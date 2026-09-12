@@ -1,0 +1,85 @@
+/* assets/css/style.css - Minified extra styles */
+.btn-outline-light:hover {
+    background: rgba(255, 255, 255, 0.1)
+}
+
+.text-success {
+    color: #34d399 !important
+}
+
+.text-danger {
+    color: #f87171 !important
+}
+
+.text-warning {
+    color: #fbbf24 !important
+}
+
+.text-info {
+    color: #38bdf8 !important
+}
+
+.text-primary {
+    color: #818cf8 !important
+}
+
+.fw-bold {
+    font-weight: 600
+}
+
+.ms-1 {
+    margin-left: 0.25rem
+}
+
+.ms-2 {
+    margin-left: 0.5rem
+}
+
+.ms-3 {
+    margin-left: 1rem
+}
+
+.me-2 {
+    margin-right: 0.5rem
+}
+
+.mb-0 {
+    margin-bottom: 0
+}
+
+.px-3 {
+    padding-left: 1rem;
+    padding-right: 1rem
+}
+
+.px-4 {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem
+}
+
+.rounded-pill {
+    border-radius: 50px
+}
+
+.btn-sm {
+    padding: 6px 14px;
+    font-size: 13px
+}
+
+.btn-group-sm>.btn {
+    padding: 5px 10px;
+    font-size: 11px
+}
+
+.gap-1 {
+    gap: 0.25rem
+}
+
+.gap-3 {
+    gap: 1rem
+}
+
+.g-3 {
+    --bs-gutter-y: 1rem;
+    --bs-gutter-x: 1rem
+}

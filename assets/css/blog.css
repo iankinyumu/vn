@@ -1,0 +1,362 @@
+/* assets/css/blog.css */
+.blog-wrapper {
+    padding: 0;
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto
+}
+
+.blog-hero {
+    padding: 30px 35px;
+    margin-bottom: 0;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.04))
+}
+
+.blog-hero-title {
+    font-size: 2em;
+    font-weight: 700;
+    margin-bottom: 8px
+}
+
+.blog-hero-subtitle {
+    color: var(--text-secondary);
+    font-size: 1em;
+    margin: 0;
+    line-height: 1.5
+}
+
+.blog-hero .search-wrapper .premium-search {
+    width: 100%;
+    padding: 12px 16px 12px 42px;
+    font-size: 14px
+}
+
+.blog-categories-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px
+}
+
+.blog-categories {
+    display: flex;
+    gap: 8px;
+    flex-wrap: nowrap;
+    min-width: max-content;
+    padding: 0 4px
+}
+
+.blog-cat-btn {
+    white-space: nowrap;
+    padding: 10px 20px;
+    border-radius: 12px;
+    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center
+}
+
+.blog-cat-btn i {
+    font-size: 14px
+}
+
+.blog-cat-btn.active {
+    background: var(--purple-grad);
+    color: white;
+    border-color: transparent
+}
+
+.blog-cat-btn:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.06);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.12)
+}
+
+.blog-card {
+    overflow: hidden;
+    padding: 0;
+    transition: all 0.35s ease;
+    display: flex;
+    flex-direction: column
+}
+
+.blog-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5)
+}
+
+.blog-card.featured {
+    flex-direction: row
+}
+
+.blog-card-img {
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0
+}
+
+.blog-card.featured .blog-card-img {
+    width: 45%;
+    min-height: 280px
+}
+
+.blog-card:not(.featured) .blog-card-img {
+    height: 200px
+}
+
+.blog-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s
+}
+
+.blog-card:hover .blog-card-img img {
+    transform: scale(1.05)
+}
+
+.blog-tag {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    z-index: 1;
+    letter-spacing: 0.3px
+}
+
+.tag-market {
+    background: rgba(99, 102, 241, 0.85);
+    color: white
+}
+
+.tag-tutorial {
+    background: rgba(16, 185, 129, 0.85);
+    color: white
+}
+
+.tag-news {
+    background: rgba(245, 158, 11, 0.85);
+    color: white
+}
+
+.tag-defi {
+    background: rgba(59, 130, 246, 0.85);
+    color: white
+}
+
+.tag-nft {
+    background: rgba(236, 72, 153, 0.85);
+    color: white
+}
+
+.tag-security {
+    background: rgba(239, 68, 68, 0.85);
+    color: white
+}
+
+.tag-mining {
+    background: rgba(139, 92, 246, 0.85);
+    color: white
+}
+
+.blog-card-body {
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    flex: 1
+}
+
+.blog-card.featured .blog-card-body {
+    padding: 25px
+}
+
+.blog-meta-top {
+    display: flex;
+    gap: 15px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 12px
+}
+
+.blog-meta-top span {
+    display: flex;
+    align-items: center;
+    gap: 5px
+}
+
+.blog-card-title {
+    font-size: 1.1em;
+    font-weight: 600;
+    margin-bottom: 10px;
+    line-height: 1.4
+}
+
+.blog-card.featured .blog-card-title {
+    font-size: 1.3em
+}
+
+.blog-card-excerpt {
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.6;
+    margin-bottom: 15px;
+    flex: 1
+}
+
+.blog-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto
+}
+
+.blog-author {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 500
+}
+
+.blog-author img {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover
+}
+
+.btn-read-more {
+    color: #818cf8;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.3s
+}
+
+.btn-read-more:hover {
+    color: #a78bfa;
+    gap: 8px
+}
+
+.blog-pagination {
+    display: flex;
+    justify-content: center
+}
+
+.pagination-list {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    list-style: none;
+    padding: 0;
+    margin: 0
+}
+
+.page-num {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--glass-border);
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 13px;
+    transition: all 0.3s
+}
+
+.page-num.active,
+.page-num:hover {
+    background: var(--purple-grad);
+    color: white;
+    border-color: transparent
+}
+
+.page-link-prev,
+.page-link-next {
+    padding: 8px 16px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--glass-border);
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 13px;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 6px
+}
+
+.page-link-prev:hover,
+.page-link-next:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: white
+}
+
+.page-dots {
+    color: var(--text-secondary);
+    font-size: 13px;
+    padding: 8px 4px
+}
+
+.section-title {
+    font-size: 1.1em;
+    font-weight: 600
+}
+
+@media (max-width:992px) {
+    .blog-card.featured {
+        flex-direction: column
+    }
+
+    .blog-card.featured .blog-card-img {
+        width: 100%;
+        min-height: 200px
+    }
+
+    .blog-card-title {
+        font-size: 1em
+    }
+}
+
+@media (max-width:576px) {
+    .blog-hero {
+        padding: 20px
+    }
+
+    .blog-hero-title {
+        font-size: 1.4em
+    }
+
+    .blog-cat-btn {
+        padding: 8px 14px;
+        font-size: 11px
+    }
+
+    .blog-card-body {
+        padding: 16px
+    }
+
+    .blog-card.featured .blog-card-body {
+        padding: 18px
+    }
+
+    .page-num {
+        width: 32px;
+        height: 32px;
+        font-size: 11px
+    }
+}
