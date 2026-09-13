@@ -104,41 +104,38 @@ function setWsStatus(status) {
 }
 
 // --- Order Book & Recent Trades Synced to Binance Price ---
-function generateOrderBook() {
-    const basePrice = liveMarket.currentPrice || 77150.00;
-    const asks = [];
-    const bids = [];
-    for (let i = 0; i < 7; i++) {
-        const offset = (i + 1) * 3.5 + Math.random() * 2.5;
-        asks.push({ price: basePrice + offset, amount: (Math.random() * 1.8 + 0.05).toFixed(4) });
-        bids.push({ price: basePrice - offset, amount: (Math.random() * 1.8 + 0.05).toFixed(4) });
-    }
+async function generateOrderBook() {
+    let asks = [], bids = [];
+    try {
+        const response = await fetch(`https://data-api.binance.vision/api/v3/depth?symbol=${encodeURIComponent(liveMarket.symbol)}&limit=10`);
+        if (!response.ok) throw new Error('depth unavailable');
+        const depth = await response.json();
+        asks = (depth.asks || []).slice(0, 7).map(([price, amount]) => ({ price: Number(price), amount: Number(amount) }));
+        bids = (depth.bids || []).slice(0, 7).map(([price, amount]) => ({ price: Number(price), amount: Number(amount) }));
+    } catch (error) { console.warn('Live order book unavailable.', error); return; }
     const asksEl = document.getElementById('orderBookAsks');
     const bidsEl = document.getElementById('orderBookBids');
     const spreadEl = document.querySelector('.spread-price');
 
     if (asksEl) {
-        asksEl.innerHTML = asks.reverse().map(a => `<div class="ob-mini-row ask"><span class="text-danger">$${a.price.toFixed(2)}</span><span>${a.amount}</span><span>$${(a.price * a.amount).toFixed(2)}</span></div>`).join('');
+        asksEl.innerHTML = asks.reverse().map(a => `<div class="ob-mini-row ask"><span class="text-danger">$${a.price.toFixed(2)}</span><span>${a.amount.toFixed(4)}</span><span>$${(a.price * a.amount).toFixed(2)}</span></div>`).join('');
     }
     if (bidsEl) {
-        bidsEl.innerHTML = bids.map(b => `<div class="ob-mini-row bid"><span class="text-success">$${b.price.toFixed(2)}</span><span>${b.amount}</span><span>$${(b.price * b.amount).toFixed(2)}</span></div>`).join('');
+        bidsEl.innerHTML = bids.map(b => `<div class="ob-mini-row bid"><span class="text-success">$${b.price.toFixed(2)}</span><span>${b.amount.toFixed(4)}</span><span>$${(b.price * b.amount).toFixed(2)}</span></div>`).join('');
     }
     if (spreadEl) {
-        spreadEl.textContent = `$${basePrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        const midpoint = asks[0] && bids[0] ? (asks[0].price + bids[0].price) / 2 : liveMarket.currentPrice;
+        spreadEl.textContent = `$${midpoint.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
 }
 
-function generateRecentTrades() {
-    const basePrice = liveMarket.currentPrice || 77150.00;
-    const trades = [];
-    const now = new Date();
-    for (let i = 0; i < 9; i++) {
-        const d = new Date(now.getTime() - i * 1800);
-        const timeStr = d.toTimeString().split(' ')[0];
-        const type = Math.random() > 0.48 ? 'buy' : 'sell';
-        const price = basePrice + (Math.random() - 0.5) * 6;
-        trades.push({ type, price: price.toFixed(2), amount: (Math.random() * 0.45 + 0.01).toFixed(4), time: timeStr });
-    }
+async function generateRecentTrades() {
+    let trades = [];
+    try {
+        const response = await fetch(`https://data-api.binance.vision/api/v3/trades?symbol=${encodeURIComponent(liveMarket.symbol)}&limit=9`);
+        if (!response.ok) throw new Error('trades unavailable');
+        trades = (await response.json()).reverse().map((trade) => ({ type: trade.isBuyerMaker ? 'sell' : 'buy', price: Number(trade.price).toFixed(2), amount: Number(trade.qty).toFixed(4), time: new Date(trade.time).toTimeString().split(' ')[0] }));
+    } catch (error) { console.warn('Live trades unavailable.', error); return; }
     const el = document.getElementById('recentTrades');
     if (el) {
         el.innerHTML = trades.map(t => `<div class="recent-trade-item ${t.type}"><span>$${t.price}</span><span>${t.amount}</span><span>${t.time}</span></div>`).join('');
@@ -304,8 +301,9 @@ async function loadDataAndConnect(symbol, interval) {
     }
 
     if (candles.length === 0) {
-        console.warn('Generating simulated historical seed data...');
-        candles = generateSimulatedHistory(interval);
+        console.warn('Historical market data is unavailable; no synthetic candles will be displayed.');
+        setWsStatus('disconnected');
+        return;
     }
 
     liveMarket.candles = candles;
@@ -601,25 +599,6 @@ function updateFallbackWithCandle(candle) {
     renderFallbackCanvas();
 }
 
-function generateSimulatedHistory(interval) {
-    const list = [];
-    let price = 77000;
-    const now = Math.floor(Date.now() / 1000);
-    const stepSeconds = interval === '1m' ? 60 : interval === '5m' ? 300 : interval === '15m' ? 900 : interval === '1h' ? 3600 : interval === '4h' ? 14400 : 86400;
-    for (let i = 100; i >= 0; i--) {
-        const time = now - i * stepSeconds;
-        const open = price;
-        const delta = (Math.random() - 0.48) * 80;
-        const close = open + delta;
-        const high = Math.max(open, close) + Math.random() * 40;
-        const low = Math.min(open, close) - Math.random() * 40;
-        const volume = Math.random() * 15 + 2;
-        list.push({ time, open, high, low, close, volume });
-        price = close;
-    }
-    return list;
-}
-
 // --- Order Form Logic ---
 function setOrderType(type) {
     document.querySelectorAll('.order-type-btn').forEach(b => b.classList.remove('active'));
@@ -638,7 +617,7 @@ function setOrderType(type) {
 }
 
 function setAmountPercent(pct) {
-    const total = 0.2345;
+    const total = Number((window.smartProfitAccountData?.balances || []).find((balance) => balance.asset === (liveMarket.baseCoin || 'BTC'))?.available || 0);
     const amountInput = document.getElementById('orderAmount');
     if (amountInput) {
         amountInput.value = (total * pct / 100).toFixed(4);
@@ -653,16 +632,27 @@ function updateTotal() {
     if (totalEl) totalEl.value = (price * amount).toFixed(2);
 }
 
-function placeOrder(type) {
-    const price = document.getElementById('orderPrice')?.value || liveMarket.currentPrice;
-    const amount = document.getElementById('orderAmount')?.value;
-    const baseCoin = liveMarket.baseCoin || 'BTC';
-    if (!amount || parseFloat(amount) <= 0) {
-        alert('Please enter an amount.');
-        return;
-    }
-    const action = type === 'buy' ? 'Buy' : 'Sell';
-    alert(`${action} order placed!\n\nAsset: ${liveMarket.symbol.replace('USDT', '/USDT')}\nAmount: ${amount} ${baseCoin}\nPrice: $${parseFloat(price).toLocaleString()}\nTotal: $${(parseFloat(price) * parseFloat(amount)).toFixed(2)} USDT`);
+async function placeOrder(type) {
+    const amount = Number(document.getElementById('orderAmount')?.value);
+    const price = Number(document.getElementById('orderPrice')?.value);
+    const active = document.querySelector('.order-type-btn.active')?.textContent.trim().toLowerCase();
+    const orderType = active === 'market' ? 'MARKET' : active?.includes('stop') ? 'STOP_LIMIT' : 'LIMIT';
+    const button = document.querySelector(type === 'buy' ? '.btn-buy-large' : '.btn-sell-large');
+    if (!Number.isFinite(amount) || amount <= 0 || (orderType !== 'MARKET' && (!Number.isFinite(price) || price <= 0))) { alert('Enter a valid order amount and price.'); return; }
+    if (!window.getSupabaseClient) { alert('Authentication is still loading. Please try again.'); return; }
+    button && (button.disabled = true);
+    try {
+        const client = await getSupabaseClient();
+        // Quotes are persisted by a server function; the order RPC never trusts browser price.
+        const { error: quoteError } = await client.functions.invoke('refresh-market-quote', { body: { symbol: liveMarket.symbol } });
+        if (quoteError) throw quoteError;
+        const clientOrderId = crypto.randomUUID();
+        const { data, error } = await client.rpc('submit_demo_order', { p_client_order_id: clientOrderId, p_symbol: liveMarket.symbol, p_side: type.toUpperCase(), p_type: orderType, p_quantity: amount, p_limit_price: orderType === 'MARKET' ? null : price, p_stop_price: orderType === 'STOP_LIMIT' ? price : null, p_idempotency_key: clientOrderId });
+        if (error) throw error;
+        alert(`Demo ${data.state === 'FILLED' ? 'order filled' : 'order accepted'}: ${data.id}`);
+        window.location.reload();
+    } catch (error) { console.error('Demo order submission failed.', error); alert(error?.message || 'Unable to submit the demo order.'); }
+    finally { if (button) button.disabled = false; }
 }
 
 // ============================================================

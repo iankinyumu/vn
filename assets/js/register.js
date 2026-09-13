@@ -51,7 +51,7 @@ function checkPasswordMatch() {
     }
 }
 
-function handleRegister(e) {
+async function handleRegister(e) {
     e.preventDefault();
     const firstName = document.getElementById('firstName').value.trim();
     const lastName = document.getElementById('lastName').value.trim();
@@ -81,19 +81,26 @@ function handleRegister(e) {
         return;
     }
 
-    if (typeof setSession === 'function') {
-        setSession({
-            name: `${firstName} ${lastName}`,
-            email: email
+    const submit = e.currentTarget.querySelector('button[type="submit"]');
+    submit.disabled = true;
+    try {
+        const { data, error } = await (await getSupabaseClient()).auth.signUp({
+            email,
+            password,
+            options: {
+                data: { display_name: `${firstName} ${lastName}`, username },
+                emailRedirectTo: new URL('login.html', window.location.href).href
+            }
         });
-    } else {
-        localStorage.setItem('smartprofit_user', JSON.stringify({
-            name: `${firstName} ${lastName}`,
-            email: email,
-            loggedIn: true
-        }));
+        if (error) throw error;
+        if (data.session) {
+            window.location.assign('dashboard.html');
+            return;
+        }
+        alert('Account created. Check your email to confirm your address, then sign in.');
+        window.location.assign('login.html');
+    } catch (error) {
+        alert(error.message || 'Unable to create your account.');
+        submit.disabled = false;
     }
-
-    alert('Account created successfully!\n\nWelcome to SmartProfitBinary, ' + firstName + '!');
-    window.location.href = 'dashboard.html';
 }

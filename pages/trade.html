@@ -72,44 +72,44 @@
             <div class="row g-3 mb-3">
                 <div class="col-6 col-md-4 col-lg-2">
                     <div class="premium-glass-card balance-card">
-                        <div class="balance-label">USDT Balance</div>
-                        <div class="balance-value">$12,450.00</div>
-                        <div class="balance-change positive"><i class="fas fa-arrow-up"></i> 3.2%</div>
+                        <div class="balance-label">USD Balance</div>
+                        <div class="balance-value" data-wallet-total-usd>—</div>
+                        <div class="balance-sub" data-account-load-status>Ledger-backed balance</div>
                     </div>
                 </div>
                 <div class="col-6 col-md-4 col-lg-2">
                     <div class="premium-glass-card balance-card">
                         <div class="balance-label">BTC Balance</div>
-                        <div class="balance-value">0.2345</div>
+                        <div class="balance-value" data-wallet-asset="BTC">0</div>
                         <div class="balance-sub">≈ $15,890.00</div>
                     </div>
                 </div>
                 <div class="col-6 col-md-4 col-lg-2">
                     <div class="premium-glass-card balance-card">
                         <div class="balance-label">ETH Balance</div>
-                        <div class="balance-value">3.4567</div>
+                        <div class="balance-value" data-wallet-asset="ETH">0</div>
                         <div class="balance-sub">≈ $12,320.00</div>
                     </div>
                 </div>
                 <div class="col-6 col-md-4 col-lg-2">
                     <div class="premium-glass-card balance-card">
-                        <div class="balance-label">24h P&L</div>
-                        <div class="balance-value text-success">+$845.32</div>
-                        <div class="balance-change positive"><i class="fas fa-arrow-up"></i> 5.8%</div>
+                        <div class="balance-label">24h P&amp;L</div>
+                        <div class="balance-value">—</div>
+                        <div class="balance-sub">Requires execution service</div>
                     </div>
                 </div>
                 <div class="col-6 col-md-4 col-lg-2">
                     <div class="premium-glass-card balance-card">
                         <div class="balance-label">Open Orders</div>
-                        <div class="balance-value">3</div>
-                        <div class="balance-sub">$2,340.00</div>
+                        <div class="balance-value">—</div>
+                        <div class="balance-sub">No execution service</div>
                     </div>
                 </div>
                 <div class="col-6 col-md-4 col-lg-2">
                     <div class="premium-glass-card balance-card">
                         <div class="balance-label">Total Assets</div>
-                        <div class="balance-value">$40,660.00</div>
-                        <div class="balance-change positive"><i class="fas fa-arrow-up"></i> 12.4%</div>
+                        <div class="balance-value" data-wallet-total-usd>—</div>
+                        <div class="balance-sub">USD ledger total</div>
                     </div>
                 </div>
             </div>
@@ -258,40 +258,8 @@
                         <div class="card-header-clean">
                             <h5 class="mb-0"><i class="fas fa-list-check me-2"></i>Open Orders</h5>
                         </div>
-                        <div class="open-orders-list">
-                            <div class="open-order-item">
-                                <div class="order-info">
-                                    <span class="order-type buy">Buy</span>
-                                    <span class="order-pair">BTC/USDT</span>
-                                </div>
-                                <div class="order-details">
-                                    <span>0.0234 BTC @ $67,450.00</span>
-                                    <span class="text-secondary">Sep 11, 14:30</span>
-                                </div>
-                                <button class="btn-cancel-order"><i class="fas fa-times"></i></button>
-                            </div>
-                            <div class="open-order-item">
-                                <div class="order-info">
-                                    <span class="order-type sell">Sell</span>
-                                    <span class="order-pair">BTC/USDT</span>
-                                </div>
-                                <div class="order-details">
-                                    <span>0.0150 BTC @ $68,200.00</span>
-                                    <span class="text-secondary">Sep 11, 12:15</span>
-                                </div>
-                                <button class="btn-cancel-order"><i class="fas fa-times"></i></button>
-                            </div>
-                            <div class="open-order-item">
-                                <div class="order-info">
-                                    <span class="order-type buy">Buy</span>
-                                    <span class="order-pair">ETH/USDT</span>
-                                </div>
-                                <div class="order-details">
-                                    <span>0.5000 ETH @ $3,450.00</span>
-                                    <span class="text-secondary">Sep 11, 10:00</span>
-                                </div>
-                                <button class="btn-cancel-order"><i class="fas fa-times"></i></button>
-                            </div>
+                        <div class="open-orders-list" id="openOrdersList">
+                            <div class="open-order-item text-secondary">Loading orders…</div>
                         </div>
                     </div>
                 </div>
@@ -333,6 +301,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.2.1/chart.umd.min.js"></script>
     <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
     <script src="../assets/js/trade.js"></script>
+    <script src="../assets/js/account-data.js"></script>
 </body>
 
 </html>
