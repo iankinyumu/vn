@@ -60,6 +60,12 @@ async function handleRegister(e) {
     const password = document.getElementById('password').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
     const terms = document.getElementById('termsCheck');
+    const status = document.getElementById('registerStatus');
+    const showStatus = (message, isError) => {
+        if (!status) return;
+        status.textContent = message;
+        status.style.color = isError ? '#ef4444' : '#10b981';
+    };
     const errors = [];
 
     if (!firstName) errors.push('First Name is required.');
@@ -77,19 +83,19 @@ async function handleRegister(e) {
     if (terms && !terms.checked) errors.push('You must accept the Terms of Service.');
 
     if (errors.length > 0) {
-        alert(errors.join('\n'));
+        showStatus(errors.join(' '), true);
         return;
     }
 
     const submit = e.currentTarget.querySelector('button[type="submit"]');
     submit.disabled = true;
+    showStatus('Creating your DEMO account…', false);
     try {
         const { data, error } = await (await getSupabaseClient()).auth.signUp({
             email,
             password,
             options: {
-                data: { display_name: `${firstName} ${lastName}`, username },
-                emailRedirectTo: new URL('login.html', window.location.href).href
+                data: { display_name: `${firstName} ${lastName}`, username }
             }
         });
         if (error) throw error;
@@ -97,10 +103,16 @@ async function handleRegister(e) {
             window.location.assign('dashboard.html');
             return;
         }
-        alert('Account created. Check your email to confirm your address, then sign in.');
+        showStatus('Account created. You can now sign in.', false);
         window.location.assign('login.html');
     } catch (error) {
-        alert(error.message || 'Unable to create your account.');
+        const rateLimited = error?.status === 429 || /rate limit|too many requests|email rate/i.test(error?.message || '');
+        showStatus(
+            rateLimited
+                ? 'Signups are temporarily rate-limited by the email service. Please wait before trying again, or contact support to enable transactional email.'
+                : (error.message || 'Unable to create your account.'),
+            true
+        );
         submit.disabled = false;
     }
 }

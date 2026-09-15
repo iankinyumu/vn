@@ -633,6 +633,11 @@ function updateTotal() {
 }
 
 async function placeOrder(type) {
+    const account = window.smartProfitAccountData?.account;
+    if (!account || account.execution_mode !== 'DEMO' || account.status !== 'ACTIVE') {
+        alert('An active practice account is required. Real-money trading is not available.');
+        return;
+    }
     const amount = Number(document.getElementById('orderAmount')?.value);
     const price = Number(document.getElementById('orderPrice')?.value);
     const active = document.querySelector('.order-type-btn.active')?.textContent.trim().toLowerCase();

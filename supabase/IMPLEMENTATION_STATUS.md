@@ -4,6 +4,12 @@ Verified on 12 September 2026: the demo-engine migration is applied to the confi
 
 ## Complete
 
+### Frontend gaps closed (14 September 2026)
+
+- Public navigation hides sign-in and registration actions for authenticated users.
+- Dashboard and trade pages now project open positions, mark them from trusted market snapshots, and display unrealized P&L, total equity, open-order count, and wallet USD equivalents.
+- A CRON_SECRET-authorized worker now refreshes BTCUSDT and ETHUSDT snapshots every minute and evaluates resting DEMO orders.
+
 - Supabase Auth is authoritative; fabricated local-storage sessions are removed.
 - DEMO-only account provisioning, isolated wallets, immutable ledger entries, orders, fills, positions, snapshots, and execution events are durable and RLS protected.
 - `REAL` has no creation path, writable RPC, broker integration, or credentials path.
@@ -14,7 +20,7 @@ Verified on 12 September 2026: the demo-engine migration is applied to the confi
 
 ## Partially complete
 
-- Limit and stop-limit orders are evaluated whenever the quote function runs. A scheduled continuous market-data worker is not deployed.
+- Limit and stop-limit orders are evaluated from each trusted market snapshot; the scheduled worker currently covers BTCUSDT and ETHUSDT.
 - Market snapshots contain trusted bid/ask data, but not a full normalized depth book or provider sequence stream.
 - Precision validation is a safe eight-decimal and minimum-notional rule, not exchange-specific symbol-filter ingestion.
 - Realtime updates refresh the account after order changes; a dedicated account-event websocket payload stream is not implemented.

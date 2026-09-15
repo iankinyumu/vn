@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <meta name="description"
-        content="About SmartProfitBinary - Learn about our mission, team, and the story behind the leading binary and cryptocurrency trading platform">
+        content="Learn how to follow cryptocurrency markets and practise trading with virtual funds on SmartProfitBinary.">
     <title>About Us - SmartProfitBinary</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
@@ -32,7 +32,7 @@
     <header class="premium-header">
         <nav class="navbar navbar-expand-xl">
             <div class="container-fluid px-4">
-                <a class="navbar-brand premium-logo" href="index.html">
+                <a class="navbar-brand premium-logo" href="dashboard.html">
                     <div class="logo-text"><span class="logo-primary">SmartProfit</span><span
                             class="logo-secondary">Binary</span></div>
                 </a>
@@ -41,15 +41,15 @@
                 </button>
                 <div class="collapse navbar-collapse" id="mainNav">
                     <ul class="navbar-nav ms-auto align-items-center gap-1">
-                        <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+                        <li class="nav-item"><a class="nav-link" href="dashboard.html"><i class="fas fa-chart-line me-1"></i>Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link" href="trade.html"><i class="fas fa-exchange-alt me-1"></i>Trade</a></li>
+                        <li class="nav-item"><a class="nav-link" href="profile.html"><i class="fas fa-user-circle me-1"></i>Profile</a></li>
                         <li class="nav-item"><a class="nav-link active" href="about.html">About</a></li>
                         <li class="nav-item"><a class="nav-link" href="blog.html">Blog</a></li>
                         <li class="nav-item"><a class="nav-link" href="contact.html">Contact</a></li>
                         <li class="nav-item"><a class="nav-link" href="faq.html">FAQ</a></li>
-                        <li class="nav-item ms-2"><a href="login.html"
-                                class="btn btn-outline-light btn-sm rounded-pill px-3">Sign In</a></li>
-                        <li class="nav-item ms-1"><a href="register.html"
-                                class="btn btn-premium-primary btn-sm rounded-pill px-3">Register</a></li>
+                        <li class="nav-item ms-2" data-about-signed-in hidden><button onclick="logout()" class="btn btn-outline-danger btn-sm rounded-pill px-3"><i class="fas fa-sign-out-alt me-1"></i>Logout</button></li>
+                        <li class="nav-item ms-2" data-about-signed-out hidden><a class="btn btn-outline-light btn-sm rounded-pill px-3" href="login.html">Sign in</a></li>
                     </ul>
                 </div>
             </div>
@@ -58,379 +58,45 @@
 
     <main class="about-wrapper">
         <div class="container-fluid px-4 py-4">
-
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="premium-glass-card about-hero text-center">
-                        <div class="about-hero-icon"><i class="fas fa-building-columns"></i></div>
-                        <h1 class="about-hero-title">About <span class="text-gradient-animated">SmartProfitBinary</span>
-                        </h1>
-                        <p class="about-hero-subtitle">Empowering the world to trade digital assets with confidence,
-                            security, and simplicity.</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row g-3 mb-4">
+            <section class="premium-glass-card about-hero text-center mb-4" aria-labelledby="aboutTitle">
+                <div class="about-hero-icon"><i class="fas fa-chart-line" aria-hidden="true"></i></div>
+                <h1 class="about-hero-title" id="aboutTitle">About <span class="text-gradient-animated">SmartProfitBinary</span></h1>
+                <p class="about-hero-subtitle">Get familiar with cryptocurrency markets and practise placing trades with virtual funds.</p>
+            </section>
+            <section class="row g-3 mb-4" aria-label="Using SmartProfitBinary">
                 <div class="col-md-6">
-                    <div class="premium-glass-card stat-card-horizontal">
-                        <div class="stat-icon-wrap bg-gradient-purple"><i class="fas fa-users"></i></div>
-                        <div class="stat-info">
-                            <div class="stat-number-horizontal">1,200,000</div>
-                            <div class="stat-desc-horizontal">Active Traders</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="premium-glass-card stat-card-horizontal">
-                        <div class="stat-icon-wrap bg-gradient-blue"><i class="fas fa-globe"></i></div>
-                        <div class="stat-info">
-                            <div class="stat-number-horizontal">150</div>
-                            <div class="stat-desc-horizontal">Countries Supported</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="premium-glass-card stat-card-horizontal">
-                        <div class="stat-icon-wrap bg-gradient-green"><i class="fas fa-chart-line"></i></div>
-                        <div class="stat-info">
-                            <div class="stat-number-horizontal">10B+</div>
-                            <div class="stat-desc-horizontal">Trading Volume</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="premium-glass-card stat-card-horizontal">
-                        <div class="stat-icon-wrap bg-gradient-orange"><i class="fas fa-coins"></i></div>
-                        <div class="stat-info">
-                            <div class="stat-number-horizontal">365+</div>
-                            <div class="stat-desc-horizontal">Listed Coins</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row g-3 mb-4">
-                <div class="col-lg-6">
                     <div class="premium-glass-card mission-card h-100">
-                        <div class="mission-icon bg-gradient-purple"><i class="fas fa-bullseye"></i></div>
-                        <h3>Our Mission</h3>
-                        <p>To democratize access to cryptocurrency trading by providing a secure, intuitive, and
-                            affordable platform that empowers individuals and institutions worldwide to participate in
-                            the digital economy.</p>
-                        <ul class="mission-list">
-                            <li><i class="fas fa-check-circle"></i> Provide fair and transparent trading</li>
-                            <li><i class="fas fa-check-circle"></i> Ensure enterprise-grade security for all users</li>
-                            <li><i class="fas fa-check-circle"></i> Offer comprehensive educational resources</li>
-                            <li><i class="fas fa-check-circle"></i> Build an inclusive global financial ecosystem</li>
-                        </ul>
+                        <div class="mission-icon bg-gradient-purple"><i class="fas fa-chart-line" aria-hidden="true"></i></div>
+                        <h2 class="h4">Follow the market</h2>
+                        <p>View price charts, explore trading pairs, and follow recent market activity. Use these tools to understand how prices change before placing a practice trade.</p>
+                        <p class="mb-0">Market data can be delayed or temporarily unavailable. Check the connection status when using the trading page.</p>
                     </div>
                 </div>
-                <div class="col-lg-6">
+                <div class="col-md-6">
                     <div class="premium-glass-card mission-card h-100">
-                        <div class="mission-icon bg-gradient-blue"><i class="fas fa-eye"></i></div>
-                        <h3>Our Vision</h3>
-                        <p>To become the world's most trusted and widely-used cryptocurrency exchange, bridging the gap
-                            between traditional finance and the decentralized future while setting the standard for
-                            innovation, security, and user experience.</p>
-                        <ul class="mission-list">
-                            <li><i class="fas fa-check-circle"></i> Pioneer next-generation trading technology</li>
-                            <li><i class="fas fa-check-circle"></i> Expand access to underserved markets</li>
-                            <li><i class="fas fa-check-circle"></i> Lead regulatory compliance and transparency</li>
-                            <li><i class="fas fa-check-circle"></i> Drive mainstream crypto adoption globally</li>
-                        </ul>
+                        <div class="mission-icon bg-gradient-blue"><i class="fas fa-coins" aria-hidden="true"></i></div>
+                        <h2 class="h4">Practise with virtual funds</h2>
+                        <p>Your demo account lets you try buying and selling without spending real money. You can review your orders, balances, and holdings as you practise.</p>
+                        <p class="mb-0">Demo funds have no cash value and cannot be withdrawn. Practice trades do not buy or sell real cryptocurrency.</p>
                     </div>
                 </div>
-            </div>
-
-            <div class="row mb-4">
-                <div class="col-12 text-center mb-3">
-                    <h2 class="section-heading">Our <span class="text-gradient-animated">Core Values</span></h2>
-                    <p class="section-subheading">The principles that guide everything we do</p>
+            </section>
+            <section class="premium-glass-card mission-card mb-4" aria-labelledby="expectTitle">
+                <h2 class="h4" id="expectTitle">What to expect</h2>
+                <ul class="mission-list">
+                    <li><i class="fas fa-circle-info" aria-hidden="true"></i><span>Trading is currently available in demo mode. Real-money trading is not available.</span></li>
+                    <li><i class="fas fa-circle-info" aria-hidden="true"></i><span>Practice trades use market quotes to simulate a trade. The price you receive can differ from the price on the chart.</span></li>
+                    <li><i class="fas fa-circle-info" aria-hidden="true"></i><span>Demo results do not predict real returns. Real trading involves costs, changing prices, and the risk of losing money.</span></li>
+                </ul>
+            </section>
+            <section class="premium-glass-card cta-card text-center" aria-labelledby="continueTitle">
+                <h2 id="continueTitle">Explore at your own pace</h2>
+                <p>Open the trading page to explore the markets, or visit your dashboard to review your account.</p>
+                <div class="cta-buttons">
+                    <a href="trade.html" class="btn btn-premium-primary btn-lg">Explore markets</a>
+                    <a href="dashboard.html" class="btn btn-glass-premium btn-lg">Go to dashboard</a>
                 </div>
-                <div class="col-md-6 col-lg-3">
-                    <div class="premium-glass-card value-card text-center">
-                        <div class="value-icon-wrap"><i class="fas fa-shield-halved"></i></div>
-                        <h5>Security First</h5>
-                        <p>95% of assets in cold storage, multi-sig wallets, and regular third-party security audits.
-                        </p>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-3">
-                    <div class="premium-glass-card value-card text-center">
-                        <div class="value-icon-wrap"><i class="fas fa-handshake"></i></div>
-                        <h5>Transparency</h5>
-                        <p>Real-time proof of reserves, public fee schedules, and open communication with our community.
-                        </p>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-3">
-                    <div class="premium-glass-card value-card text-center">
-                        <div class="value-icon-wrap"><i class="fas fa-bolt"></i></div>
-                        <h5>Innovation</h5>
-                        <p>Continuous platform improvements, cutting-edge trading tools, and support for emerging
-                            technologies.</p>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-3">
-                    <div class="premium-glass-card value-card text-center">
-                        <div class="value-icon-wrap"><i class="fas fa-users"></i></div>
-                        <h5>Community</h5>
-                        <p>1.2M+ traders, 24/7 support, educational resources, and an active global community.</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row mb-4">
-                <div class="col-12 text-center mb-3">
-                    <h2 class="section-heading">Our <span class="text-gradient-animated">Story</span></h2>
-                </div>
-                <div class="col-12">
-                    <div class="premium-glass-card timeline-card">
-                        <div class="timeline">
-                            <div class="timeline-item">
-                                <div class="timeline-dot"></div>
-                                <div class="timeline-content">
-                                    <span class="timeline-year">2022</span>
-                                    <h5>The Beginning</h5>
-                                    <p>SmartProfitBinary was founded by a team of fintech veterans and blockchain
-                                        enthusiasts with a vision to create the most user-friendly cryptocurrency
-                                        exchange. Launching with just 50 coins and a handful of employees.</p>
-                                </div>
-                            </div>
-                            <div class="timeline-item">
-                                <div class="timeline-dot"></div>
-                                <div class="timeline-content">
-                                    <span class="timeline-year">Early 2023</span>
-                                    <h5>Rapid Growth</h5>
-                                    <p>Reached 100,000 users within 6 months of launch. Introduced advanced trading
-                                        features including futures trading, margin trading, and staking rewards.
-                                        Expanded to 150+ coins.</p>
-                                </div>
-                            </div>
-                            <div class="timeline-item">
-                                <div class="timeline-dot"></div>
-                                <div class="timeline-content">
-                                    <span class="timeline-year">Mid 2023</span>
-                                    <h5>Institutional Grade</h5>
-                                    <p>Launched institutional services with API access, OTC trading desk, and custody
-                                        solutions. Secured $50M in Series A funding from top venture capital firms.</p>
-                                </div>
-                            </div>
-                            <div class="timeline-item">
-                                <div class="timeline-dot"></div>
-                                <div class="timeline-content">
-                                    <span class="timeline-year">Late 2023</span>
-                                    <h5>Global Expansion</h5>
-                                    <p>Expanded operations to 150+ countries with multi-language support. Achieved $5B
-                                        in daily trading volume. Launched mobile apps for iOS and Android.</p>
-                                </div>
-                            </div>
-                            <div class="timeline-item">
-                                <div class="timeline-dot"></div>
-                                <div class="timeline-content">
-                                    <span class="timeline-year">2025</span>
-                                    <h5>Institutional Maturity & RWA</h5>
-                                    <p>Surpassed 1.2 million active traders. Introduced tokenized Real-World Assets, multi-jurisdiction regulatory licensing, and sub-millisecond derivatives engine.</p>
-                                </div>
-                            </div>
-                            <div class="timeline-item">
-                                <div class="timeline-dot"></div>
-                                <div class="timeline-content">
-                                    <span class="timeline-year">2026</span>
-                                    <h5>AI & Global Market Leadership</h5>
-                                    <p>Surpassed 2.5 million active traders and $25B+ cumulative trading volume. Pioneered live autonomous AI trading execution, quantum-resilient security, and real-time streaming liquidity.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row mb-4">
-                <div class="col-12 text-center mb-3">
-                    <h2 class="section-heading">Meet Our <span class="text-gradient-animated">Team</span></h2>
-                    <p class="section-subheading">The talented people behind SmartProfitBinary</p>
-                </div>
-                <div class="col-6 col-md-4 col-lg-3">
-                    <div class="premium-glass-card team-card text-center">
-                        <div class="team-img-wrap"><img
-                                src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=200" alt="CEO">
-                            <div class="team-img-border"></div>
-                        </div>
-                        <h5>Michael Anderson</h5>
-                        <span class="team-role">CEO & Co-Founder</span>
-                        <p class="team-bio">Former VP at Goldman Sachs. 15+ years in fintech and blockchain.</p>
-                        <div class="team-social">
-                            <a href="#"><i class="fab fa-twitter"></i></a>
-                            <a href="#"><i class="fab fa-linkedin-in"></i></a>
-                            <a href="#"><i class="fab fa-medium-m"></i></a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-6 col-md-4 col-lg-3">
-                    <div class="premium-glass-card team-card text-center">
-                        <div class="team-img-wrap"><img
-                                src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200" alt="CTO">
-                            <div class="team-img-border"></div>
-                        </div>
-                        <h5>Sarah Chen</h5>
-                        <span class="team-role">CTO & Co-Founder</span>
-                        <p class="team-bio">Ex-Senior Engineer at Coinbase. Blockchain architect with 12+ years
-                            experience.</p>
-                        <div class="team-social">
-                            <a href="#"><i class="fab fa-twitter"></i></a>
-                            <a href="#"><i class="fab fa-linkedin-in"></i></a>
-                            <a href="#"><i class="fab fa-github"></i></a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-6 col-md-4 col-lg-3">
-                    <div class="premium-glass-card team-card text-center">
-                        <div class="team-img-wrap"><img
-                                src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200" alt="COO">
-                            <div class="team-img-border"></div>
-                        </div>
-                        <h5>David Park</h5>
-                        <span class="team-role">Chief Operating Officer</span>
-                        <p class="team-bio">Operations leader with experience scaling startups from seed to IPO.</p>
-                        <div class="team-social">
-                            <a href="#"><i class="fab fa-twitter"></i></a>
-                            <a href="#"><i class="fab fa-linkedin-in"></i></a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-6 col-md-4 col-lg-3">
-                    <div class="premium-glass-card team-card text-center">
-                        <div class="team-img-wrap"><img
-                                src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200" alt="CMO">
-                            <div class="team-img-border"></div>
-                        </div>
-                        <h5>Emily Rodriguez</h5>
-                        <span class="team-role">Chief Marketing Officer</span>
-                        <p class="team-bio">Growth marketing expert. Drove user acquisition for three unicorn startups.
-                        </p>
-                        <div class="team-social">
-                            <a href="#"><i class="fab fa-twitter"></i></a>
-                            <a href="#"><i class="fab fa-linkedin-in"></i></a>
-                            <a href="#"><i class="fab fa-instagram"></i></a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-6 col-md-4 col-lg-3">
-                    <div class="premium-glass-card team-card text-center">
-                        <div class="team-img-wrap"><img
-                                src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200" alt="CFO">
-                            <div class="team-img-border"></div>
-                        </div>
-                        <h5>James Williams</h5>
-                        <span class="team-role">Chief Financial Officer</span>
-                        <p class="team-bio">CPA with expertise in digital asset compliance and financial regulation.</p>
-                        <div class="team-social">
-                            <a href="#"><i class="fab fa-linkedin-in"></i></a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-6 col-md-4 col-lg-3">
-                    <div class="premium-glass-card team-card text-center">
-                        <div class="team-img-wrap"><img
-                                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200" alt="CSO">
-                            <div class="team-img-border"></div>
-                        </div>
-                        <h5>Alex Novak</h5>
-                        <span class="team-role">Chief Security Officer</span>
-                        <p class="team-bio">Former cybersecurity lead at Kraken. Expert in blockchain security and
-                            threat prevention.</p>
-                        <div class="team-social">
-                            <a href="#"><i class="fab fa-twitter"></i></a>
-                            <a href="#"><i class="fab fa-linkedin-in"></i></a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-6 col-md-4 col-lg-3">
-                    <div class="premium-glass-card team-card text-center">
-                        <div class="team-img-wrap"><img
-                                src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200"
-                                alt="Head of Product">
-                            <div class="team-img-border"></div>
-                        </div>
-                        <h5>Lisa Thompson</h5>
-                        <span class="team-role">Head of Product</span>
-                        <p class="team-bio">Product leader with 10+ years designing trading platforms and financial
-                            tools.</p>
-                        <div class="team-social">
-                            <a href="#"><i class="fab fa-twitter"></i></a>
-                            <a href="#"><i class="fab fa-linkedin-in"></i></a>
-                            <a href="#"><i class="fab fa-dribbble"></i></a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-6 col-md-4 col-lg-3">
-                    <div class="premium-glass-card team-card text-center">
-                        <div class="team-img-wrap"><img
-                                src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200"
-                                alt="Head of BD">
-                            <div class="team-img-border"></div>
-                        </div>
-                        <h5>Robert Kim</h5>
-                        <span class="team-role">Head of Business Development</span>
-                        <p class="team-bio">Strategic partnerships expert. Built relationships with 200+ institutional
-                            clients.</p>
-                        <div class="team-social">
-                            <a href="#"><i class="fab fa-linkedin-in"></i></a>
-                            <a href="#"><i class="fab fa-twitter"></i></a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row mb-4">
-                <div class="col-12 text-center mb-3">
-                    <h2 class="section-heading">Our <span class="text-gradient-animated">Partners</span></h2>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="premium-glass-card partner-card text-center">
-                        <i class="fab fa-google fa-2x mb-2" style="color:#4285f4"></i>
-                        <h6>Google Cloud</h6>
-                        <p>Infrastructure Partner</p>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="premium-glass-card partner-card text-center">
-                        <i class="fab fa-aws fa-2x mb-2" style="color:#ff9900"></i>
-                        <h6>Amazon AWS</h6>
-                        <p>Cloud Services</p>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="premium-glass-card partner-card text-center">
-                        <i class="fas fa-shield-halved fa-2x mb-2" style="color:#34d399"></i>
-                        <h6>CertiK</h6>
-                        <p>Security Audits</p>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="premium-glass-card partner-card text-center">
-                        <i class="fas fa-building-columns fa-2x mb-2" style="color:#818cf8"></i>
-                        <h6>Fireblocks</h6>
-                        <p>Custody Solution</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-12">
-                    <div class="premium-glass-card cta-card text-center">
-                        <h2>Ready to Start Trading?</h2>
-                        <p>Join 1.2 million traders on the world's most trusted cryptocurrency exchange.</p>
-                        <div class="cta-buttons">
-                            <a href="register.html" class="btn btn-premium-primary btn-lg">Create Free Account</a>
-                            <a href="trade.html" class="btn btn-glass-premium btn-lg">Explore Markets</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+            </section>
         </div>
     </main>
 
@@ -439,7 +105,7 @@
             <div class="row g-3">
                 <div class="col-md-6">
                     <div class="footer-brand-small">SmartProfitBinary</div>
-                    <p class="footer-desc">Professional cryptocurrency and binary options trading platform.</p>
+                    <p class="footer-desc">Explore cryptocurrency markets and practise trading with virtual funds.</p>
                 </div>
                 <div class="col-md-3">
                     <h6>Quick Links</h6>
@@ -453,8 +119,7 @@
                     <h6>Support</h6>
                     <ul>
                         <li><a href="faq.html">FAQ</a></li>
-                        <li><a href="#">API Docs</a></li>
-                        <li><a href="#">Fees</a></li>
+                        <li><a href="contact.html">Contact us</a></li>
                     </ul>
                 </div>
             </div>

@@ -48,6 +48,8 @@
                         <li class="nav-item"><a class="nav-link active" href="trade.html"><i class="fas fa-exchange-alt me-1"></i>Trade</a></li>
                         <li class="nav-item"><a class="nav-link" href="profile.html"><i class="fas fa-user-circle me-1"></i>Profile</a></li>
                         <li class="nav-item"><a class="nav-link" href="about.html">About</a></li>
+                        <li class="nav-item"><a class="nav-link" href="blog.html">Blog</a></li>
+                        <li class="nav-item"><a class="nav-link" href="contact.html">Contact</a></li>
                         <li class="nav-item"><a class="nav-link" href="faq.html">FAQ</a></li>
                         <li class="nav-item ms-2">
                             <button onclick="logout()" class="btn btn-outline-danger btn-sm rounded-pill px-3">
@@ -72,7 +74,7 @@
             <div class="row g-3 mb-3">
                 <div class="col-6 col-md-4 col-lg-2">
                     <div class="premium-glass-card balance-card">
-                        <div class="balance-label">USD Balance</div>
+                        <div class="balance-label">USDT Balance</div>
                         <div class="balance-value" data-wallet-total-usd>—</div>
                         <div class="balance-sub" data-account-load-status>Ledger-backed balance</div>
                     </div>
@@ -81,35 +83,35 @@
                     <div class="premium-glass-card balance-card">
                         <div class="balance-label">BTC Balance</div>
                         <div class="balance-value" data-wallet-asset="BTC">0</div>
-                        <div class="balance-sub">≈ $15,890.00</div>
+                        <div class="balance-sub" data-wallet-asset-usd="BTC">≈ $0.00</div>
                     </div>
                 </div>
                 <div class="col-6 col-md-4 col-lg-2">
                     <div class="premium-glass-card balance-card">
                         <div class="balance-label">ETH Balance</div>
                         <div class="balance-value" data-wallet-asset="ETH">0</div>
-                        <div class="balance-sub">≈ $12,320.00</div>
+                        <div class="balance-sub" data-wallet-asset-usd="ETH">≈ $0.00</div>
                     </div>
                 </div>
                 <div class="col-6 col-md-4 col-lg-2">
                     <div class="premium-glass-card balance-card">
-                        <div class="balance-label">24h P&amp;L</div>
-                        <div class="balance-value">—</div>
-                        <div class="balance-sub">Requires execution service</div>
+                        <div class="balance-label">Unrealized P&amp;L</div>
+                        <div class="balance-value" data-unrealized-pnl>—</div>
+                        <div class="balance-sub">Across open positions</div>
                     </div>
                 </div>
                 <div class="col-6 col-md-4 col-lg-2">
                     <div class="premium-glass-card balance-card">
                         <div class="balance-label">Open Orders</div>
-                        <div class="balance-value">—</div>
-                        <div class="balance-sub">No execution service</div>
+                        <div class="balance-value" data-open-orders-count>—</div>
+                        <div class="balance-sub">Pending or partially filled</div>
                     </div>
                 </div>
                 <div class="col-6 col-md-4 col-lg-2">
                     <div class="premium-glass-card balance-card">
-                        <div class="balance-label">Total Assets</div>
-                        <div class="balance-value" data-wallet-total-usd>—</div>
-                        <div class="balance-sub">USD ledger total</div>
+                        <div class="balance-label">Total Equity</div>
+                        <div class="balance-value" data-total-equity>—</div>
+                        <div class="balance-sub">Cash + open position value</div>
                     </div>
                 </div>
             </div>
@@ -252,6 +254,30 @@
                                 </button>
                             </div>
                         </form>
+                    </div>
+
+                    <div class="premium-glass-card">
+                        <div class="card-header-clean">
+                            <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Open Positions</h5>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="transaction-table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Symbol</th>
+                                        <th>Quantity</th>
+                                        <th>Avg. Entry</th>
+                                        <th>Mark Price</th>
+                                        <th>Unrealized P&amp;L</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="openPositionsBody">
+                                    <tr>
+                                        <td colspan="5" class="text-secondary">Loading positions…</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
                     <div class="premium-glass-card">
