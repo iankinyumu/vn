@@ -422,3 +422,8 @@
         padding: 20px 16px
     }
 }
+.support-request { padding: 1rem 0; border-bottom: 1px solid rgba(255,255,255,.12); overflow-wrap: anywhere; }
+.support-request p { margin: 0; font-size: .85rem; }
+#contactFields { min-width: 0; }
+#contactFields:disabled { opacity: .65; }
+#contactStatus { overflow-wrap: anywhere; }

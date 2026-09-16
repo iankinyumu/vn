@@ -655,7 +655,7 @@ async function placeOrder(type) {
         const { data, error } = await client.rpc('submit_demo_order', { p_client_order_id: clientOrderId, p_symbol: liveMarket.symbol, p_side: type.toUpperCase(), p_type: orderType, p_quantity: amount, p_limit_price: orderType === 'MARKET' ? null : price, p_stop_price: orderType === 'STOP_LIMIT' ? price : null, p_idempotency_key: clientOrderId });
         if (error) throw error;
         alert(`Demo ${data.state === 'FILLED' ? 'order filled' : 'order accepted'}: ${data.id}`);
-        window.location.reload();
+        window.refreshAccountData?.();
     } catch (error) { console.error('Demo order submission failed.', error); alert(error?.message || 'Unable to submit the demo order.'); }
     finally { if (button) button.disabled = false; }
 }

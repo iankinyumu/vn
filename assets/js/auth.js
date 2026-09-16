@@ -57,6 +57,11 @@
         try { if (await window.isAuthenticated()) window.location.replace('dashboard.html'); } catch (_) { /* Keep form available. */ }
     };
     window.logout = async function logout() {
+        window.smartProfitCache?.clear();
+        // Public pages do not load account-cache.js but must still clear its data.
+        try {
+            Object.keys(sessionStorage).filter((key) => key.startsWith('smartprofit:account:')).forEach((key) => sessionStorage.removeItem(key));
+        } catch (_) { /* Storage may be disabled. */ }
         try { await (await getSupabaseClient()).auth.signOut(); }
         finally { window.location.replace('index.html'); }
     };

@@ -1,5 +1,20 @@
 /* Authenticated account projection. Every query is constrained by Supabase RLS. */
-(async function () {
+(function () {
+    let channel, channelAccount, running, refreshTimer, rerun = false;
+    const cache = window.smartProfitCache;
+    let authUserId;
+    function requestRefresh(invalidate = true) {
+        if (invalidate) cache.clear();
+        // Keep one scheduled refresh even during a continuous event burst.
+        if (refreshTimer) return;
+        refreshTimer = setTimeout(() => { refreshTimer = null; refresh(); }, 300);
+    }
+    window.refreshAccountData = () => requestRefresh(true);
+    function refresh() {
+        if (running) { rerun = true; return running; }
+        running = load().finally(() => { running = null; if (rerun) { rerun = false; requestRefresh(false); } });
+        return running;
+    }
     const setText = (selector, value) => document.querySelectorAll(selector).forEach((node) => { node.textContent = value; });
     const setValue = (selector, value) => document.querySelectorAll(selector).forEach((node) => { node.value = value; });
     const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 });
@@ -35,7 +50,7 @@
         if (!orders.length) {
             const empty = document.createElement('div');
             empty.className = 'open-order-item text-secondary';
-            empty.textContent = 'No open orders. Order execution is not enabled.';
+            empty.textContent = 'No open orders.';
             container.appendChild(empty); return;
         }
         orders.forEach((order) => {
@@ -55,9 +70,10 @@
         const body = document.getElementById('openPositionsBody');
         const quoteBySymbol = new Map();
         quotes.forEach((quote) => {
-            if (!quoteBySymbol.has(quote.symbol)) quoteBySymbol.set(quote.symbol, Number(quote.bid_price));
+            if (Date.now() - Date.parse(quote.received_at) < 60000 && !quoteBySymbol.has(quote.symbol)) quoteBySymbol.set(quote.symbol, Number(quote.bid_price));
         });
         const openPositions = positions.filter((position) => Number(position.quantity) !== 0);
+        const missingQuote = openPositions.some((position) => !quoteBySymbol.has(position.symbol));
         const unrealizedPnl = openPositions.reduce((total, position) => {
             const quantity = Number(position.quantity);
             const mark = quoteBySymbol.get(position.symbol) || 0;
@@ -65,7 +81,7 @@
         }, 0);
         const positionValue = openPositions.reduce((total, position) => total + (Number(position.quantity) * (quoteBySymbol.get(position.symbol) || 0)), 0);
 
-        setText('[data-unrealized-pnl]', money.format(unrealizedPnl));
+        setText('[data-unrealized-pnl]', missingQuote ? 'Quote unavailable' : money.format(unrealizedPnl));
         if (body) {
             body.replaceChildren();
             if (!openPositions.length) {
@@ -85,21 +101,26 @@
                     addCell(row, quantity.toLocaleString('en-US', { maximumFractionDigits: 8 }));
                     addCell(row, money.format(Number(position.average_entry_price)));
                     addCell(row, mark ? money.format(mark) : 'Quote unavailable');
-                    addCell(row, money.format(pnl));
+                    addCell(row, mark ? money.format(pnl) : 'Quote unavailable');
                     body.appendChild(row);
                 });
             }
         }
-        return { unrealizedPnl, positionValue, quoteBySymbol };
+        return { unrealizedPnl, positionValue, quoteBySymbol, missingQuote };
     }
 
+    async function load() {
     try {
         const client = await getSupabaseClient();
-        const { data: { user } } = await client.auth.getUser();
+        const { data: { session }, error: sessionError } = await client.auth.getSession();
+        if (sessionError) throw sessionError;
+        const user = session?.user;
         if (!user) return;
+        const scope = `${window.SMARTPROFIT_SUPABASE_CONFIG.url}:${user.id}:DEMO`;
+        const read = (name, loader) => cache.read(scope, name, loader);
         const [{ data: profile, error: profileError }, { data: accounts, error: accountError }] = await Promise.all([
-            client.from('profiles').select('display_name, created_at').single(),
-            client.from('trading_accounts').select('id, execution_mode, base_currency, status, created_at').eq('status', 'ACTIVE').order('created_at', { ascending: true })
+            read('profile', () => client.from('profiles').select('display_name, created_at').single()),
+            read('accounts', () => client.from('trading_accounts').select('id, execution_mode, base_currency, status, created_at').eq('status', 'ACTIVE').order('created_at', { ascending: true }))
         ]);
         if (profileError) throw profileError;
         if (accountError) throw accountError;
@@ -119,11 +140,13 @@
             setText('[data-account-load-status]', 'No active practice account is available.');
             return;
         }
-        // Account lifecycle changes are published by Supabase Realtime; all data is
-        // re-read through RLS rather than trusting a websocket payload as a balance.
-        client.channel(`account-orders-${account.id}`)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `trading_account_id=eq.${account.id}` }, () => window.location.reload())
-            .subscribe();
+        if (channelAccount !== account.id) {
+            if (channel) await client.removeChannel(channel);
+            channelAccount = account.id;
+            channel = client.channel('account-orders-' + account.id)
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: 'trading_account_id=eq.' + account.id }, () => requestRefresh(true))
+                .subscribe();
+        }
         setText('[data-account-mode]', account.execution_mode);
         document.querySelectorAll('[data-mode-option]').forEach((button) => {
             const current = button.dataset.modeOption === account.execution_mode;
@@ -131,23 +154,23 @@
         });
 
         const [{ data: wallets, error: walletError }, { data: transactions, error: transactionError }, { data: orders, error: orderError }, { data: positions, error: positionError }] = await Promise.all([
-            client.from('wallets').select('id, asset, ledger_scope, ledger_accounts(id, kind)').eq('trading_account_id', account.id).order('asset'),
-            client.from('ledger_transactions').select('description, correlation_id, idempotency_key, created_at').eq('trading_account_id', account.id).order('created_at', { ascending: false }).limit(50),
-            client.from('orders').select('symbol, side, type, quantity, submitted_at').eq('trading_account_id', account.id).in('state', ['PENDING_VALIDATION', 'ACCEPTED', 'OPEN', 'PARTIALLY_FILLED']).order('submitted_at', { ascending: false }),
-            client.from('positions').select('symbol, quantity, average_entry_price').eq('trading_account_id', account.id).eq('margin_type', 'SPOT')
+            read('wallets:' + account.id, () => client.from('wallets').select('id, asset, ledger_scope, ledger_accounts(id, kind)').eq('trading_account_id', account.id).order('asset')),
+            document.getElementById('transactionHistoryBody') ? read('ledger_transactions:' + account.id, () => client.from('ledger_transactions').select('description, correlation_id, idempotency_key, created_at').eq('trading_account_id', account.id).order('created_at', { ascending: false }).limit(50)) : { data: [] },
+            read('orders:' + account.id, () => client.from('orders').select('symbol, side, type, quantity, submitted_at').eq('trading_account_id', account.id).in('state', ['PENDING_VALIDATION', 'ACCEPTED', 'OPEN', 'PARTIALLY_FILLED']).order('submitted_at', { ascending: false })),
+            read('positions:' + account.id, () => client.from('positions').select('symbol, quantity, average_entry_price').eq('trading_account_id', account.id).eq('margin_type', 'SPOT'))
         ]);
         if (walletError || transactionError || orderError || positionError) throw walletError || transactionError || orderError || positionError;
         renderTransactions(transactions || []); renderOrders(orders || []);
 
         const symbols = [...new Set((positions || []).filter((position) => Number(position.quantity) !== 0).map((position) => position.symbol))];
         const snapshotResult = symbols.length
-            ? await client.from('market_snapshots').select('symbol, bid_price, received_at').in('symbol', symbols).order('received_at', { ascending: false }).limit(Math.max(symbols.length * 10, 20))
+            ? await read('quotes:' + account.id + ':' + symbols.join(','), () => client.rpc('account_position_quotes', { p_account: account.id }))
             : { data: [] };
         if (snapshotResult.error) throw snapshotResult.error;
         const projection = renderPositions(positions || [], snapshotResult.data || []);
 
         const ledgerAccountIds = (wallets || []).flatMap((wallet) => (wallet.ledger_accounts || []).map((ledger) => ledger.id));
-        const entryResult = ledgerAccountIds.length ? await client.from('ledger_entries').select('ledger_account_id, amount').in('ledger_account_id', ledgerAccountIds) : { data: [] };
+        const entryResult = ledgerAccountIds.length ? await read('ledger:' + account.id, () => client.rpc('account_balance_totals', { p_account: account.id })) : { data: [] };
         if (entryResult.error) throw entryResult.error;
         const totals = (entryResult.data || []).reduce((all, entry) => ({ ...all, [entry.ledger_account_id]: (all[entry.ledger_account_id] || 0) + Number(entry.amount) }), {});
         const balances = (wallets || []).map((wallet) => ({ asset: wallet.asset, available: totals[(wallet.ledger_accounts || []).find((ledger) => ledger.kind === 'AVAILABLE')?.id] || 0 }));
@@ -165,19 +188,36 @@
             node.textContent = mark ? `≈ ${money.format(amount * mark)}` : 'Quote unavailable';
         });
         setText('[data-open-orders-count]', String((orders || []).length));
-        setText('[data-total-equity]', money.format(cashValue + projection.positionValue));
+        setText('[data-total-equity]', projection.missingQuote ? 'Quote unavailable' : money.format(cashValue + projection.positionValue));
+        setText('[data-account-load-status]', 'Balances may take a few seconds to update.');
 
         const profileForm = document.getElementById('profileForm');
-        if (profileForm) profileForm.addEventListener('submit', async (event) => {
+        if (profileForm) profileForm.onsubmit = async (event) => {
             event.preventDefault(); const status = document.querySelector('[data-profile-save-status]'); const displayName = document.getElementById('profileDisplayName').value.trim();
             if (!displayName) return;
             status.textContent = 'Saving…';
             const { error } = await client.from('profiles').update({ display_name: displayName }).eq('id', user.id);
             status.textContent = error ? error.message : 'Saved.';
-            if (!error) { setText('[data-profile-name]', displayName); setText('[data-profile-avatar]', displayName.split(/\s+/).slice(0, 2).map((word) => word[0]).join('').toUpperCase()); }
-        });
+            if (!error) { cache.clear(); setText('[data-profile-name]', displayName); setText('[data-profile-avatar]', displayName.split(/\s+/).slice(0, 2).map((word) => word[0]).join('').toUpperCase()); }
+        };
     } catch (error) {
         console.error('Unable to load authenticated account data.', error);
         setText('[data-account-load-status]', 'Account data is temporarily unavailable.');
     }
+    }
+    getSupabaseClient().then((client) => {
+        client.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_OUT' || (authUserId && authUserId !== session?.user?.id)) {
+                cache.clear();
+                window.smartProfitAccountData = null;
+                // Clear rendered private data when the identity changes.
+                window.location.replace('login.html');
+            }
+            authUserId = session?.user?.id;
+        });
+        refresh();
+    }).catch(() => setText('[data-account-load-status]', 'Account data is temporarily unavailable.'));
+    // Expiry is checked when returning to the page; no background polling loop.
+    window.addEventListener('focus', () => requestRefresh(false));
+    window.addEventListener('pagehide', () => { clearTimeout(refreshTimer); });
 })();
