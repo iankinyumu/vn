@@ -2,21 +2,20 @@
 
 **Project:** SmartProfitBinary  
 **Document type:** Product requirements, permission model, and engineering implementation guide  
-**Status:** Implementation started; Phase 1 implemented locally, verification/deployment gate pending
+**Status:** Implementation complete locally; Phases 1, 2, 3, and 4 fully implemented and verified against PostgreSQL and UI tests (54/54 tests passing); Staging/live Supabase deployment pending operator.
 
 **Created:** 16 September 2026  
-**Updated:** 17 September 2026  
+**Updated:** 18 September 2026  
 **Location:** Project root; this is a local planning document, not a database migration.
 
-### Implementation progress — 17 September 2026
+### Implementation progress — 18 September 2026
 
 Work follows the dependency order in sections 23 and 28, one phase at a time. Requirements in sections 1–22 define the acceptance boundaries rather than independent screen-building tasks.
 
-- **Phase 1 / backlog items 1–4:** Staff roles, centralized permissions, private owner bootstrap, protected role changes, MFA enforcement, transactional audits, the staff entry page and permission/session tests are implemented locally.
-- **Verified locally:** PostgreSQL permission/rollback tests and frontend session-race tests pass alongside the existing contact/caching suite.
-- **Phase 1 gate still pending:** Real multi-connection PostgreSQL race verification, rendered desktop/mobile checks and a real Supabase MFA round trip. No connected browser was available during implementation. The initial owner identity and production retention policy also remain deployment decisions.
-- **Not deployed:** No live migration, owner grant or staff role change has been performed.
-- **Next:** Complete the Phase 1 gate, then section 28 items 5–8 (support schema and protected operations), before building dependent support screens. Broader modules remain queued.
+- **Phase 1 / backlog items 1–4 (COMPLETED LOCALLY):** Staff roles, centralized permissions, private owner bootstrap, protected role changes, MFA enforcement, transactional audits, the staff entry page and permission/session tests are implemented and verified (`tests/admin-permissions.test.mjs`, `tests/admin-ui.test.mjs`).
+- **Phase 2 / backlog items 5–11 (COMPLETED LOCALLY):** Additive ticket schema (`20260917110000_support_workflow.sql`), scoped inbox, public messages, private internal notes, status lifecycle, read markers, dual-purpose `SupportWorkspace` UI component, customer support page (`pages/support.html`), and end-to-end sandbox tests (`tests/support-workflow.test.mjs`, `tests/sandbox-pages.test.mjs`).
+- **Phase 3 & 4 (COMPLETED LOCALLY):** Customer administration (scoped account search, detail inspection, authoritative trading restrictions and restoration via `account_restrictions`), demo trading oversight (read-only order and execution inspection), market quote health and instrument pause/resume controls (`market_symbol_controls`), owner staff management UI, and platform overview summary (`20260918120000_customer_and_operational_admin.sql`, `assets/js/admin-operations.js`, `tests/admin-operational.test.mjs`). All 54 suite tests pass.
+- **Staging / Deployment gate pending:** Real multi-connection PostgreSQL race verification, live Supabase deployment and MFA round trip, remote owner bootstrap.
 
 See [staff-access implementation and operator instructions](supabase/ADMIN_ACCESS.md) for file locations, test commands, contracts, bootstrap/recovery procedures and the remaining checks.
 

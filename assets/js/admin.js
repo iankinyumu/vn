@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function clear() {
         window.supportWorkspace?.clear();
+        window.adminOperations?.clear();
         generation++;
         clearTimeout(timer);
         context = null;
@@ -104,6 +105,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             el('adminStatus').textContent = 'Your staff access is verified.';
             el('adminWorkspace').hidden = false;
             window.supportWorkspace?.open(client, context);
+            window.adminOperations?.init(client, context);
             el('auditOpen').hidden = !context.capabilities.includes('audit.read');
             el('adminRetry').hidden = false;
             // Read-only access recheck; no automatic mutation retries.

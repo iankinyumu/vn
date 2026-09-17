@@ -10,6 +10,7 @@
   <script defer src="../assets/js/auth.js"></script>
   <script defer src="../assets/js/support-ui.js"></script>
   <script defer src="../assets/js/support-workspace.js"></script>
+  <script defer src="../assets/js/admin-operations.js"></script>
   <script defer src="../assets/js/admin.js"></script>
 </head>
 <body>
@@ -46,8 +47,153 @@
       <h2 id="workspaceTitle">Access verified</h2>
       <p>Your staff session is ready.</p>
       <section id="supportPanel" hidden></section>
+
+      <nav id="adminTabs" class="admin-tabs" aria-label="Admin modules">
+        <button id="tabOverview" class="tab-btn active" data-tab="overviewPanel" type="button">Overview</button>
+        <button id="tabSupport" class="tab-btn" data-tab="supportPanel" type="button">Support</button>
+        <button id="tabCustomers" class="tab-btn" data-tab="customersPanel" type="button">Customers</button>
+        <button id="tabTrading" class="tab-btn" data-tab="tradingPanel" type="button">Demo Trading</button>
+        <button id="tabMarkets" class="tab-btn" data-tab="marketsPanel" type="button">Markets</button>
+        <button id="tabStaff" class="tab-btn" data-tab="staffPanel" type="button" hidden>Staff</button>
+        <button id="tabAudit" class="tab-btn" data-tab="auditPanel" type="button" hidden>Audit</button>
+      </nav>
+
+      <!-- Overview Module -->
+      <section id="overviewPanel" class="admin-tab-panel" aria-labelledby="overviewTitle">
+        <h2 id="overviewTitle">Platform overview</h2>
+        <p id="overviewStatus" role="status" aria-live="polite"></p>
+        <div id="overviewCards" class="overview-grid"></div>
+      </section>
+
+      <!-- Support Module -->
+      <section id="supportPanel" class="admin-tab-panel" hidden></section>
+
+      <!-- Customers Module -->
+      <section id="customersPanel" class="admin-tab-panel" hidden aria-labelledby="customersTitle">
+        <h2 id="customersTitle">Customer accounts</h2>
+        <form id="customerSearchForm" class="search-form">
+          <label for="customerSearchInput">Search customer</label>
+          <input id="customerSearchInput" placeholder="Email, display name, or user UUID">
+          <button type="submit">Search</button>
+        </form>
+        <p id="customersStatus" role="status" aria-live="polite"></p>
+        <div id="customersListWrap" class="table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr><th>Customer</th><th>Email</th><th>Verified</th><th>Tickets</th><th>Restrictions</th><th>Action</th></tr>
+            </thead>
+            <tbody id="customersTableBody"></tbody>
+          </table>
+        </div>
+        <div id="customerDetailModal" class="detail-card" hidden>
+          <h3 id="customerDetailName">Customer detail</h3>
+          <p id="customerDetailMeta"></p>
+          <div class="customer-sections">
+            <div>
+              <h4>Demo balances</h4>
+              <ul id="customerBalancesList"></ul>
+            </div>
+            <div>
+              <h4>Restrictions</h4>
+              <ul id="customerRestrictionsList"></ul>
+              <form id="applyRestrictionForm">
+                <label for="restrictionReason">Restrict demo trading reason</label>
+                <input id="restrictionReason" placeholder="Reason (3-500 chars)" minlength="3" maxlength="500" required>
+                <button type="submit">Apply trading restriction</button>
+              </form>
+            </div>
+          </div>
+          <button id="closeCustomerDetail" type="button">Close details</button>
+        </div>
+      </section>
+
+      <!-- Demo Trading Module -->
+      <section id="tradingPanel" class="admin-tab-panel" hidden aria-labelledby="tradingTitle">
+        <h2 id="tradingTitle">Demo trading oversight</h2>
+        <form id="tradingFilterForm" class="search-form">
+          <label for="orderSymbolFilter">Symbol</label>
+          <select id="orderSymbolFilter"><option value="">All symbols</option><option value="BTCUSDT">BTCUSDT</option><option value="ETHUSDT">ETHUSDT</option></select>
+          <label for="orderStateFilter">State</label>
+          <select id="orderStateFilter"><option value="">All states</option><option value="OPEN">OPEN</option><option value="FILLED">FILLED</option><option value="CANCELLED">CANCELLED</option><option value="REJECTED">REJECTED</option></select>
+          <button type="submit">Filter orders</button>
+        </form>
+        <p id="tradingStatus" role="status" aria-live="polite"></p>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr><th>Order ID</th><th>Customer</th><th>Symbol</th><th>Side</th><th>Type</th><th>Qty</th><th>Price</th><th>State</th><th>Submitted</th><th>Action</th></tr>
+            </thead>
+            <tbody id="ordersTableBody"></tbody>
+          </table>
+        </div>
+        <div id="orderDetailCard" class="detail-card" hidden>
+          <h3 id="orderDetailTitle">Order details</h3>
+          <div id="orderDetailContent"></div>
+          <button id="closeOrderDetail" type="button">Close</button>
+        </div>
+      </section>
+
+      <!-- Markets Module -->
+      <section id="marketsPanel" class="admin-tab-panel" hidden aria-labelledby="marketsTitle">
+        <h2 id="marketsTitle">Markets & quotes health</h2>
+        <p id="marketsStatus" role="status" aria-live="polite"></p>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr><th>Symbol</th><th>Bid</th><th>Ask</th><th>Last quote</th><th>Freshness</th><th>Trading status</th><th>Action</th></tr>
+            </thead>
+            <tbody id="marketsTableBody"></tbody>
+          </table>
+        </div>
+        <div id="symbolActionCard" class="detail-card" hidden>
+          <h3 id="symbolActionTitle">Update market status</h3>
+          <form id="symbolActionForm">
+            <input type="hidden" id="symbolActionTarget">
+            <input type="hidden" id="symbolActionPaused">
+            <label for="symbolActionReason">Reason</label>
+            <input id="symbolActionReason" placeholder="Reason (3-500 chars)" minlength="3" maxlength="500" required>
+            <button id="symbolActionSubmit" type="submit">Confirm</button>
+            <button id="symbolActionCancel" type="button">Cancel</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- Staff Module -->
+      <section id="staffPanel" class="admin-tab-panel" hidden aria-labelledby="staffTitle">
+        <h2 id="staffTitle">Staff & role management</h2>
+        <p id="staffStatus" role="status" aria-live="polite"></p>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr><th>Staff member</th><th>Role</th><th>Active</th><th>Version</th><th>Last updated</th><th>Action</th></tr>
+            </thead>
+            <tbody id="staffTableBody"></tbody>
+          </table>
+        </div>
+        <div id="staffRoleCard" class="detail-card" hidden>
+          <h3 id="staffRoleTitle">Change staff role</h3>
+          <form id="staffRoleForm">
+            <input type="hidden" id="staffRoleUserId">
+            <input type="hidden" id="staffRoleVersion">
+            <label for="staffRoleSelect">Role</label>
+            <select id="staffRoleSelect">
+              <option value="support_agent">Support agent</option>
+              <option value="administrator">Administrator</option>
+              <option value="owner">Owner</option>
+            </select>
+            <label><input type="checkbox" id="staffRoleActive" checked> Active staff account</label>
+            <label for="staffRoleReason">Reason</label>
+            <input id="staffRoleReason" placeholder="Reason (3-500 chars)" minlength="3" maxlength="500" required>
+            <button type="submit">Save role change</button>
+            <button id="cancelStaffRole" type="button">Cancel</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- Audit Module -->
       <button id="auditOpen" type="button" hidden>View administrative audit</button>
       <section id="auditPanel" hidden aria-labelledby="auditTitle">
+      <section id="auditPanel" class="admin-tab-panel" hidden aria-labelledby="auditTitle">
         <h2 id="auditTitle">Administrative audit</h2>
         <p id="auditStatus" role="status" aria-live="polite"></p>
         <ol id="auditEvents"></ol>

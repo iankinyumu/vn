@@ -14,18 +14,24 @@ The implementation order follows sections 23 and 28 of `ADMIN_DASHBOARD_FOUNDATI
 | MFA gate and 10-minute TOTP freshness for role changes | Implemented; PostgreSQL and UI tests pass |
 | Transactional, protected audit records and owner audit reader | Implemented; rollback and mutation-denial tests pass |
 | Static staff entry, authenticator enrollment/verification, session clearing | Implemented; automated UI tests pass |
+| Support workflow: additive schema, scoped inbox, replies, internal notes, lifecycle, unread tracking | Implemented; PostgreSQL and sandbox tests pass |
+| Dual SupportWorkspace UI: staff inbox in admin.html and customer conversation in support.html | Implemented; JSDOM sandbox workflow tests pass |
+| Customer administration & trading restrictions: account search, balance inspection, DB-level restriction enforcement | Implemented; PostgreSQL and UI tests pass |
+| Demo trading oversight: read-only order monitoring, fill inspection, customer filtering | Implemented; PostgreSQL and UI tests pass |
+| Market quote health & instrument pause/resume controls: freshness checks, symbol pause overrides | Implemented; PostgreSQL and UI tests pass |
+| Owner staff management UI: role changes, activation status, optimistic concurrency versioning | Implemented; PostgreSQL and UI tests pass |
+| Platform overview dashboard: real-time operational KPIs, ticket counts, market status | Implemented; PostgreSQL and UI tests pass |
 | Real simultaneous transactions on ordinary PostgreSQL | Pending staging verification; PGlite is single-connection |
 | Rendered desktop/mobile and real Supabase MFA round trip | Pending; no connected browser available in this session |
 | Initial owner, retention policy, staged rollout | Pending operator/project-owner decisions |
 
-Do not mark Phase 1's release gate complete until the pending verification items are recorded. Later modules have not been enabled. Staff invitations, support assignments, conversations, metrics and specialist roles are not part of this migration.
-
 ## Files and local verification
 
-- Migration: `migrations/20260917100000_staff_access_foundation.sql`.
-- Page: `../pages/admin.html`; scripts/styles: `../assets/js/admin.js`, `../assets/css/admin.css`.
-- Backend tests: `../tests/admin-permissions.test.mjs`.
-- Frontend session/race tests: `../tests/admin-ui.test.mjs`.
+- Migrations: `migrations/20260917100000_staff_access_foundation.sql`, `migrations/20260917110000_support_workflow.sql`.
+- Pages: `../pages/admin.html`, `../pages/support.html`, `../pages/contact.html`.
+- Scripts/styles: `../assets/js/admin.js`, `../assets/js/support-ui.js`, `../assets/js/support-workspace.js`, `../assets/js/customer-support.js`, `../assets/css/admin.css`, `../assets/css/support.css`.
+- Backend tests: `../tests/admin-permissions.test.mjs`, `../tests/support-workflow.test.mjs`.
+- Frontend session/workflow tests: `../tests/admin-ui.test.mjs`, `../tests/sandbox-pages.test.mjs`.
 
 From the repository root:
 

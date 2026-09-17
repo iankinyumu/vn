@@ -20,6 +20,17 @@ const rpc = {
     assign_support_ticket: ['p_ticket_id','p_assignee','p_expected_version','p_request_id','p_reason'],
     change_support_status: ['p_ticket_id','p_status','p_body','p_reason','p_expected_version','p_request_id'],
     mark_support_read: ['p_ticket_id','p_sequence','p_staff']
+    mark_support_read: ['p_ticket_id','p_sequence','p_staff'],
+    apply_account_restriction: ['p_user_id', 'p_restriction_type', 'p_reason'],
+    lift_account_restriction: ['p_restriction_id', 'p_reason'],
+    list_admin_customers: ['p_search', 'p_limit'],
+    get_admin_customer_detail: ['p_user_id'],
+    list_admin_demo_orders: ['p_user_id', 'p_symbol', 'p_state', 'p_limit'],
+    get_admin_demo_order_detail: ['p_order_id'],
+    list_admin_market_health: [],
+    set_symbol_trading_status: ['p_symbol', 'p_trading_status', 'p_reason'],
+    list_staff_members: [],
+    get_platform_overview: []
 };
 export async function startSandbox({ port = 4173 } = {}) {
     const db = await createSandboxDatabase();
@@ -89,6 +100,7 @@ export async function startSandbox({ port = 4173 } = {}) {
             if (pathname === '/assets/js/auth.js') pathname = '/sandbox/auth.js';
             // No generic repository file serving, env files, production config, symlinks or remote requests.
             const allowed = /^\/(?:pages\/(?:admin|support)\.html|assets\/(?:js\/(?:admin|support-workspace|customer-support|support-ui)\.js|css\/(?:admin|support)\.css)|sandbox\/(?:index\.html|index\.js|auth\.js))$/;
+            const allowed = /^\/(?:pages\/(?:admin|support)\.html|assets\/(?:js\/(?:admin|admin-operations|support-workspace|customer-support|support-ui)\.js|css\/(?:admin|support)\.css)|sandbox\/(?:index\.html|index\.js|auth\.js))$/;
             if (!allowed.test(pathname)) { send({ error: { message: 'not_found' } }, 404); return; }
             const filename = path.join(root, pathname);
             const stat = await fs.lstat(filename);
