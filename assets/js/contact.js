@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const refresh = el('refreshRequests'), history = el('requestHistory');
     let client, user, pending = false, requestId = null, authVersion = 0;
     const topics = { general: 'General inquiry', account: 'Account help', deposit: 'Deposit help', withdrawal: 'Withdrawal help', trading: 'Trading support', security: 'Security concern', bug: 'Bug report', partnership: 'Business inquiry', other: 'Other' };
-    const states = { open: 'Received', in_progress: 'In progress', resolved: 'Resolved', closed: 'Closed' };
+    const states = { open: 'Received', in_progress: 'In progress', waiting_for_customer: 'Waiting for you', resolved: 'Resolved', closed: 'Closed' };
     function status(message, kind = 'danger') {
         const box = el('contactStatus');
         box.hidden = false;

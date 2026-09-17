@@ -1,0 +1,15 @@
+{
+  "name": "smartprofitbinary",
+  "private": true,
+  "scripts": {
+    "test": "node --test --test-concurrency=1 tests/*.test.mjs",
+    "sandbox": "node sandbox/server.mjs",
+    "test:concurrency": "node --test tests/sandbox/concurrency.mjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
+    "embedded-postgres": "18.4.0-beta.17",
+    "jsdom": "26.1.0",
+    "pg": "8.23.0"
+  }
+}

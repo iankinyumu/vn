@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Staff workspace | SmartProfitBinary</title>
+  <link rel="stylesheet" href="../assets/css/admin.css">
+  <link rel="stylesheet" href="../assets/css/support.css">
+  <script defer src="../assets/js/auth.js"></script>
+  <script defer src="../assets/js/support-ui.js"></script>
+  <script defer src="../assets/js/support-workspace.js"></script>
+  <script defer src="../assets/js/admin.js"></script>
+</head>
+<body>
+  <header><a class="brand" href="dashboard.html">SmartProfit<span>Binary</span></a><a href="dashboard.html">Back to customer dashboard</a></header>
+  <main>
+    <p class="eyebrow">PLATFORM ADMINISTRATION</p>
+    <h1>Staff workspace</h1>
+    <p id="adminIdentity"></p>
+    <p id="adminStatus" role="status" aria-live="polite">Checking your access…</p>
+    <div class="actions">
+      <a id="adminSignIn" href="login.html?redirect=admin.html" hidden>Sign in to continue</a>
+      <button id="adminRetry" type="button" hidden>Check access again</button>
+      <button id="adminSignOut" type="button" hidden>Sign out</button>
+    </div>
+    <noscript><p>Enable JavaScript to use the staff workspace.</p></noscript>
+    <section id="adminMfa" hidden aria-labelledby="mfaTitle">
+      <h2 id="mfaTitle">Verify with your authenticator</h2>
+      <p>Staff access requires a second verification step.</p>
+      <label for="mfaFactor">Authenticator</label>
+      <select id="mfaFactor"></select>
+      <button id="mfaEnroll" type="button" hidden>Set up an authenticator</button>
+      <div id="mfaSetup" hidden>
+        <p>Add this setup key to your authenticator app, then enter its six-digit code. Keep the key private.</p>
+        <label for="mfaSecret">Setup key</label><input id="mfaSecret" readonly autocomplete="off">
+      </div>
+      <form id="mfaForm">
+        <label for="mfaCode">Six-digit code</label>
+        <input id="mfaCode" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required>
+        <button id="mfaVerify" type="submit">Verify access</button>
+      </form>
+      <p id="mfaStatus" role="status" aria-live="polite"></p>
+    </section>
+    <section id="adminWorkspace" hidden aria-labelledby="workspaceTitle">
+      <h2 id="workspaceTitle">Access verified</h2>
+      <p>Your staff session is ready.</p>
+      <section id="supportPanel" hidden></section>
+      <button id="auditOpen" type="button" hidden>View administrative audit</button>
+      <section id="auditPanel" hidden aria-labelledby="auditTitle">
+        <h2 id="auditTitle">Administrative audit</h2>
+        <p id="auditStatus" role="status" aria-live="polite"></p>
+        <ol id="auditEvents"></ol>
+        <button id="auditMore" type="button" hidden>Load older events</button>
+      </section>
+    </section>
+  </main>
+</body>
+</html>

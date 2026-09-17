@@ -2,10 +2,23 @@
 
 **Project:** SmartProfitBinary  
 **Document type:** Product requirements, permission model, and engineering implementation guide  
-**Status:** Proposed foundation for the next development phase  
+**Status:** Implementation started; Phase 1 implemented locally, verification/deployment gate pending
+
 **Created:** 16 September 2026  
 **Updated:** 17 September 2026  
 **Location:** Project root; this is a local planning document, not a database migration.
+
+### Implementation progress — 17 September 2026
+
+Work follows the dependency order in sections 23 and 28, one phase at a time. Requirements in sections 1–22 define the acceptance boundaries rather than independent screen-building tasks.
+
+- **Phase 1 / backlog items 1–4:** Staff roles, centralized permissions, private owner bootstrap, protected role changes, MFA enforcement, transactional audits, the staff entry page and permission/session tests are implemented locally.
+- **Verified locally:** PostgreSQL permission/rollback tests and frontend session-race tests pass alongside the existing contact/caching suite.
+- **Phase 1 gate still pending:** Real multi-connection PostgreSQL race verification, rendered desktop/mobile checks and a real Supabase MFA round trip. No connected browser was available during implementation. The initial owner identity and production retention policy also remain deployment decisions.
+- **Not deployed:** No live migration, owner grant or staff role change has been performed.
+- **Next:** Complete the Phase 1 gate, then section 28 items 5–8 (support schema and protected operations), before building dependent support screens. Broader modules remain queued.
+
+See [staff-access implementation and operator instructions](supabase/ADMIN_ACCESS.md) for file locations, test commands, contracts, bootstrap/recovery procedures and the remaining checks.
 
 ### Reading map
 
@@ -242,6 +255,8 @@ Frontend capability data controls presentation. The backend must independently v
 MFA is a release requirement for staff access. Role changes, staff removal, and account sign-in restrictions also require a recently verified session.
 
 The exact freshness window must be chosen during the permission-foundation phase, documented, and tested. Until that mechanism is implemented, do not expose sensitive administrative controls with a weaker substitute.
+
+**Phase 1 implementation decision:** Staff access requires AAL2. Role changes require a TOTP verification timestamp within the last 600 seconds; token refresh does not extend that window. This rule is enforced by the backend and covered by permission tests. Initial enrollment uses the existing Supabase authenticator flow; exceptional recovery remains an audited operator procedure described in `supabase/ADMIN_ACCESS.md`.
 
 ### 7.4 Session changes
 

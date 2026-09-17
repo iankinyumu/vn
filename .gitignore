@@ -1,2 +1,4 @@
 # Local credentials. Already tracked files must be untracked separately.
 .env*.local
+node_modules/
+.sandbox/
