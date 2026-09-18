@@ -2,9 +2,7 @@
   "name": "smartprofitbinary",
   "private": true,
   "scripts": {
-    "test": "node --test --test-concurrency=1 tests/*.test.mjs",
-    "sandbox": "node sandbox/server.mjs",
-    "test:concurrency": "node --test tests/sandbox/concurrency.mjs"
+    "test": "node --test --test-concurrency=1 tests/*.test.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.8",

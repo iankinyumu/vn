@@ -83,39 +83,77 @@
                 const { data, error } = await this.client.rpc('get_platform_overview');
                 if (error) throw error;
 
-                statusEl.textContent = `Last updated: ${new Date(data.timestamp).toLocaleTimeString()}`;
+                statusEl.textContent = `Live as of ${new Date(data.timestamp).toLocaleTimeString()}`;
                 gridEl.innerHTML = `
-                    <div class="card-kpi">
-                        <div class="kpi-num">${data.open_tickets}</div>
-                        <div class="kpi-label">Open Support Tickets</div>
+                    <div class="card-kpi stat-card">
+                        <div class="stat-icon-wrapper">
+                            <i class="fas fa-headset text-primary"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-label">Open Tickets</div>
+                            <div class="stat-value">${data.open_tickets}</div>
+                            <div class="stat-badge"><span class="status-dot dot-info"></span> Active Queue</div>
+                        </div>
                     </div>
-                    <div class="card-kpi">
-                        <div class="kpi-num">${data.unassigned_tickets}</div>
-                        <div class="kpi-label">Unassigned Tickets</div>
+                    <div class="card-kpi stat-card">
+                        <div class="stat-icon-wrapper">
+                            <i class="fas fa-inbox text-warning"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-label">Unassigned</div>
+                            <div class="stat-value">${data.unassigned_tickets}</div>
+                            <div class="stat-badge"><span class="status-dot dot-warn"></span> Needs Review</div>
+                        </div>
                     </div>
-                    <div class="card-kpi">
-                        <div class="kpi-num">${data.waiting_tickets}</div>
-                        <div class="kpi-label">Waiting for Customer</div>
+                    <div class="card-kpi stat-card">
+                        <div class="stat-icon-wrapper">
+                            <i class="fas fa-users text-info"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-label">Registered Accounts</div>
+                            <div class="stat-value">${data.total_customers}</div>
+                            <div class="stat-badge"><span class="status-dot dot-active"></span> Platform Total</div>
+                        </div>
                     </div>
-                    <div class="card-kpi">
-                        <div class="kpi-num">${data.total_customers}</div>
-                        <div class="kpi-label">Total Registered Accounts</div>
+                    <div class="card-kpi stat-card">
+                        <div class="stat-icon-wrapper">
+                            <i class="fas fa-user-slash ${data.active_restrictions > 0 ? 'text-danger' : 'text-muted'}"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-label">Trading Restrictions</div>
+                            <div class="stat-value">${data.active_restrictions}</div>
+                            <div class="stat-badge"><span class="status-dot ${data.active_restrictions > 0 ? 'dot-danger' : 'dot-muted'}"></span> ${data.active_restrictions > 0 ? 'Restricted' : 'None Active'}</div>
+                        </div>
                     </div>
-                    <div class="card-kpi ${data.active_restrictions > 0 ? 'kpi-warn' : ''}">
-                        <div class="kpi-num">${data.active_restrictions}</div>
-                        <div class="kpi-label">Restricted Trading Accounts</div>
+                    <div class="card-kpi stat-card">
+                        <div class="stat-icon-wrapper">
+                            <i class="fas fa-exchange-alt text-success"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-label">Demo Orders Today</div>
+                            <div class="stat-value">${data.orders_today}</div>
+                            <div class="stat-badge"><span class="status-dot dot-active"></span> Order Stream</div>
+                        </div>
                     </div>
-                    <div class="card-kpi">
-                        <div class="kpi-num">${data.orders_today}</div>
-                        <div class="kpi-label">Demo Orders Today</div>
+                    <div class="card-kpi stat-card">
+                        <div class="stat-icon-wrapper">
+                            <i class="fas fa-user-shield text-primary"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-label">Active Staff</div>
+                            <div class="stat-value">${data.active_staff}</div>
+                            <div class="stat-badge"><span class="status-dot dot-active"></span> Operations</div>
+                        </div>
                     </div>
-                    <div class="card-kpi">
-                        <div class="kpi-num">${data.active_staff}</div>
-                        <div class="kpi-label">Active Staff Members</div>
-                    </div>
-                    <div class="card-kpi ${data.market_health === 'healthy' ? 'kpi-good' : 'kpi-warn'}">
-                        <div class="kpi-num">${data.market_health.toUpperCase()}</div>
-                        <div class="kpi-label">Market Quote Feed</div>
+                    <div class="card-kpi stat-card">
+                        <div class="stat-icon-wrapper">
+                            <i class="fas fa-bolt ${data.market_health === 'healthy' ? 'text-success' : 'text-warning'}"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-label">Market Feed</div>
+                            <div class="stat-value" style="font-size: 1.35rem;">${data.market_health.toUpperCase()}</div>
+                            <div class="stat-badge"><span class="status-dot ${data.market_health === 'healthy' ? 'dot-active' : 'dot-warn'}"></span> Quotes Live</div>
+                        </div>
                     </div>
                 `;
             } catch (err) {
@@ -190,18 +228,19 @@
                 data.forEach(c => {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td><strong>${escapeHtml(c.display_name)}</strong><br><small class="mono">${escapeHtml(c.id)}</small></td>
+                        <td class="ps-3"><strong>${escapeHtml(c.display_name)}</strong><br><small class="mono">${escapeHtml(c.id)}</small></td>
                         <td>${escapeHtml(c.email)}</td>
-                        <td>${c.email_verified ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-warn">Unverified</span>'}</td>
+                        <td>${c.email_verified ? '<span class="badge-success">✓ Verified</span>' : '<span class="badge-warn">Unverified</span>'}</td>
                         <td>${c.tickets_count}</td>
-                        <td>${c.active_restrictions_count > 0 ? '<span class="badge badge-danger">Restricted</span>' : '<span class="badge badge-neutral">None</span>'}</td>
-                        <td><button type="button" class="btn-sm btn-inspect" data-id="${c.id}">Inspect</button></td>
+                        <td>${c.active_restrictions_count > 0 ? '<span class="badge-danger">Restricted</span>' : '<span class="badge-neutral">None</span>'}</td>
+                        <td class="text-end pe-3"><button type="button" class="btn-inspect" data-id="${c.id}"><i class="fas fa-search-plus"></i> Inspect</button></td>
                     `;
                     tr.querySelector('.btn-inspect').onclick = () => this.openCustomerDetail(c.id);
                     tbody.appendChild(tr);
                 });
             } catch (err) {
-                status.textContent = 'Failed to load customer list.';
+                status.textContent = `Failed to load customers: ${err?.message || err}`;
+                console.error('[admin] loadCustomers error:', err);
             }
         }
 
@@ -243,9 +282,9 @@
                         const li = document.createElement('li');
                         li.innerHTML = `
                             <strong>${r.restriction_type}</strong> ·
-                            ${r.active ? '<span class="badge badge-danger">ACTIVE</span>' : '<span class="badge badge-neutral">LIFTED</span>'}
-                            <br>Reason: ${escapeHtml(r.reason)} (${new Date(r.applied_at).toLocaleDateString()})
-                            ${r.active ? `<br><button type="button" class="btn-sm btn-lift" data-id="${r.id}">Lift restriction</button>` : ''}
+                            ${r.active ? '<span class="badge-danger">ACTIVE</span>' : '<span class="badge-neutral">LIFTED</span>'}
+                            <br><span class="text-muted" style="font-size:0.82rem">Reason: ${escapeHtml(r.reason)} — ${new Date(r.applied_at).toLocaleDateString()}</span>
+                            ${r.active ? `<br><button type="button" class="btn-lift mt-1" data-id="${r.id}"><i class="fas fa-unlock"></i> Lift restriction</button>` : ''}
                         `;
                         if (r.active) {
                             li.querySelector('.btn-lift').onclick = async () => {
@@ -267,7 +306,7 @@
                         rList.appendChild(li);
                     });
                 } else {
-                    rList.innerHTML = '<li>No restrictions recorded for this account.</li>';
+                    rList.innerHTML = '<li class="text-muted" style="font-size:0.88rem">No restrictions recorded for this account.</li>';
                 }
             } catch (err) {
                 el('customerDetailName').textContent = 'Error loading customer details.';
@@ -319,16 +358,16 @@
                 data.forEach(o => {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td class="mono">${o.id.slice(0, 8)}…</td>
-                        <td>${escapeHtml(o.customer_name)}<br><small>${escapeHtml(o.customer_email)}</small></td>
+                        <td class="ps-3 mono">${o.id.slice(0, 8)}…</td>
+                        <td><strong>${escapeHtml(o.customer_name)}</strong><br><small class="text-muted">${escapeHtml(o.customer_email)}</small></td>
                         <td><strong>${o.symbol}</strong></td>
-                        <td><span class="badge ${o.side === 'BUY' ? 'badge-success' : 'badge-danger'}">${o.side}</span></td>
+                        <td><span class="${o.side === 'BUY' ? 'badge-success' : 'badge-danger'}">${o.side}</span></td>
                         <td>${o.order_type}</td>
                         <td>${Number(o.quantity).toFixed(4)}</td>
-                        <td>${o.price ? Number(o.price).toFixed(2) : 'MARKET'}</td>
-                        <td><span class="badge badge-neutral">${o.state}</span></td>
-                        <td><small>${new Date(o.submitted_at).toLocaleTimeString()}</small></td>
-                        <td><button type="button" class="btn-sm btn-inspect" data-id="${o.id}">View</button></td>
+                        <td>${o.price ? '$' + Number(o.price).toFixed(2) : '<span class="badge-neutral">MARKET</span>'}</td>
+                        <td><span class="badge-neutral">${o.state}</span></td>
+                        <td><small class="text-muted">${new Date(o.submitted_at).toLocaleTimeString()}</small></td>
+                        <td class="text-end pe-3"><button type="button" class="btn-inspect" data-id="${o.id}"><i class="fas fa-eye"></i> View</button></td>
                     `;
                     tr.querySelector('.btn-inspect').onclick = () => this.openOrderDetail(o.id);
                     tbody.appendChild(tr);
@@ -421,19 +460,45 @@
                 const { data, error } = await this.client.rpc('list_admin_market_health');
                 if (error) throw error;
 
-                status.textContent = `Market symbols: ${data.length}`;
+                // Dynamically populate the trading symbol filter from live market data
+                const symbolFilter = el('orderSymbolFilter');
+                if (symbolFilter && data.length > 0) {
+                    const current = symbolFilter.value;
+                    symbolFilter.innerHTML = '<option value="">All Instruments</option>';
+                    data.forEach(m => {
+                        const opt = document.createElement('option');
+                        opt.value = m.symbol;
+                        opt.textContent = m.symbol.replace('USDT', '/USDT');
+                        if (m.symbol === current) opt.selected = true;
+                        symbolFilter.appendChild(opt);
+                    });
+                }
+
+                status.textContent = `${data.length} market symbol${data.length !== 1 ? 's' : ''} tracked`;
                 data.forEach(m => {
+                    const freshBadge = m.freshness === 'fresh'
+                        ? '<span class="badge-success">Fresh</span>'
+                        : m.freshness === 'no_data'
+                            ? '<span class="badge-neutral">No data</span>'
+                            : '<span class="badge-warn">Stale</span>';
+                    const pauseBadge = m.trading_paused
+                        ? '<span class="badge-danger">PAUSED</span>'
+                        : '<span class="badge-success">ACTIVE</span>';
+                    const toggleIcon = m.trading_paused
+                        ? '<i class="fas fa-play-circle"></i> Resume'
+                        : '<i class="fas fa-pause-circle"></i> Pause';
+
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td><strong>${m.symbol}</strong></td>
-                        <td>${m.bid_price ? Number(m.bid_price).toFixed(2) : '-'}</td>
-                        <td>${m.ask_price ? Number(m.ask_price).toFixed(2) : '-'}</td>
-                        <td><small>${m.last_quote_time ? new Date(m.last_quote_time).toLocaleTimeString() : 'No quote'}</small></td>
-                        <td>${m.freshness === 'fresh' ? '<span class="badge badge-success">Fresh</span>' : '<span class="badge badge-warn">Stale</span>'}</td>
-                        <td>${m.trading_paused ? '<span class="badge badge-danger">PAUSED</span>' : '<span class="badge badge-success">ACTIVE</span>'}</td>
-                        <td>
-                            <button type="button" class="btn-sm btn-market-toggle" data-symbol="${m.symbol}" data-paused="${m.trading_paused}">
-                                ${m.trading_paused ? 'Resume trading' : 'Pause trading'}
+                        <td class="ps-3"><strong>${m.symbol}</strong></td>
+                        <td>${m.bid_price ? '$' + Number(m.bid_price).toFixed(2) : '<span class="text-muted">—</span>'}</td>
+                        <td>${m.ask_price ? '$' + Number(m.ask_price).toFixed(2) : '<span class="text-muted">—</span>'}</td>
+                        <td><small class="text-muted">${m.last_quote_time ? new Date(m.last_quote_time).toLocaleTimeString() : 'No quote'}</small></td>
+                        <td>${freshBadge}</td>
+                        <td>${pauseBadge}</td>
+                        <td class="text-end pe-3">
+                            <button type="button" class="btn-market-toggle" data-symbol="${m.symbol}" data-paused="${m.trading_paused}">
+                                ${toggleIcon}
                             </button>
                         </td>
                     `;
@@ -443,13 +508,16 @@
                         card.hidden = false;
                         el('symbolActionTarget').value = m.symbol;
                         el('symbolActionPaused').value = (!m.trading_paused).toString();
-                        el('symbolActionTitle').textContent = `${m.trading_paused ? 'Resume' : 'Pause'} Demo Trading for ${m.symbol}`;
+                        el('symbolActionTitle').textContent = `${m.trading_paused ? 'Resume' : 'Pause'} Demo Trading — ${m.symbol}`;
                         el('symbolActionReason').value = '';
+                        el('symbolActionSubmit').textContent = m.trading_paused ? 'Confirm Resume' : 'Confirm Pause';
+                        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                     };
                     tbody.appendChild(tr);
                 });
             } catch (err) {
-                status.textContent = 'Failed to load market health.';
+                status.textContent = `Failed to load market health: ${err?.message || err}`;
+                console.error('[admin] loadMarkets error:', err);
             }
         }
 
@@ -503,16 +571,16 @@
                 const { data, error } = await this.client.rpc('list_staff_members');
                 if (error) throw error;
 
-                status.textContent = `Staff members: ${data.length}`;
+                status.textContent = `${data.length} staff member${data.length !== 1 ? 's' : ''}`;
                 data.forEach(s => {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td><strong>${escapeHtml(s.display_name)}</strong><br><small>${escapeHtml(s.email)}</small></td>
-                        <td><span class="badge badge-info">${s.role}</span></td>
-                        <td>${s.active ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-warn">Inactive</span>'}</td>
-                        <td>v${s.version}</td>
-                        <td><small>${new Date(s.updated_at).toLocaleDateString()}</small></td>
-                        <td><button type="button" class="btn-sm btn-edit-staff">Manage role</button></td>
+                        <td class="ps-3"><strong>${escapeHtml(s.display_name)}</strong><br><small class="mono">${escapeHtml(s.email)}</small></td>
+                        <td><span class="badge-info">${s.role.replace('_', ' ')}</span></td>
+                        <td>${s.active ? '<span class="badge-success">Active</span>' : '<span class="badge-warn">Inactive</span>'}</td>
+                        <td class="text-muted">v${s.version}</td>
+                        <td><small class="text-muted">${new Date(s.updated_at).toLocaleDateString()}</small></td>
+                        <td class="text-end pe-3"><button type="button" class="btn-edit-staff"><i class="fas fa-user-cog"></i> Manage role</button></td>
                     `;
                     tr.querySelector('.btn-edit-staff').onclick = () => {
                         const card = el('staffRoleCard');
@@ -524,11 +592,13 @@
                         el('staffRoleSelect').value = s.role;
                         el('staffRoleActive').checked = s.active;
                         el('staffRoleReason').value = '';
+                        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                     };
                     tbody.appendChild(tr);
                 });
             } catch (err) {
-                status.textContent = 'Failed to load staff list.';
+                status.textContent = `Failed to load staff list: ${err?.message || err}`;
+                console.error('[admin] loadStaff error:', err);
             }
         }
 

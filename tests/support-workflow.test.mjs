@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { createSandboxDatabase, identities, claimsFor } from '../sandbox/database.mjs';
+import { createTestDatabase, identities, claimsFor } from './helpers/test-db.mjs';
 
 test('complete support workflow runs on synthetic PostgreSQL records with scoped permissions', async t => {
-    const db = await createSandboxDatabase();
+    const db = await createTestDatabase();
     const ticket = randomUUID();
     const secondTicket = randomUUID();
     let version = 1;

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import fs from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
-import { identities, claimsFor, authSchema } from '../sandbox/database.mjs';
+import { identities, claimsFor, authSchema } from './helpers/test-db.mjs';
 
 const customAuthSchema = `
     create role anon; create role authenticated; create role service_role;

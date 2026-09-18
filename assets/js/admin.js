@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         el('auditEvents').replaceChildren();
         el('mfaFactor').replaceChildren();
         el('mfaSecret').value = '';
+        el('mfaQrCode').src = '';
         el('mfaCode').value = '';
         el('mfaVerify').disabled = true;
         for (const id of ['auditOpen', 'auditMore', 'mfaEnroll']) el(id).disabled = false;
@@ -152,6 +153,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (epoch !== generation) return;
             if (error) throw error;
             factorId = data.id;
+            // Supabase returns a base64 SVG in data.totp.qr_code — use it directly as img src
+            el('mfaQrCode').src = data.totp.qr_code;
             el('mfaSecret').value = data.totp.secret;
             el('mfaSetup').hidden = false;
             el('mfaEnroll').hidden = true;
