@@ -1,32 +1,15 @@
 /* assets/js/trade.js - 2026 Binance Live WebSocket & Candlestick/OHLC Engine */
 
-const coins = [
-    { name: 'BTC', price: 77150.00, change: 2.85 },
-    { name: 'ETH', price: 2845.50, change: 1.95 },
-    { name: 'BNB', price: 624.80, change: -0.45 },
-    { name: 'SOL', price: 168.40, change: 4.82 },
-    { name: 'ADA', price: 0.5840, change: -0.95 },
-    { name: 'XRP', price: 0.6250, change: 3.15 },
-    { name: 'DOGE', price: 0.1450, change: 6.20 },
-    { name: 'DOT', price: 8.40, change: -1.80 },
-    { name: 'AVAX', price: 38.90, change: 2.40 },
-    { name: 'NEAR', price: 6.85, change: 8.50 },
-    { name: 'LINK', price: 17.20, change: 3.90 },
-    { name: 'UNI', price: 9.15, change: 1.85 },
-    { name: 'ATOM', price: 10.40, change: -1.20 },
-    { name: 'LTC', price: 84.60, change: 0.85 },
-    { name: 'SUI', price: 2.45, change: 11.20 }
-];
-
 let liveMarket = {
     symbol: 'BTCUSDT',
     interval: '1m',
     chartType: 'candle', // 'candle' | 'ohlc' | 'line'
-    currentPrice: 77150.00,
-    priceChange24h: 2.85,
-    high24h: 78500.00,
-    low24h: 75200.00,
-    volume24h: '32,450 BTC',
+    // No seeded price: every number shown is either the live ticker or blank.
+    currentPrice: 0,
+    priceChange24h: 0,
+    high24h: 0,
+    low24h: 0,
+    volume24h: '',
     candles: [],
     latestCandle: null,
     ws: null,
@@ -38,19 +21,57 @@ let liveMarket = {
     volumeSeries: null
 };
 
-// --- Ticker Banner ---
-function initTickerTrack() {
+// --- Ticker Banner (live, restricted to the registry's listed pairs) ---
+const TICKER_LIMIT = 15;
+let tickerStream = null;
+
+function initTickerTrack(catalog) {
     const tickerTrack = document.getElementById('tickerTrack');
     if (!tickerTrack) return;
-    tickerTrack.innerHTML = '';
-    coins.forEach(c => {
-        const cl = c.change >= 0 ? 'positive' : 'negative';
-        const s = c.change >= 0 ? '+' : '';
-        const idAttr = c.name === 'BTC' ? 'id="tickerBtcPrice"' : '';
-        const idChgAttr = c.name === 'BTC' ? 'id="tickerBtcChange"' : '';
-        tickerTrack.innerHTML += `<div class="ticker-item"><span class="ticker-pair">${c.name}/USDT</span><span class="ticker-price" ${idAttr}>$${c.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span><span class="ticker-change ${cl}" ${idChgAttr}>${s}${c.change}%</span></div>`;
-    });
+    const pairs = (catalog || []).slice(0, TICKER_LIMIT);
+    if (pairs.length === 0) {
+        tickerTrack.innerHTML = '<div class="ticker-item"><span class="ticker-pair">Market list unavailable</span></div>';
+        return;
+    }
+    tickerTrack.innerHTML = pairs.map(c => `
+        <div class="ticker-item">
+            <span class="ticker-pair">${c.base_asset}/USDT</span>
+            <span class="ticker-price" id="ticker-price-${c.symbol}">--</span>
+            <span class="ticker-change" id="ticker-change-${c.symbol}">--</span>
+        </div>`).join('');
+    // Duplicated once so the CSS marquee can loop seamlessly; both copies update.
     tickerTrack.innerHTML += tickerTrack.innerHTML;
+    connectTickerStream(pairs.map(c => c.symbol));
+}
+
+function connectTickerStream(symbols) {
+    if (!symbols.length) return;
+    if (tickerStream) { try { tickerStream.close(); } catch (e) {} }
+    const wanted = new Set(symbols);
+    try {
+        tickerStream = new WebSocket('wss://stream.binance.com:9443/ws/!miniTicker@arr');
+        tickerStream.onmessage = function (event) {
+            let tickers;
+            try { tickers = JSON.parse(event.data); } catch (_) { return; }
+            if (!Array.isArray(tickers)) return;
+            tickers.forEach(t => {
+                if (!wanted.has(t.s)) return;
+                const price = parseFloat(t.c);
+                const change = parseFloat(t.P);
+                const up = change >= 0;
+                document.querySelectorAll(`[id="ticker-price-${t.s}"]`).forEach(el => {
+                    el.textContent = '$' + price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                });
+                document.querySelectorAll(`[id="ticker-change-${t.s}"]`).forEach(el => {
+                    el.className = 'ticker-change ' + (up ? 'positive' : 'negative');
+                    el.textContent = (up ? '+' : '') + change.toFixed(2) + '%';
+                });
+            });
+        };
+        tickerStream.onclose = function () { setTimeout(() => connectTickerStream(symbols), 5000); };
+    } catch (e) {
+        console.warn('Ticker stream unavailable.', e);
+    }
 }
 
 // --- OHLC Display Bar ---

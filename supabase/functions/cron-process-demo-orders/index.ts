@@ -5,13 +5,18 @@
 // Deploy with --no-verify-jwt and configure CRON_SECRET plus Redis secrets.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Extend this list if new trading pairs are added to the UI. Keeping it a
-// fixed, small watchlist (rather than deriving it from open orders on every
-// tick) keeps this function simple and its Binance API usage predictable.
+// The watchlist is never hardcoded here. It is derived from the market registry
+// (public.market_symbols.tradable minus paused symbols) so a pair cannot be
+// advertised as tradable while this worker silently ignores it.
 import { createQuoteCache } from "../_shared/quote-cache.mjs";
 const quotes = createQuoteCache({ env: (key: string) => Deno.env.get(key) });
 
-const WATCHLIST = ["BTCUSDT", "ETHUSDT"];
+async function loadWatchlist(admin: ReturnType<typeof createClient>): Promise<string[]> {
+  const { data, error } = await admin.rpc("list_executable_symbols");
+  if (error) throw error;
+  if (!Array.isArray(data)) throw new Error("market registry returned an unexpected shape");
+  return data as string[];
+}
 
 Deno.serve(async (request) => {
   try {
@@ -25,7 +30,12 @@ Deno.serve(async (request) => {
     const admin = createClient(url, serviceKey);
 
     const results: Record<string, unknown> = {};
-    for (const symbol of WATCHLIST) {
+    const watchlist = await loadWatchlist(admin);
+    if (watchlist.length === 0) {
+      // Every tradable pair is paused. That is a valid operational state, not an error.
+      return Response.json({ results, watchlist });
+    }
+    for (const symbol of watchlist) {
       try {
         const snapshot = await quotes.getSnapshot(admin, symbol);
 

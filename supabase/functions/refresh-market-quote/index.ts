@@ -23,9 +23,18 @@ Deno.serve(async (request) => {
     const { symbol } = await request.json();
     if (typeof symbol !== "string" || !/^[A-Z0-9]{2,20}USDT$/.test(symbol)) return Response.json({ error: "Unsupported symbol" }, { status: 400, headers: cors });
     const admin = createClient(url, serviceKey);
+    // A quote is only ingested for a pair the registry marks executable. Without
+    // this the browser could mint snapshots for a listed-but-untradable pair and
+    // the order would then be rejected later with a confusing message.
+    const { data: executableSymbols, error: registryError } = await admin.rpc("list_executable_symbols");
+    if (registryError) throw new QuoteError("Market registry is unavailable.");
+    if (!Array.isArray(executableSymbols) || !executableSymbols.includes(symbol)) {
+      return Response.json({ error: "This pair is not available for demo trading." }, { status: 400, headers: cors });
+    }
     const snapshot = await quotes.getSnapshot(admin, symbol, async (fresh: { id: string }) => {
-      // Run once per fresh snapshot, not once per user/cache hit. Preserve matching
-      // for pairs not yet covered by the scheduled worker's watchlist.
+      // Run once per fresh snapshot, not once per user/cache hit. The scheduled
+      // worker covers every tradable pair; this keeps matching prompt for the
+      // pair the user is actually trading.
       const { error } = await admin.rpc('process_demo_orders', { p_snapshot_id: fresh.id }).abortSignal(AbortSignal.timeout(2000));
       if (error) throw new QuoteError('Order updates are temporarily unavailable.');
     });

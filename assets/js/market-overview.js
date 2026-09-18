@@ -1,90 +1,15 @@
-/* assets/js/market-overview.js - 2026 Live 75-Coin Market Overview Engine */
+/* assets/js/market-overview.js - live market table driven by the market registry.
+ *
+ * The listed pairs come from window.SmartProfitMarkets (backed by the
+ * list_market_catalog RPC), never from an array in this file. 24h statistics
+ * come straight from Binance's public REST snapshot and mini-ticker stream.
+ */
 (function () {
     'use strict';
 
-    var MARKET_COINS = [
-        { symbol: 'BTCUSDT',   base: 'BTC',    name: 'Bitcoin' },
-        { symbol: 'ETHUSDT',   base: 'ETH',    name: 'Ethereum' },
-        { symbol: 'SOLUSDT',   base: 'SOL',    name: 'Solana' },
-        { symbol: 'BNBUSDT',   base: 'BNB',    name: 'BNB' },
-        { symbol: 'XRPUSDT',   base: 'XRP',    name: 'XRP' },
-        { symbol: 'DOGEUSDT',  base: 'DOGE',   name: 'Dogecoin' },
-        { symbol: 'ADAUSDT',   base: 'ADA',    name: 'Cardano' },
-        { symbol: 'AVAXUSDT',  base: 'AVAX',   name: 'Avalanche' },
-        { symbol: 'SUIUSDT',   base: 'SUI',    name: 'Sui' },
-        { symbol: 'LINKUSDT',  base: 'LINK',   name: 'Chainlink' },
-        { symbol: 'SHIBUSDT',  base: 'SHIB',   name: 'Shiba Inu' },
-        { symbol: 'NEARUSDT',  base: 'NEAR',   name: 'NEAR Protocol' },
-        { symbol: 'PEPEUSDT',  base: 'PEPE',   name: 'Pepe' },
-        { symbol: 'LTCUSDT',   base: 'LTC',    name: 'Litecoin' },
-        { symbol: 'DOTUSDT',   base: 'DOT',    name: 'Polkadot' },
-        { symbol: 'BCHUSDT',   base: 'BCH',    name: 'Bitcoin Cash' },
-        { symbol: 'UNIUSDT',   base: 'UNI',    name: 'Uniswap' },
-        { symbol: 'APTUSDT',   base: 'APT',    name: 'Aptos' },
-        { symbol: 'ICPUSDT',   base: 'ICP',    name: 'Internet Computer' },
-        { symbol: 'FETUSDT',   base: 'FET',    name: 'Fetch.ai' },
-        { symbol: 'AAVEUSDT',  base: 'AAVE',   name: 'Aave' },
-        { symbol: 'RENDERUSDT',base: 'RENDER', name: 'Render' },
-        { symbol: 'FILUSDT',   base: 'FIL',    name: 'Filecoin' },
-        { symbol: 'ARBUSDT',   base: 'ARB',    name: 'Arbitrum' },
-        { symbol: 'OPUSDT',    base: 'OP',     name: 'Optimism' },
-        { symbol: 'TIAUSDT',   base: 'TIA',    name: 'Celestia' },
-        { symbol: 'INJUSDT',   base: 'INJ',    name: 'Injective' },
-        { symbol: 'TRXUSDT',   base: 'TRX',    name: 'TRON' },
-        { symbol: 'FTMUSDT',   base: 'FTM',    name: 'Fantom' },
-        { symbol: 'WIFUSDT',   base: 'WIF',    name: 'dogwifhat' },
-        { symbol: 'STXUSDT',   base: 'STX',    name: 'Stacks' },
-        { symbol: 'XLMUSDT',   base: 'XLM',    name: 'Stellar' },
-        { symbol: 'ATOMUSDT',  base: 'ATOM',   name: 'Cosmos' },
-        { symbol: 'ETCUSDT',   base: 'ETC',    name: 'Ethereum Classic' },
-        { symbol: 'XMRUSDT',   base: 'XMR',    name: 'Monero' },
-        { symbol: 'GRTUSDT',   base: 'GRT',    name: 'The Graph' },
-        { symbol: 'THETAUSDT', base: 'THETA',  name: 'Theta Network' },
-        { symbol: 'MKRUSDT',   base: 'MKR',    name: 'Maker' },
-        { symbol: 'VETUSDT',   base: 'VET',    name: 'VeChain' },
-        { symbol: 'LDOUSDT',   base: 'LDO',    name: 'Lido DAO' },
-        { symbol: 'RUNEUSDT',  base: 'RUNE',   name: 'THORChain' },
-        { symbol: 'ALGOUSDT',  base: 'ALGO',   name: 'Algorand' },
-        { symbol: 'SEIUSDT',   base: 'SEI',    name: 'Sei' },
-        { symbol: 'FLOKIUSDT', base: 'FLOKI',  name: 'FLOKI' },
-        { symbol: 'BONKUSDT',  base: 'BONK',   name: 'Bonk' },
-        { symbol: 'JUPUSDT',   base: 'JUP',    name: 'Jupiter' },
-        { symbol: 'BEAMUSDT',  base: 'BEAM',   name: 'Beam' },
-        { symbol: 'OMUSDT',    base: 'OM',     name: 'MANTRA' },
-        { symbol: 'PYTHUSDT',  base: 'PYTH',   name: 'Pyth Network' },
-        { symbol: 'GALAUSDT',  base: 'GALA',   name: 'Gala' },
-        { symbol: 'BLURUSDT',  base: 'BLUR',   name: 'Blur' },
-        { symbol: 'CRVUSDT',   base: 'CRV',    name: 'Curve DAO' },
-        { symbol: 'DYDXUSDT',  base: 'DYDX',   name: 'dYdX' },
-        { symbol: 'SANDUSDT',  base: 'SAND',   name: 'The Sandbox' },
-        { symbol: 'MANAUSDT',  base: 'MANA',   name: 'Decentraland' },
-        { symbol: 'AXSUSDT',   base: 'AXS',    name: 'Axie Infinity' },
-        { symbol: 'IMXUSDT',   base: 'IMX',    name: 'Immutable' },
-        { symbol: 'ENAUSDT',   base: 'ENA',    name: 'Ethena' },
-        { symbol: 'PENDLEUSDT',base: 'PENDLE', name: 'Pendle' },
-        { symbol: 'WLDUSDT',   base: 'WLD',    name: 'Worldcoin' },
-        { symbol: 'STRKUSDT',  base: 'STRK',   name: 'Starknet' },
-        { symbol: 'JASMYUSDT', base: 'JASMY',  name: 'JasmyCoin' },
-        { symbol: 'NOTUSDT',   base: 'NOT',    name: 'Notcoin' },
-        { symbol: 'BOMEUSDT',  base: 'BOME',   name: 'BOOK OF MEME' },
-        { symbol: 'TAOUSDT',   base: 'TAO',    name: 'Bittensor' },
-        { symbol: 'TONUSDT',   base: 'TON',    name: 'Toncoin' },
-        { symbol: 'ONDOUSDT',  base: 'ONDO',   name: 'Ondo' },
-        { symbol: 'POLUSDT',   base: 'POL',    name: 'POL (MATIC)' },
-        { symbol: 'QNTUSDT',   base: 'QNT',    name: 'Quant' },
-        { symbol: 'CHZUSDT',   base: 'CHZ',    name: 'Chiliz' },
-        { symbol: 'APEUSDT',   base: 'APE',    name: 'ApeCoin' },
-        { symbol: 'EOSUSDT',   base: 'EOS',    name: 'EOS' },
-        { symbol: 'NEOUSDT',   base: 'NEO',    name: 'NEO' },
-        { symbol: 'FLOWUSDT',  base: 'FLOW',   name: 'Flow' },
-        { symbol: 'GMXUSDT',   base: 'GMX',    name: 'GMX' }
-    ];
-
-    /* ---------- Lookup set ---------- */
-    var COIN_SET = {};
-    MARKET_COINS.forEach(function (c) { COIN_SET[c.symbol] = true; });
-
     /* ---------- State ---------- */
+    var coins = [];            // catalog rows, ordered by the registry's sort_order
+    var coinSet = {};          // symbol -> true, for the stream filter
     var marketData = {};
     var searchQuery = '';
     var currentPage = 1;
@@ -124,14 +49,18 @@
         }
     }
 
+    function visibleCoins() {
+        var q = searchQuery.toLowerCase();
+        return coins.filter(function (c) {
+            return !q || c.base.toLowerCase().indexOf(q) > -1 || c.name.toLowerCase().indexOf(q) > -1;
+        });
+    }
+
     /* ---------- Full table render ---------- */
     function renderTable() {
         var tbody = document.getElementById('marketOverviewBody');
         if (!tbody) return;
-        var q = searchQuery.toLowerCase();
-        var visible = MARKET_COINS.filter(function (c) {
-            return !q || c.base.toLowerCase().indexOf(q) > -1 || c.name.toLowerCase().indexOf(q) > -1;
-        });
+        var visible = visibleCoins();
         var totalPages = Math.max(1, Math.ceil(visible.length / pageSize));
         if (currentPage > totalPages) currentPage = totalPages;
         var pageStart = (currentPage - 1) * pageSize;
@@ -150,11 +79,14 @@
             var high   = d.high   !== undefined ? fmtPrice(d.high)   : '—';
             var low    = d.low    !== undefined ? fmtPrice(d.low)    : '—';
             var vol    = d.volume !== undefined ? fmtVol(parseFloat(d.volume)) : '—';
+            var marketBadge = c.orderable
+                ? '<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 ms-1" style="font-size:9px;">Tradable</span>'
+                : '<span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 ms-1" style="font-size:9px;">View only</span>';
             return '<tr id="row-' + c.symbol + '">'
                  + '<td class="text-secondary">' + (pageStart + idx + 1) + '</td>'
                  + '<td><div class="coin-info d-flex align-items-center gap-2">'
                  + '<span class="pair-symbol-badge" style="font-size:10px;padding:2px 5px;border-radius:4px;">' + c.base + '</span>'
-                 + '<div><span class="fw-bold">' + c.base + '/USDT</span>'
+                 + '<div><span class="fw-bold">' + c.base + '/USDT</span>' + marketBadge
                  + '<small class="d-block text-secondary" style="font-size:10px;">' + c.name + '</small></div>'
                  + '</div></td>'
                  + '<td class="fw-bold" id="price-' + c.symbol + '">' + price + '</td>'
@@ -216,7 +148,7 @@
                 if (!res.ok) continue;
                 var all = await res.json();
                 all.forEach(function (t) {
-                    if (!COIN_SET[t.symbol]) return;
+                    if (!coinSet[t.symbol]) return;
                     marketData[t.symbol] = {
                         price:  parseFloat(t.lastPrice),
                         change: parseFloat(t.priceChangePercent),
@@ -251,7 +183,7 @@
                     var tickers = JSON.parse(ev.data);
                     if (!Array.isArray(tickers)) return;
                     tickers.forEach(function (t) {
-                        if (!COIN_SET[t.s]) return;
+                        if (!coinSet[t.s]) return;
                         var nd = {
                             price:  parseFloat(t.c),
                             change: parseFloat(t.P),
@@ -270,7 +202,7 @@
     }
 
     /* ---------- Bootstrap on DOMContentLoaded ---------- */
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', async function () {
         var tbody = document.getElementById('marketOverviewBody');
         if (!tbody) return; // not the dashboard page
 
@@ -288,12 +220,23 @@
             if (currentPage > 1) { currentPage--; renderTable(); }
         });
         if (next) next.addEventListener('click', function () {
-            var q = searchQuery.toLowerCase();
-            var count = MARKET_COINS.filter(function (c) {
-                return !q || c.base.toLowerCase().indexOf(q) > -1 || c.name.toLowerCase().indexOf(q) > -1;
-            }).length;
-            if (currentPage < Math.ceil(count / pageSize)) { currentPage++; renderTable(); }
+            if (currentPage < Math.ceil(visibleCoins().length / pageSize)) { currentPage++; renderTable(); }
         });
+
+        setMarketStatus('LOADING...', 'connecting');
+        try {
+            var client = await window.getSupabaseClient();
+            var rows = await window.SmartProfitMarkets.load(client);
+            coins = rows.map(function (row) {
+                coinSet[row.symbol] = true;
+                return { symbol: row.symbol, base: row.base_asset, name: row.display_name, orderable: row.orderable };
+            });
+        } catch (error) {
+            console.error('[market-overview] catalog load failed:', error);
+            setMarketStatus('MARKET LIST UNAVAILABLE', 'disconnected');
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-secondary py-3">The market list could not be loaded. Reload the page to try again.</td></tr>';
+            return;
+        }
         loadRestData();
     });
 })();

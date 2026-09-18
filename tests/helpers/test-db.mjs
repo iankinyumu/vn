@@ -43,7 +43,8 @@ export async function createTestDatabase() {
         '20260916130000_friendly_ticket_references.sql',
         '20260917100000_staff_access_foundation.sql',
         '20260917110000_support_workflow.sql',
-        '20260918120000_customer_and_operational_admin.sql'
+        '20260918120000_customer_and_operational_admin.sql',
+        '20260919120000_market_registry.sql'
     ];
 
     for (const name of migrations) {
@@ -75,4 +76,3 @@ export async function createTestDatabase() {
 
     return db;
 }
-
