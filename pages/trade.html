@@ -245,14 +245,15 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="action-buttons">
-                                <button type="button" class="btn-buy-large" onclick="placeOrder('buy')">
-                                    <i class="fas fa-arrow-up me-2"></i> <span id="btnBuyText">Buy BTC</span>
-                                </button>
-                                <button type="button" class="btn-sell-large" onclick="placeOrder('sell')">
-                                    <i class="fas fa-arrow-down me-2"></i> <span id="btnSellText">Sell BTC</span>
-                                </button>
-                            </div>
+                        <div id="marketNotice" class="alert alert-warning py-2 px-3 mb-3 small" role="status" aria-live="polite" hidden></div>
+                        <div class="action-buttons">
+                            <button type="button" class="btn-buy-large" onclick="placeOrder('buy')">
+                                <i class="fas fa-arrow-up me-2"></i> <span id="btnBuyText">Buy BTC</span>
+                            </button>
+                            <button type="button" class="btn-sell-large" onclick="placeOrder('sell')">
+                                <i class="fas fa-arrow-down me-2"></i> <span id="btnSellText">Sell BTC</span>
+                            </button>
+                        </div>
                         </form>
                     </div>
 
@@ -326,6 +327,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.2.1/chart.umd.min.js"></script>
     <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+    <script src="../assets/js/market-registry.js"></script>
+    <script src="../assets/js/market-ticker.js"></script>
     <script src="../assets/js/trade.js"></script>
     <script src="../assets/js/account-cache.js"></script>
     <script src="../assets/js/account-data.js"></script>

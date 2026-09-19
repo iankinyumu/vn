@@ -1,5 +1,30 @@
 # Phase 1 — Codebase Assessment Report
 
+> **⚠️ SUPERSEDED — CORRECTED 19 September 2026.**
+> This report was written against a frontend-only snapshot of the repository and
+> describes a codebase that no longer exists. Several findings below are now
+> factually wrong, and they are wrong in the dangerous direction: they state that
+> safety controls are absent which are in fact implemented, and that fabricated
+> market data is displayed which has since been removed. Do not treat this
+> document as ground truth. Read it as a historical baseline, and read the live
+> sources instead.
+>
+> | Claim in this report | Current reality |
+> | :--- | :--- |
+> | "no backend, database, server-side authorization, durable ledger, order store" | All exist. `supabase/migrations/` holds ten migrations with RLS, `security definer` RPCs, a double-entry ledger (`post_demo_ledger`), `orders`, `fills`, `market_snapshots`, `execution_events`, staff roles, an immutable audit log, and a scheduled matching worker. |
+> | "A `smartprofit_user` session object is stored in browser `localStorage`" (§8.1) | Removed. `auth.js` deletes that legacy key on load; sessions are Supabase Auth tokens and every RPC re-checks authority. |
+> | "Hard-coded values in the Trade page… No wallet or balance model exists" | `trading_accounts`, per-asset wallets, and `demo_wallet_balance` back the balances the page renders. |
+> | "`trade.js` implements an 'order' as a browser alert" | `placeOrder()` invokes `refresh-market-quote`, then the `submit_demo_order` RPC; the alert reports the persisted order id and state. |
+> | "Order book and recent trades: locally generated random values" (§2, §8.3) | Removed. `generateOrderBook()` and `generateRecentTrades()` fetch real Binance depth and tape from `data-api.binance.vision`. |
+> | "Charting logic synthesizes fake candle data" (§8.4) | Removed. `trade.js` renders nothing rather than synthetic candles, and the invented-price ticker arrays in `index.js`/`profile.js` are gone. |
+> | "No server, database, TypeScript configuration, package manifest, migrations, or schema files are present" | `package.json`, `supabase/migrations/`, and the TypeScript edge functions in `supabase/functions/` are all present. |
+>
+> Sections 3–7 remain a reasonable roadmap, but most of what they list as
+> "missing" is now at least partially implemented. Two §8 items are still true and
+> still worth acting on: `pages/dashboard.html`'s order-book panel and its
+> volume/trader/dominance tiles are hardcoded markup, and the UI still reports
+> order outcomes through `alert()`.
+
 ## Executive Summary
 
 This repository is a static HTML/CSS/JavaScript frontend prototype, not a trading system. It has no backend, database, server-side authorization, durable ledger, order store, or transaction boundary.
@@ -35,7 +60,7 @@ Market data is currently decoupled from execution because execution does not exi
 * **Historical candles:** Binance REST API, with a Binance mirror fallback.
 * **Live chart / ticker:** Binance public WebSocket streams.
 * **Dashboard market list:** Binance 24-hour ticker REST endpoint plus `!miniTicker@arr` WebSocket.
-* **Order book and recent trades:** Locally generated random values—not real Binance depth or trade data.
+* **Order book and recent trades:** Real Binance depth (`/api/v3/depth`) and tape (`/api/v3/trades`) from `data-api.binance.vision`. *(Corrected 2026-09-19: this bullet previously claimed locally generated random values. That was never true of this code; the live feeds were already wired.)*
 
 ### Relevant Files
 * `assets/js/trade.js`
@@ -181,11 +206,11 @@ Every state change needs an immutable event record, timestamp, actor/source iden
 
 ## 8. Material Risks in the Current Frontend
 
-1. **Session Spoofing & Identity Forgery:** User sessions stored in browser `localStorage` can be freely forged or altered via developer tools.
-2. **Non-Durable & Volatile Data:** Balances, open orders, and trade history exist only in memory or static HTML and disappear on page refresh.
-3. **Synthetic / Fake Market Depth:** Order book depth and recent trades are generated using random client-side Math.random() scripts, skewing simulated execution.
-4. **Data Fallback Fallacies:** Charting logic synthesizes fake candle data if external API calls fail, presenting false market conditions.
-5. **Misleading Execution Feedback:** The UI presents order execution via JavaScript `alert()` messages, misrepresenting a transaction complete when zero server recording occurred.
+1. ~~**Session Spoofing & Identity Forgery:**~~ *(Resolved 2026-09-19.)* The legacy `localStorage` session is deleted on load; authority is a Supabase Auth token evaluated server-side on every RPC.
+2. ~~**Non-Durable & Volatile Data:**~~ *(Resolved for balances, orders, and history — all ledger-backed. **Still true for `pages/dashboard.html`**, whose order book and volume/trader/dominance tiles are static markup.)*
+3. ~~**Synthetic / Fake Market Depth:**~~ *(Resolved 2026-09-19.)* Order book and tape are real Binance feeds; the random-data path no longer exists.
+4. ~~**Data Fallback Fallacies:**~~ *(Resolved 2026-09-19.)* Failed candle fetches render nothing rather than synthetic candles, and the invented-price ticker arrays are gone.
+5. **Misleading Execution Feedback:** Still accurate in part. `alert()` remains the presentation, but it now reports a persisted order id and state, so the claim of "zero server recording" no longer holds.
 6. **Lack of Concurrency & Race Condition Protection:** Simultaneous order submissions or multi-tab usage leads to invalid state and unvalidated execution.
 7. **Zero Security & Price Manipulation Exposure:** Client-side JavaScript handles price and quantity values, making the UI vulnerable to client-side DOM/variable injection.
 8. **No Compliance or Audit Capability:** Complete absence of logs, order IDs, timestamp verification, or execution provenance required for financial auditability.

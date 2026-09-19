@@ -35,9 +35,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         const message = error?.message || '';
         clear();
         if (message === 'forbidden') {
+            // Signed in, but this account holds no staff role: offer the staff
+            // sign-in link and a way out of the non-staff session.
             el('adminStatus').textContent = 'This account does not have staff access.';
+            el('adminSignIn').hidden = Boolean(session);
+            el('adminSignOut').hidden = !session;
         } else if (message === 'unauthenticated' || error?.code === 'PGRST301') {
-            el('adminStatus').textContent = 'Your session has expired. Sign in to continue.';
+            el('adminStatus').textContent = 'Your staff session has expired. Sign in to continue.';
+            el('adminSignIn').hidden = false;
+        } else if (message === 'auth_unavailable') {
+            el('adminStatus').textContent = 'Staff sign-in is unavailable. Reload the page to try again.';
             el('adminSignIn').hidden = false;
         } else {
             el('adminStatus').textContent = 'We could not verify access. Please try again.';
@@ -69,7 +76,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         el('adminStatus').textContent = 'Checking your access…';
         try {
             if (!client) {
-                client = await window.getSupabaseClient();
+                // The staff console never uses the customer client. Its session
+                // lives under a separate storage key, so a customer sign-in cannot
+                // reach this page and a staff sign-out cannot end a customer session.
+                if (typeof window.getStaffSupabaseClient !== 'function') throw new Error('auth_unavailable');
+                client = await window.getStaffSupabaseClient();
                 if (epoch !== generation) return;
                 subscription = client.auth.onAuthStateChange((_event, next) => {
                     session = next;

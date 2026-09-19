@@ -22,56 +22,16 @@ let liveMarket = {
 };
 
 // --- Ticker Banner (live, restricted to the registry's listed pairs) ---
+// Rendering and streaming live in market-ticker.js so every page shows the same
+// pairs; this file keeps no copy of the pair universe.
 const TICKER_LIMIT = 15;
-let tickerStream = null;
+let tickerController = null;
 
-function initTickerTrack(catalog) {
+async function initTickerTrack(client) {
     const tickerTrack = document.getElementById('tickerTrack');
     if (!tickerTrack) return;
-    const pairs = (catalog || []).slice(0, TICKER_LIMIT);
-    if (pairs.length === 0) {
-        tickerTrack.innerHTML = '<div class="ticker-item"><span class="ticker-pair">Market list unavailable</span></div>';
-        return;
-    }
-    tickerTrack.innerHTML = pairs.map(c => `
-        <div class="ticker-item">
-            <span class="ticker-pair">${c.base_asset}/USDT</span>
-            <span class="ticker-price" id="ticker-price-${c.symbol}">--</span>
-            <span class="ticker-change" id="ticker-change-${c.symbol}">--</span>
-        </div>`).join('');
-    // Duplicated once so the CSS marquee can loop seamlessly; both copies update.
-    tickerTrack.innerHTML += tickerTrack.innerHTML;
-    connectTickerStream(pairs.map(c => c.symbol));
-}
-
-function connectTickerStream(symbols) {
-    if (!symbols.length) return;
-    if (tickerStream) { try { tickerStream.close(); } catch (e) {} }
-    const wanted = new Set(symbols);
-    try {
-        tickerStream = new WebSocket('wss://stream.binance.com:9443/ws/!miniTicker@arr');
-        tickerStream.onmessage = function (event) {
-            let tickers;
-            try { tickers = JSON.parse(event.data); } catch (_) { return; }
-            if (!Array.isArray(tickers)) return;
-            tickers.forEach(t => {
-                if (!wanted.has(t.s)) return;
-                const price = parseFloat(t.c);
-                const change = parseFloat(t.P);
-                const up = change >= 0;
-                document.querySelectorAll(`[id="ticker-price-${t.s}"]`).forEach(el => {
-                    el.textContent = '$' + price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                });
-                document.querySelectorAll(`[id="ticker-change-${t.s}"]`).forEach(el => {
-                    el.className = 'ticker-change ' + (up ? 'positive' : 'negative');
-                    el.textContent = (up ? '+' : '') + change.toFixed(2) + '%';
-                });
-            });
-        };
-        tickerStream.onclose = function () { setTimeout(() => connectTickerStream(symbols), 5000); };
-    } catch (e) {
-        console.warn('Ticker stream unavailable.', e);
-    }
+    tickerController?.close();
+    tickerController = await window.SmartProfitTicker.mount({ track: tickerTrack, client, limit: TICKER_LIMIT });
 }
 
 // --- OHLC Display Bar ---
@@ -647,10 +607,12 @@ function setAmountPercent(pct) {
 }
 
 function updateTotal() {
-    const price = parseFloat(document.getElementById('orderPrice')?.value) || liveMarket.currentPrice || 77150.00;
+    // No seeded fallback: an unpriced pair shows an empty total rather than a
+    // number the browser invented.
+    const price = parseFloat(document.getElementById('orderPrice')?.value) || liveMarket.currentPrice || 0;
     const amount = parseFloat(document.getElementById('orderAmount')?.value) || 0;
     const totalEl = document.getElementById('orderTotal');
-    if (totalEl) totalEl.value = (price * amount).toFixed(2);
+    if (totalEl) totalEl.value = price > 0 ? (price * amount).toFixed(2) : '';
 }
 
 async function placeOrder(type) {
@@ -666,6 +628,8 @@ async function placeOrder(type) {
     const button = document.querySelector(type === 'buy' ? '.btn-buy-large' : '.btn-sell-large');
     if (!Number.isFinite(amount) || amount <= 0 || (orderType !== 'MARKET' && (!Number.isFinite(price) || price <= 0))) { alert('Enter a valid order amount and price.'); return; }
     if (!window.getSupabaseClient) { alert('Authentication is still loading. Please try again.'); return; }
+    const row = catalogRow(liveMarket.symbol);
+    if (!row || !row.orderable) { alert(tradabilityNotice(row)); return; }
     button && (button.disabled = true);
     try {
         const client = await getSupabaseClient();
@@ -682,108 +646,68 @@ async function placeOrder(type) {
 }
 
 // ============================================================
-// TOP 75 CURATED COINS (Binance USDT spot, by market cap/volume)
+// The pair universe is read from the market registry (window.SmartProfitMarkets
+// -> list_market_catalog). There is deliberately no coin array in this file:
+// the hardcoded list that used to live here drifted out of sync with the
+// database the moment a symbol was added, paused, or retired.
 // ============================================================
-const TOP_75_COINS = [
-    { symbol: 'BTCUSDT',  base: 'BTC',    name: 'Bitcoin' },
-    { symbol: 'ETHUSDT',  base: 'ETH',    name: 'Ethereum' },
-    { symbol: 'SOLUSDT',  base: 'SOL',    name: 'Solana' },
-    { symbol: 'BNBUSDT',  base: 'BNB',    name: 'BNB' },
-    { symbol: 'XRPUSDT',  base: 'XRP',    name: 'XRP' },
-    { symbol: 'DOGEUSDT', base: 'DOGE',   name: 'Dogecoin' },
-    { symbol: 'ADAUSDT',  base: 'ADA',    name: 'Cardano' },
-    { symbol: 'AVAXUSDT', base: 'AVAX',   name: 'Avalanche' },
-    { symbol: 'SUIUSDT',  base: 'SUI',    name: 'Sui' },
-    { symbol: 'LINKUSDT', base: 'LINK',   name: 'Chainlink' },
-    { symbol: 'SHIBUSDT', base: 'SHIB',   name: 'Shiba Inu' },
-    { symbol: 'NEARUSDT', base: 'NEAR',   name: 'NEAR Protocol' },
-    { symbol: 'PEPEUSDT', base: 'PEPE',   name: 'Pepe' },
-    { symbol: 'LTCUSDT',  base: 'LTC',    name: 'Litecoin' },
-    { symbol: 'DOTUSDT',  base: 'DOT',    name: 'Polkadot' },
-    { symbol: 'BCHUSDT',  base: 'BCH',    name: 'Bitcoin Cash' },
-    { symbol: 'UNIUSDT',  base: 'UNI',    name: 'Uniswap' },
-    { symbol: 'APTUSDT',  base: 'APT',    name: 'Aptos' },
-    { symbol: 'ICPUSDT',  base: 'ICP',    name: 'Internet Computer' },
-    { symbol: 'FETUSDT',  base: 'FET',    name: 'Fetch.ai' },
-    { symbol: 'AAVEUSDT', base: 'AAVE',   name: 'Aave' },
-    { symbol: 'RENDERUSDT',base:'RENDER', name: 'Render' },
-    { symbol: 'FILUSDT',  base: 'FIL',    name: 'Filecoin' },
-    { symbol: 'ARBUSDT',  base: 'ARB',    name: 'Arbitrum' },
-    { symbol: 'OPUSDT',   base: 'OP',     name: 'Optimism' },
-    { symbol: 'TIAUSDT',  base: 'TIA',    name: 'Celestia' },
-    { symbol: 'INJUSDT',  base: 'INJ',    name: 'Injective' },
-    { symbol: 'TRXUSDT',  base: 'TRX',    name: 'TRON' },
-    { symbol: 'FTMUSDT',  base: 'FTM',    name: 'Fantom' },
-    { symbol: 'WIFUSDT',  base: 'WIF',    name: 'dogwifhat' },
-    { symbol: 'STXUSDT',  base: 'STX',    name: 'Stacks' },
-    { symbol: 'XLMUSDT',  base: 'XLM',    name: 'Stellar' },
-    { symbol: 'ATOMUSDT', base: 'ATOM',   name: 'Cosmos' },
-    { symbol: 'ETCUSDT',  base: 'ETC',    name: 'Ethereum Classic' },
-    { symbol: 'XMRUSDT',  base: 'XMR',    name: 'Monero' },
-    { symbol: 'GRTUSDT',  base: 'GRT',    name: 'The Graph' },
-    { symbol: 'THETAUSDT',base: 'THETA',  name: 'Theta Network' },
-    { symbol: 'MKRUSDT',  base: 'MKR',    name: 'Maker' },
-    { symbol: 'VETUSDT',  base: 'VET',    name: 'VeChain' },
-    { symbol: 'LDOUSDT',  base: 'LDO',    name: 'Lido DAO' },
-    { symbol: 'RUNEUSDT', base: 'RUNE',   name: 'THORChain' },
-    { symbol: 'ALGOUSDT', base: 'ALGO',   name: 'Algorand' },
-    { symbol: 'SEIUSDT',  base: 'SEI',    name: 'Sei' },
-    { symbol: 'FLOKIUSDT',base: 'FLOKI',  name: 'FLOKI' },
-    { symbol: 'BONKUSDT', base: 'BONK',   name: 'Bonk' },
-    { symbol: 'JUPUSDT',  base: 'JUP',    name: 'Jupiter' },
-    { symbol: 'BEAMUSDT', base: 'BEAM',   name: 'Beam' },
-    { symbol: 'OMUSDT',   base: 'OM',     name: 'MANTRA' },
-    { symbol: 'PYTHUSDT', base: 'PYTH',   name: 'Pyth Network' },
-    { symbol: 'GALAUSDT', base: 'GALA',   name: 'Gala' },
-    { symbol: 'BLURUSDT', base: 'BLUR',   name: 'Blur' },
-    { symbol: 'CRVUSDT',  base: 'CRV',    name: 'Curve DAO' },
-    { symbol: 'DYDXUSDT', base: 'DYDX',   name: 'dYdX' },
-    { symbol: 'SANDUSDT', base: 'SAND',   name: 'The Sandbox' },
-    { symbol: 'MANAUSDT', base: 'MANA',   name: 'Decentraland' },
-    { symbol: 'AXSUSDT',  base: 'AXS',    name: 'Axie Infinity' },
-    { symbol: 'IMXUSDT',  base: 'IMX',    name: 'Immutable' },
-    { symbol: 'ENAUSDT',  base: 'ENA',    name: 'Ethena' },
-    { symbol: 'PENDLEUSDT',base:'PENDLE', name: 'Pendle' },
-    { symbol: 'WLDUSDT',  base: 'WLD',    name: 'Worldcoin' },
-    { symbol: 'STRKUSDT', base: 'STRK',   name: 'Starknet' },
-    { symbol: 'JASMYUSDT',base: 'JASMY',  name: 'JasmyCoin' },
-    { symbol: 'NOTUSDT',  base: 'NOT',    name: 'Notcoin' },
-    { symbol: 'BOMEUSDT', base: 'BOME',   name: 'BOOK OF MEME' },
-    { symbol: 'TAOUSDT',  base: 'TAO',    name: 'Bittensor' },
-    { symbol: 'TONUSDT',  base: 'TON',    name: 'Toncoin' },
-    { symbol: 'ONDOUSDT', base: 'ONDO',   name: 'Ondo' },
-    { symbol: 'POLUSDT',  base: 'POL',    name: 'POL (MATIC)' },
-    { symbol: 'QNTUSDT',  base: 'QNT',    name: 'Quant' },
-    { symbol: 'CHZUSDT',  base: 'CHZ',    name: 'Chiliz' },
-    { symbol: 'APEUSDT',  base: 'APE',    name: 'ApeCoin' },
-    { symbol: 'EOSUSDT',  base: 'EOS',    name: 'EOS' },
-    { symbol: 'NEOUSDT',  base: 'NEO',    name: 'NEO' },
-    { symbol: 'FLOWUSDT', base: 'FLOW',   name: 'Flow' },
-    { symbol: 'GMXUSDT',  base: 'GMX',    name: 'GMX' }
-];
+let marketCatalog = [];
+
+function catalogRow(symbol) {
+    const wanted = String(symbol || '').toUpperCase();
+    return marketCatalog.find(row => row.symbol === wanted) || null;
+}
+
+function tradabilityNotice(row) {
+    if (!row) return 'This pair is not listed by the exchange.';
+    if (row.paused) return `${row.base_asset}/USDT trading is paused by the operations team.`;
+    if (!row.tradable) return `${row.base_asset}/USDT is listed for reference only and cannot be ordered yet.`;
+    return '';
+}
+
+// The registry decides what the form may submit. The server re-checks every order,
+// so this only spares the customer a round trip that would fail anyway.
+function applyTradability(row) {
+    const blocked = !row || !row.orderable;
+    const form = document.getElementById('tradeForm');
+    if (form) form.querySelectorAll('input, button').forEach(el => { el.disabled = blocked; });
+    const buyBtn = document.querySelector('.btn-buy-large');
+    const sellBtn = document.querySelector('.btn-sell-large');
+    if (buyBtn) buyBtn.disabled = blocked;
+    if (sellBtn) sellBtn.disabled = blocked;
+    const notice = document.getElementById('marketNotice');
+    if (notice) {
+        notice.hidden = !blocked;
+        notice.textContent = tradabilityNotice(row);
+    }
+}
 
 // ============================================================
 // SWITCH ASSET — reconnects WebSocket and updates all labels
 // ============================================================
-function switchAsset(symbol, baseCoin) {
-    liveMarket.symbol = symbol;
-    liveMarket.baseCoin = baseCoin;
+function switchAsset(symbol) {
+    const row = catalogRow(symbol);
+    if (!row) return;
+    liveMarket.symbol = row.symbol;
+    liveMarket.baseCoin = row.base_asset;
 
     // Update pair selector display
     const pairText = document.getElementById('currentPairText');
     const pairBadge = document.getElementById('currentPairBadge');
-    if (pairText) pairText.textContent = `${baseCoin}/USDT`;
-    if (pairBadge) pairBadge.textContent = baseCoin;
+    if (pairText) pairText.textContent = `${row.base_asset}/USDT`;
+    if (pairBadge) pairBadge.textContent = row.base_asset;
 
     // Update order form labels
     ['orderBookBaseLabel', 'tradeFormAmountLabel'].forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.textContent = baseCoin;
+        if (el) el.textContent = row.base_asset;
     });
     const buyEl = document.getElementById('btnBuyText');
     const sellEl = document.getElementById('btnSellText');
-    if (buyEl) buyEl.textContent = `Buy ${baseCoin}`;
-    if (sellEl) sellEl.textContent = `Sell ${baseCoin}`;
+    if (buyEl) buyEl.textContent = `Buy ${row.base_asset}`;
+    if (sellEl) sellEl.textContent = `Sell ${row.base_asset}`;
+
+    applyTradability(row);
 
     // Reset header price
     const priceEl = document.getElementById('headerBtcPrice');
@@ -815,37 +739,44 @@ function initPairSelector() {
     const container = document.getElementById('pairListContainer');
     if (!container) return;
 
-    function renderList() {
-        container.innerHTML = TOP_75_COINS.map(c => `
-            <button class="pair-list-item d-flex align-items-center gap-2 w-100 text-start border-0 bg-transparent px-2 py-1 rounded"
-                    data-symbol="${c.symbol}" data-base="${c.base}"
-                    onclick="switchAsset('${c.symbol}','${c.base}');bootstrap.Dropdown.getOrCreateInstance(document.getElementById('pairSelectorBtn')).hide()">
-                <span class="pair-symbol-badge" style="font-size:10px;padding:2px 6px;">${c.base}</span>
-                <span class="text-white fw-semibold">${c.base}<small class="text-secondary">/USDT</small></span>
-                <span class="text-secondary ms-auto" style="font-size:11px;">${c.name}</span>
-            </button>`).join('');
+    if (marketCatalog.length === 0) {
+        container.innerHTML = '<div class="px-2 py-1 text-secondary" style="font-size:12px;">Market list unavailable</div>';
+        return;
     }
 
-    renderList();
+    container.innerHTML = marketCatalog.map(row => `
+        <button class="pair-list-item d-flex align-items-center gap-2 w-100 text-start border-0 bg-transparent px-2 py-1 rounded"
+                data-symbol="${row.symbol}" data-base="${row.base_asset}"
+                onclick="switchAsset('${row.symbol}');bootstrap.Dropdown.getOrCreateInstance(document.getElementById('pairSelectorBtn')).hide()">
+            <span class="pair-symbol-badge" style="font-size:10px;padding:2px 6px;">${row.base_asset}</span>
+            <span class="text-white fw-semibold">${row.base_asset}<small class="text-secondary">/USDT</small></span>
+            <span class="text-secondary ms-auto" style="font-size:11px;">${row.display_name}${row.orderable ? '' : ' · view only'}</span>
+        </button>`).join('');
 }
 
 // --- Wire Event Listeners & Initialize ---
-document.addEventListener('DOMContentLoaded', function () {
-    // Read ?symbol= URL param
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlSymbol = urlParams.get('symbol');
-    if (urlSymbol) {
-        const found = TOP_75_COINS.find(c => c.symbol.toUpperCase() === urlSymbol.toUpperCase());
-        if (found) {
-            liveMarket.symbol = found.symbol;
-            liveMarket.baseCoin = found.base;
-        }
-    } else {
-        liveMarket.baseCoin = 'BTC';
+document.addEventListener('DOMContentLoaded', async function () {
+    // The registry is the only authority on which pairs exist. ?symbol= selects
+    // among the listed pairs; an unlisted value is ignored, never assumed.
+    const urlSymbol = new URLSearchParams(window.location.search).get('symbol');
+
+    let client = null;
+    try {
+        client = await getSupabaseClient();
+        marketCatalog = await window.SmartProfitMarkets.load(client);
+    } catch (error) {
+        console.error('Market registry unavailable.', error);
     }
 
-    initTickerTrack();
+    const requested = catalogRow(urlSymbol) || catalogRow('BTCUSDT') || marketCatalog[0] || null;
+    if (requested) {
+        liveMarket.symbol = requested.symbol;
+        liveMarket.baseCoin = requested.base_asset;
+    }
+
+    await initTickerTrack(client);
     initPairSelector();
+    applyTradability(requested);
     generateOrderBook();
     generateRecentTrades();
     initBinanceChart();
