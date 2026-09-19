@@ -68,7 +68,7 @@ sequenceDiagram
     RPC->>Security: require_staff('staff.manage')
     Note over Security: Verifies caller is active Owner AND TOTP freshness <= 600s
     RPC->>Security: Validate Target & Invariants
-    Note over Security: Target exists in auth.users with email_confirmed_at<br/>p_user_id != auth.uid() (no self change)<br/>At least 1 active owner remains<br/>Rate limit <= 10 changes / min
+    Note over Security: Target exists in auth.users with email_confirmed_at<br/>p_user_id != auth.uid() (no self change)<br/>At least 1 active owner remains<br/>Rate limit <= 30 changes / hour
     RPC->>DB: UPDATE / INSERT staff_roles (optimistic version bump)
     RPC->>Audit: Record transactional audit event
     RPC-->>Browser: Return updated staff record
@@ -120,7 +120,7 @@ The function executes the following verification pipeline inside an atomic trans
 4. **Verified Target Identity:**
    - Confirms `p_user_id` exists in `auth.users` and has `email_confirmed_at IS NOT NULL`. Phantom or unconfirmed emails cannot receive roles.
 5. **Rate Limiting:**
-   - Enforces `admin_private.staff_rate_limit(auth.uid(), 'change_role', 10, 60)`. Max 10 role modifications per minute per owner.
+   - Counts the caller's `staff.role_change` audit events created within the last hour and raises `rate_limited` once that count reaches 30. Max 30 role modifications per hour per owner.
 6. **Optimistic Concurrency Control:**
    - Matches `p_expected_version` against `staff_roles.version`. If another owner changed the record concurrently, raises `conflict`.
 7. **Idempotency Safeguard:**
@@ -221,4 +221,3 @@ The administrative dashboard consists of five core functional modules organized 
 2. **Denial by Default:** Tables have Row Level Security enabled. No table grants `SELECT`, `INSERT`, `UPDATE`, or `DELETE` directly to client roles.
 3. **Audit Immutability:** `admin_private.admin_audit_events` cannot be modified or truncated by any database user or application role.
 4. **Zero Client Authority:** The client browser is treated as untrusted. Hiding a button or manipulating DOM elements does not bypass server-side RPC permission checks.
-

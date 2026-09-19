@@ -51,23 +51,14 @@
                 </div>
 
                 <div class="remember-row">
-                    <label class="remember-check"><input type="checkbox"> Remember me</label>
+                    <label class="remember-check"><input type="checkbox" id="rememberMe"> Remember me</label>
                     <a href="forgot-password.html" class="forgot-link">Forgot Password?</a>
                 </div>
 
                 <button type="submit" class="btn-signin">Sign In</button>
             </form>
-
-            <div class="divider">or continue with</div>
-
-            <div class="social-btns">
-                <button class="social-btn google" onclick="alert('Google login')"><i class="fab fa-google"></i>
-                    Google</button>
-                <button class="social-btn apple" onclick="alert('Apple login')"><i class="fab fa-apple"></i>
-                    Apple</button>
-                <button class="social-btn github" onclick="alert('GitHub login')"><i class="fab fa-github"></i>
-                    GitHub</button>
-            </div>
+            <p id="loginStatus" class="strength-text" role="status" aria-live="polite"
+                style="font-size:13px;margin:12px 0 0;min-height:18px;text-align:center"></p>
 
             <p class="auth-footer">Don't have an account? <a href="register.html">Create Account</a></p>
 
