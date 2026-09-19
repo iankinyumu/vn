@@ -66,6 +66,31 @@
         });
     }
 
+    function renderRestrictions(restrictions) {
+        const banner = document.getElementById('accountRestrictionBanner');
+        if (!banner) return;
+        const active = (restrictions || []).filter((restriction) => restriction && restriction.reason);
+        if (!active.length) {
+            banner.hidden = true;
+            banner.replaceChildren();
+            return;
+        }
+        // Only the server-supplied reason text is shown; this module keeps no
+        // list of restriction types of its own.
+        const heading = document.createElement('div');
+        heading.className = 'fw-semibold mb-1';
+        heading.textContent = 'Your account has an active restriction.';
+        const list = document.createElement('ul');
+        list.className = 'mb-0 ps-3';
+        active.forEach((restriction) => {
+            const item = document.createElement('li');
+            item.textContent = restriction.reason;
+            list.appendChild(item);
+        });
+        banner.replaceChildren(heading, list);
+        banner.hidden = false;
+    }
+
     function renderPositions(positions, quotes) {
         const body = document.getElementById('openPositionsBody');
         const quoteBySymbol = new Map();
@@ -118,12 +143,14 @@
         if (!user) return;
         const scope = `${window.SMARTPROFIT_SUPABASE_CONFIG.url}:${user.id}:DEMO`;
         const read = (name, loader) => cache.read(scope, name, loader);
-        const [{ data: profile, error: profileError }, { data: accounts, error: accountError }] = await Promise.all([
+        const [{ data: profile, error: profileError }, { data: accounts, error: accountError }, { data: restrictions, error: restrictionError }] = await Promise.all([
             read('profile', () => client.from('profiles').select('display_name, created_at').single()),
-            read('accounts', () => client.from('trading_accounts').select('id, execution_mode, base_currency, status, created_at').eq('status', 'ACTIVE').order('created_at', { ascending: true }))
+            read('accounts', () => client.from('trading_accounts').select('id, execution_mode, base_currency, status, created_at').eq('status', 'ACTIVE').order('created_at', { ascending: true })),
+            read('restrictions', () => client.rpc('get_my_active_restrictions'))
         ]);
         if (profileError) throw profileError;
         if (accountError) throw accountError;
+        if (restrictionError) throw restrictionError;
 
         const name = profile?.display_name || user.user_metadata?.display_name || user.email || 'Trader';
         setText('[data-profile-name]', name); setText('[data-profile-email]', user.email || '');
@@ -131,6 +158,10 @@
         setText('[data-profile-avatar]', name.split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0]).join('').toUpperCase() || 'T');
         document.querySelectorAll('.toggle-switch input').forEach((toggle) => { toggle.checked = false; toggle.disabled = true; });
         if (profile?.created_at) setText('[data-profile-created]', new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' }).format(new Date(profile.created_at)));
+
+        // Active restrictions are shown whether or not a practice account exists,
+        // so the banner renders before the account check below.
+        renderRestrictions(restrictions || []);
 
         // This release supports DEMO execution only. Never display a REAL account
         // while the trading page still submits orders to the demo endpoint.

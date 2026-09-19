@@ -615,6 +615,18 @@ function updateTotal() {
     if (totalEl) totalEl.value = price > 0 ? (price * amount).toFixed(2) : '';
 }
 
+// The order RPC refuses orders with stable machine strings that mean nothing to
+// a customer. The four that surface during a rejected order are translated here;
+// every other failure keeps the existing fallback unchanged, so actionable
+// server sentences such as "insufficient available USDT" still reach the user.
+function friendlyOrderError(error) {
+    const message = String(error?.message || '').trim();
+    if (message === 'trading_restricted') return 'Your account is currently restricted from trading. Contact support for details.';
+    if (message === 'symbol_trading_paused') return 'Trading on this pair is temporarily paused.';
+    if (message.startsWith('symbol_not_tradable') || message.startsWith('unknown symbol')) return "This pair isn't available for trading right now.";
+    return error?.message || 'Unable to submit the demo order.';
+}
+
 async function placeOrder(type) {
     const account = window.smartProfitAccountData?.account;
     if (!account || account.execution_mode !== 'DEMO' || account.status !== 'ACTIVE') {
@@ -641,7 +653,7 @@ async function placeOrder(type) {
         if (error) throw error;
         alert(`Demo ${data.state === 'FILLED' ? 'order filled' : 'order accepted'}: ${data.id}`);
         window.refreshAccountData?.();
-    } catch (error) { console.error('Demo order submission failed.', error); alert(error?.message || 'Unable to submit the demo order.'); }
+    } catch (error) { console.error('Demo order submission failed.', error); alert(friendlyOrderError(error)); }
     finally { if (button) button.disabled = false; }
 }
 
