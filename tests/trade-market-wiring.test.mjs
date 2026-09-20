@@ -200,7 +200,10 @@ test('placing an order for a tradable pair passes the client-side guard', async 
     assert.deepEqual(calls.invoke, ['refresh-market-quote']);
     assert.equal(calls.rpc.filter((name) => name === 'submit_demo_order').length, 0);
     assert.equal(alerts.length, 1);
-    assert.match(alerts[0], /quote unavailable/);
+    // An unmapped failure is never shown verbatim: the customer gets the neutral
+    // fallback instead of the raw quote error.
+    assert.match(alerts[0], /couldn't place your order/i);
+    assert.equal(/quote unavailable/.test(alerts[0]), false);
     window.close();
 });
 

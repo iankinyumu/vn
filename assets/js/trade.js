@@ -615,16 +615,17 @@ function updateTotal() {
     if (totalEl) totalEl.value = price > 0 ? (price * amount).toFixed(2) : '';
 }
 
-// The order RPC refuses orders with stable machine strings that mean nothing to
-// a customer. The four that surface during a rejected order are translated here;
-// every other failure keeps the existing fallback unchanged, so actionable
-// server sentences such as "insufficient available USDT" still reach the user.
+// The order endpoint refuses orders with stable machine strings that mean nothing
+// to a customer. The ones that surface during a rejected order are translated
+// here; every other failure is logged for support and replaced with a neutral
+// message, so no raw server text is ever shown to the customer.
 function friendlyOrderError(error) {
     const message = String(error?.message || '').trim();
     if (message === 'trading_restricted') return 'Your account is currently restricted from trading. Contact support for details.';
     if (message === 'symbol_trading_paused') return 'Trading on this pair is temporarily paused.';
     if (message.startsWith('symbol_not_tradable') || message.startsWith('unknown symbol')) return "This pair isn't available for trading right now.";
-    return error?.message || 'Unable to submit the demo order.';
+    console.error('Unmapped demo order error.', error);
+    return "We couldn't place your order. Please try again.";
 }
 
 async function placeOrder(type) {

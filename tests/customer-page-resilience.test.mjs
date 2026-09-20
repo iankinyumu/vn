@@ -112,6 +112,7 @@ async function bootAccountPage({ restrictions = 'ok', balance = 2500 } = {}) {
             if (name === 'get_my_active_restrictions') {
                 if (restrictions === 'error') return { data: null, error: { code: 'PGRST202', message: 'Could not find the function public.get_my_active_restrictions' } };
                 if (restrictions === 'throws') throw new Error('network unreachable');
+                if (restrictions === 'restriction') return ok([{ restriction_type: 'TRADING', reason: 'Chargeback investigation open', applied_at: '2026-02-01T00:00:00.000Z' }]);
                 return ok([]);
             }
             if (name === 'account_balance_totals') return ok([{ ledger_account_id: 'ledger-usdt', amount: String(balance) }]);
@@ -182,16 +183,30 @@ test('a failed restrictions read cannot blank the customer account page', async 
             assert.equal(document.querySelector('[data-open-orders-count]').textContent, '0');
             assert.equal(errors.length, 0, `the loader must not fall into its fatal catch: ${errors.join(' | ')}`);
 
-            // The degraded state is surfaced, but non-blocking.
+            // The failure is reported to the console for support, but nothing is
+            // shown to the customer: an internal restriction-status error must
+            // never reach the banner.
             assert.equal(warnings.length > 0, true, 'the failure must be reported to the console');
             const banner = document.getElementById('accountRestrictionBanner');
-            assert.equal(banner.hidden, false);
-            assert.match(banner.textContent, /Restriction status unavailable/);
-            assert.equal(banner.classList.contains('alert-warning'), true);
+            assert.equal(banner.hidden, true, 'a failed read must leave the banner hidden');
+            assert.equal(banner.textContent, '');
 
             window.close();
         });
     }
+
+    await t.test('an active restriction is shown with its reason', async () => {
+        const { window, document, errors } = await bootAccountPage({ restrictions: 'restriction' });
+
+        const banner = document.getElementById('accountRestrictionBanner');
+        assert.equal(banner.hidden, false);
+        assert.match(banner.textContent, /Chargeback investigation open/);
+        assert.equal(banner.textContent.includes('Restriction status unavailable'), false);
+        assert.equal(document.querySelector('[data-total-equity]').textContent, '$2,500.00');
+        assert.equal(errors.length, 0);
+
+        window.close();
+    });
 
     await t.test('a healthy restrictions read shows no banner at all', async () => {
         const { window, document, warnings, errors } = await bootAccountPage();

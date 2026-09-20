@@ -29,7 +29,7 @@
             const cell = document.createElement('td');
             cell.colSpan = 5;
             cell.className = 'text-secondary';
-            cell.textContent = 'No ledger transactions have been recorded for this account.';
+            cell.textContent = 'No transactions have been recorded for this account.';
             row.appendChild(cell); body.appendChild(row); return;
         }
         transactions.forEach((transaction) => {
@@ -69,8 +69,6 @@
     function renderRestrictions(restrictions) {
         const banner = document.getElementById('accountRestrictionBanner');
         if (!banner) return;
-        banner.classList.add('alert-danger');
-        banner.classList.remove('alert-warning');
         const active = (restrictions || []).filter((restriction) => restriction && restriction.reason);
         if (!active.length) {
             banner.hidden = true;
@@ -90,18 +88,6 @@
             list.appendChild(item);
         });
         banner.replaceChildren(heading, list);
-        banner.hidden = false;
-    }
-
-    /* Degraded banner shown when the restrictions read fails. It is a warning,
-     * not a block: the server (submit_demo_order) is what actually enforces an
-     * active restriction, so an unread banner cannot let an order through. */
-    function renderRestrictionsUnavailable() {
-        const banner = document.getElementById('accountRestrictionBanner');
-        if (!banner) return;
-        banner.classList.remove('alert-danger');
-        banner.classList.add('alert-warning');
-        banner.textContent = 'Restriction status unavailable. Contact support if you believe your account is restricted.';
         banner.hidden = false;
     }
 
@@ -188,9 +174,10 @@
         if (profile?.created_at) setText('[data-profile-created]', new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' }).format(new Date(profile.created_at)));
 
         // Active restrictions are shown whether or not a practice account exists,
-        // so the banner renders before the account check below.
-        if (restrictionError) renderRestrictionsUnavailable();
-        else renderRestrictions(restrictions || []);
+        // so the banner renders before the account check below. A failed read
+        // renders nothing: a customer must never see an internal
+        // restriction-status error, and the server enforces restrictions anyway.
+        renderRestrictions(restrictionError ? [] : (restrictions || []));
 
         // This release supports DEMO execution only. Never display a REAL account
         // while the trading page still submits orders to the demo endpoint.
@@ -257,7 +244,8 @@
             if (!displayName) return;
             status.textContent = 'Saving…';
             const { error } = await client.from('profiles').update({ display_name: displayName }).eq('id', user.id);
-            status.textContent = error ? error.message : 'Saved.';
+            if (error) console.error('Profile save failed.', error);
+            status.textContent = error ? "We couldn't save your changes. Please try again." : 'Saved.';
             if (!error) { cache.clear(); setText('[data-profile-name]', displayName); setText('[data-profile-avatar]', displayName.split(/\s+/).slice(0, 2).map((word) => word[0]).join('').toUpperCase()); }
         };
     } catch (error) {
