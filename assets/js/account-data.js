@@ -69,6 +69,8 @@
     function renderRestrictions(restrictions) {
         const banner = document.getElementById('accountRestrictionBanner');
         if (!banner) return;
+        banner.classList.add('alert-danger');
+        banner.classList.remove('alert-warning');
         const active = (restrictions || []).filter((restriction) => restriction && restriction.reason);
         if (!active.length) {
             banner.hidden = true;
@@ -88,6 +90,18 @@
             list.appendChild(item);
         });
         banner.replaceChildren(heading, list);
+        banner.hidden = false;
+    }
+
+    /* Degraded banner shown when the restrictions read fails. It is a warning,
+     * not a block: the server (submit_demo_order) is what actually enforces an
+     * active restriction, so an unread banner cannot let an order through. */
+    function renderRestrictionsUnavailable() {
+        const banner = document.getElementById('accountRestrictionBanner');
+        if (!banner) return;
+        banner.classList.remove('alert-danger');
+        banner.classList.add('alert-warning');
+        banner.textContent = 'Restriction status unavailable. Contact support if you believe your account is restricted.';
         banner.hidden = false;
     }
 
@@ -134,6 +148,18 @@
         return { unrealizedPnl, positionValue, quoteBySymbol, missingQuote };
     }
 
+    /* Restriction status is advisory client-side: the database is what enforces it
+     * (submit_demo_order raises 'trading_restricted' for an active TRADING row),
+     * so a failed read only costs the banner. The loader never rejects, so a
+     * missing RPC cannot reject the Promise.all below and blank the whole page. */
+    async function loadActiveRestrictions(client) {
+        try {
+            return await client.rpc('get_my_active_restrictions');
+        } catch (error) {
+            return { data: null, error };
+        }
+    }
+
     async function load() {
     try {
         const client = await getSupabaseClient();
@@ -146,11 +172,13 @@
         const [{ data: profile, error: profileError }, { data: accounts, error: accountError }, { data: restrictions, error: restrictionError }] = await Promise.all([
             read('profile', () => client.from('profiles').select('display_name, created_at').single()),
             read('accounts', () => client.from('trading_accounts').select('id, execution_mode, base_currency, status, created_at').eq('status', 'ACTIVE').order('created_at', { ascending: true })),
-            read('restrictions', () => client.rpc('get_my_active_restrictions'))
+            read('restrictions', () => loadActiveRestrictions(client))
         ]);
+        // Profile and accounts stay fatal: without them there is no account to
+        // render. Restrictions do not, and every other error below stays fatal.
         if (profileError) throw profileError;
         if (accountError) throw accountError;
-        if (restrictionError) throw restrictionError;
+        if (restrictionError) console.warn('Restriction status unavailable; continuing without it.', restrictionError);
 
         const name = profile?.display_name || user.user_metadata?.display_name || user.email || 'Trader';
         setText('[data-profile-name]', name); setText('[data-profile-email]', user.email || '');
@@ -161,7 +189,8 @@
 
         // Active restrictions are shown whether or not a practice account exists,
         // so the banner renders before the account check below.
-        renderRestrictions(restrictions || []);
+        if (restrictionError) renderRestrictionsUnavailable();
+        else renderRestrictions(restrictions || []);
 
         // This release supports DEMO execution only. Never display a REAL account
         // while the trading page still submits orders to the demo endpoint.

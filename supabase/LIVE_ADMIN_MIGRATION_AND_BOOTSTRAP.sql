@@ -17,11 +17,19 @@
 --   supabase/migrations is the source of truth. This script is the manual,
 --   idempotent application of that schema for an environment where the
 --   migration runner cannot be used. Keep the two in sync: the bodies below are
---   byte-for-byte equivalents of migrations 20260917100000, 20260918120000 and
---   20260919120000.
+--   byte-for-byte equivalents of migrations 20260917100000, 20260918120000,
+--   20260919120000 and 20260919130000.
+--
+-- WHY THE CUSTOMER RPC IS IN HERE
+--   This file has drifted once already. 20260919130000 defines
+--   get_my_active_restrictions(); this script did not, while the customer account
+--   page called that RPC as a fatal dependency. One missing function therefore
+--   blanked profile, balances, orders, positions and equity for every customer.
+--   Section 7a now carries it, and Section 13 fails loudly if it goes missing
+--   again.
 --
 -- SAFE TO RE-RUN. Every step is idempotent. Section 0 is a prerequisite guard,
---   Section 10 is a self-check that fails loudly if anything is still wrong.
+--   Section 13 is a self-check that fails loudly if anything is still wrong.
 -- ==============================================================================
 
 -- ------------------------------------------------------------------------------
@@ -67,6 +75,9 @@ drop function if exists public.list_admin_audit(timestamptz, uuid);
 drop function if exists public.get_staff_context();
 drop function if exists public.change_staff_role(uuid, text, boolean, bigint, text, uuid);
 drop function if exists public.list_executable_symbols();
+-- Return type changes cannot be made with `create or replace`, so the customer
+-- restriction reader is dropped for the same reason as the rest of this list.
+drop function if exists public.get_my_active_restrictions();
 drop function if exists admin_private.require_staff(text, boolean);
 drop function if exists admin_private.role_capabilities(text);
 
@@ -715,6 +726,29 @@ begin
 end $$;
 
 -- ------------------------------------------------------------------------------
+-- 7a. Customer-facing restriction status
+-- ------------------------------------------------------------------------------
+-- Copied verbatim from migration 20260919130000. public.account_restrictions is
+-- revoked from anon/authenticated/service_role, so this SECURITY DEFINER
+-- function is the only path a customer has to see why they were restricted.
+--
+-- It takes no user_id parameter on purpose: it is hard-scoped to auth.uid(), so
+-- there is no call shape that can read another customer's rows.
+create or replace function public.get_my_active_restrictions()
+returns table(restriction_type text, reason text, applied_at timestamptz)
+language sql security definer set search_path = public stable as $$
+    select r.restriction_type, r.reason, r.applied_at
+      from public.account_restrictions r
+     where r.user_id = auth.uid()
+       and r.active = true
+     order by r.applied_at desc;
+$$;
+
+-- Granted to authenticated only: no client role may reach the table directly.
+revoke all on function public.get_my_active_restrictions() from public, anon;
+grant execute on function public.get_my_active_restrictions() to authenticated;
+
+-- ------------------------------------------------------------------------------
 -- 8. Demo trading oversight
 -- ------------------------------------------------------------------------------
 create or replace function public.list_admin_demo_orders(
@@ -1149,7 +1183,11 @@ begin
             ('set_symbol_trading_status', 'text, boolean, text', 'jsonb'),
             ('list_staff_members', '', 'jsonb'),
             ('get_platform_overview', '', 'jsonb'),
-            ('list_market_catalog', '', 'jsonb')
+            ('list_market_catalog', '', 'jsonb'),
+            -- get_my_active_restrictions is a table-returning function, so
+            -- pg_get_function_result() reports its column list rather than a
+            -- scalar type name; the expected value is that TABLE(...) signature.
+            ('get_my_active_restrictions', '', 'TABLE(restriction_type text, reason text, applied_at timestamp with time zone)')
         ) as expected(name, args, returns)
     loop
         if not exists (

@@ -665,13 +665,25 @@ async function placeOrder(type) {
 // ============================================================
 let marketCatalog = [];
 
+// "The registry could not be read" and "this pair is not in the registry" both
+// leave a null catalog row, but they are different faults: one is retryable and
+// says nothing about the pair, the other is final for that symbol. Telling them
+// apart is the whole point of this flag.
+let catalogError = false;
+
+const CATALOG_UNAVAILABLE_NOTICE = 'Market list is temporarily unavailable. Refresh to try again.';
+const PAIR_NOT_LISTED_NOTICE = 'This pair is not listed by the exchange.';
+
 function catalogRow(symbol) {
     const wanted = String(symbol || '').toUpperCase();
     return marketCatalog.find(row => row.symbol === wanted) || null;
 }
 
 function tradabilityNotice(row) {
-    if (!row) return 'This pair is not listed by the exchange.';
+    // A failed catalog read must never be reported as "not listed": the pair may
+    // be perfectly fine and the exchange list merely unreachable.
+    if (catalogError) return CATALOG_UNAVAILABLE_NOTICE;
+    if (!row) return PAIR_NOT_LISTED_NOTICE;
     if (row.paused) return `${row.base_asset}/USDT trading is paused by the operations team.`;
     if (!row.tradable) return `${row.base_asset}/USDT is listed for reference only and cannot be ordered yet.`;
     return '';
@@ -777,6 +789,9 @@ document.addEventListener('DOMContentLoaded', async function () {
         client = await getSupabaseClient();
         marketCatalog = await window.SmartProfitMarkets.load(client);
     } catch (error) {
+        // The catalog is what failed, not the requested symbol, so the form stays
+        // closed and the notice says the market list is unavailable.
+        catalogError = true;
         console.error('Market registry unavailable.', error);
     }
 
