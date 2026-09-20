@@ -572,3 +572,77 @@
 .price-flash-up   { animation: flashGreen 0.7s ease; }
 .price-flash-down { animation: flashRed   0.7s ease; }
 
+/* --- Order form: side selector, status region, hints ---
+   The status region replaces alert(): it is inline, screen-reader announced via
+   aria-live, and styled so a failure reads as a failure at a glance. */
+.side-toggle {
+    display: flex;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 10px;
+}
+
+.side-btn {
+    flex: 1;
+    padding: 9px 10px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s;
+}
+
+.side-btn:hover:not(.active) {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.side-btn.active[data-order-side="buy"] {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #fff;
+}
+
+.side-btn.active[data-order-side="sell"] {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: #fff;
+}
+
+.order-status {
+    margin: 4px 0 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.45;
+    border: 1px solid transparent;
+}
+
+.order-status-success {
+    background: rgba(16, 185, 129, 0.12);
+    border-color: rgba(16, 185, 129, 0.35);
+    color: #34d399;
+}
+
+.order-status-error {
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.35);
+    color: #fca5a5;
+}
+
+.form-hint {
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.side-btn:disabled,
+.order-type-btn:disabled,
+.preset-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}

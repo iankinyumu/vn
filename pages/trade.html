@@ -71,43 +71,38 @@
     <main class="trade-wrapper">
         <div class="container-fluid px-4 py-4">
 
-            <div class="row g-3 mb-3">
-                <div class="col-6 col-md-4 col-lg-2">
+            <!-- The second card tracks the base asset of the pair currently on
+                 screen; trade.js rewrites data-wallet-asset on every switch. -->
+            <div class="row g-3 mb-3 row-cols-2 row-cols-md-3 row-cols-xl-5">
+                <div class="col">
                     <div class="premium-glass-card balance-card">
                         <div class="balance-label">USDT Balance</div>
                         <div class="balance-value" data-wallet-total-usd>—</div>
                         <div class="balance-sub" data-account-load-status>Available balance</div>
                     </div>
                 </div>
-                <div class="col-6 col-md-4 col-lg-2">
+                <div class="col">
                     <div class="premium-glass-card balance-card">
-                        <div class="balance-label">BTC Balance</div>
-                        <div class="balance-value" data-wallet-asset="BTC">0</div>
-                        <div class="balance-sub" data-wallet-asset-usd="BTC">≈ $0.00</div>
+                        <div class="balance-label"><span data-wallet-asset-label>—</span> Balance</div>
+                        <div class="balance-value" data-wallet-asset="BTC">—</div>
+                        <div class="balance-sub" data-wallet-asset-usd="BTC">Quote unavailable</div>
                     </div>
                 </div>
-                <div class="col-6 col-md-4 col-lg-2">
+                <div class="col">
                     <div class="premium-glass-card balance-card">
-                        <div class="balance-label">ETH Balance</div>
-                        <div class="balance-value" data-wallet-asset="ETH">0</div>
-                        <div class="balance-sub" data-wallet-asset-usd="ETH">≈ $0.00</div>
-                    </div>
-                </div>
-                <div class="col-6 col-md-4 col-lg-2">
-                    <div class="premium-glass-card balance-card">
-                        <div class="balance-label">Unrealized P&amp;L</div>
+                        <div class="balance-label">Unrealized P&L</div>
                         <div class="balance-value" data-unrealized-pnl>—</div>
                         <div class="balance-sub">Across open positions</div>
                     </div>
                 </div>
-                <div class="col-6 col-md-4 col-lg-2">
+                <div class="col">
                     <div class="premium-glass-card balance-card">
                         <div class="balance-label">Open Orders</div>
                         <div class="balance-value" data-open-orders-count>—</div>
                         <div class="balance-sub">Pending or partially filled</div>
                     </div>
                 </div>
-                <div class="col-6 col-md-4 col-lg-2">
+                <div class="col">
                     <div class="premium-glass-card balance-card">
                         <div class="balance-label">Total Equity</div>
                         <div class="balance-value" data-total-equity>—</div>
@@ -134,8 +129,9 @@
                                     </div>
                                 </div>
                                 <div class="live-price-container">
-                                    <span class="live-price" id="headerBtcPrice">--</span>
-                                    <span class="live-change" id="headerBtcChange">--</span>
+                                    <!-- Pair-neutral ids: these follow whichever pair is selected. -->
+                                    <span class="live-price" id="headerPrice">--</span>
+                                    <span class="live-change" id="headerChange">--</span>
                                 </div>
                             </div>
                             <div class="chart-display-controls">
@@ -180,8 +176,9 @@
                                 <div class="ob-mini-header"><span>Price (USDT)</span><span>Amount
                                         (<span id="orderBookBaseLabel">BTC</span>)</span><span>Total</span></div>
                                 <div class="ob-mini-asks" id="orderBookAsks"></div>
-                                <div class="ob-mini-spread"><span class="spread-price" id="orderBookSpreadPrice">$67,845.32</span><small id="orderBookSpreadPercent">Spread:
-                                        0.01%</small></div>
+                                <!-- No hardcoded BTC price here: an empty book shows a placeholder. -->
+                                <div class="ob-mini-spread"><span class="spread-price" id="orderBookSpreadPrice">--</span><small id="orderBookSpreadPercent">Spread:
+                                        --</small></div>
                                 <div class="ob-mini-bids" id="orderBookBids"></div>
                             </div>
                         </div>
@@ -203,57 +200,79 @@
                         <div class="card-header-clean">
                             <h5 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>Place Order</h5>
                         </div>
-                        <div class="order-type-toggle">
-                            <button class="order-type-btn active" onclick="setOrderType('limit')">Limit</button>
-                            <button class="order-type-btn" onclick="setOrderType('market')">Market</button>
-                            <button class="order-type-btn" onclick="setOrderType('stop')">Stop Limit</button>
-                        </div>
                         <form id="tradeForm">
-                            <div id="limitFields">
-                                <div class="form-group mb-3">
-                                    <label class="form-label">Price (USDT)</label>
-                                    <div class="input-wrapper">
-                                        <i class="fas fa-tag form-icon"></i>
-                                        <input type="number" class="form-input" id="orderPrice" placeholder="67,845.32"
-                                            step="0.01">
-                                    </div>
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label class="form-label">Amount (<span id="tradeFormAmountLabel">BTC</span>)</label>
-                                    <div class="input-wrapper">
-                                        <i class="fas fa-coins form-icon" id="orderCoinIcon"></i>
-                                        <input type="number" class="form-input" id="orderAmount" placeholder="0.00"
-                                            step="0.0001">
-                                    </div>
-                                    <div class="amount-presets">
-                                        <button type="button" class="preset-btn"
-                                            onclick="setAmountPercent(25)">25%</button>
-                                        <button type="button" class="preset-btn"
-                                            onclick="setAmountPercent(50)">50%</button>
-                                        <button type="button" class="preset-btn"
-                                            onclick="setAmountPercent(75)">75%</button>
-                                        <button type="button" class="preset-btn"
-                                            onclick="setAmountPercent(100)">100%</button>
-                                    </div>
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label class="form-label">Total (USDT)</label>
-                                    <div class="input-wrapper">
-                                        <i class="fas fa-calculator form-icon"></i>
-                                        <input type="number" class="form-input" id="orderTotal" placeholder="0.00"
-                                            readonly>
-                                    </div>
+                            <!-- Side selector. The two large buttons below still submit;
+                                 this control decides which balance a percent preset uses. -->
+                            <div class="side-toggle" id="sideToggle" role="group" aria-label="Order side">
+                                <button type="button" class="side-btn active" data-order-side="buy" aria-pressed="true">
+                                    <i class="fas fa-arrow-up me-1"></i>Buy
+                                </button>
+                                <button type="button" class="side-btn" data-order-side="sell" aria-pressed="false">
+                                    <i class="fas fa-arrow-down me-1"></i>Sell
+                                </button>
+                            </div>
+
+                            <!-- Order type. Matched on data-order-type, never on button
+                                 text: "Stop Limit" also contains "limit". -->
+                            <div class="order-type-toggle" id="orderTypeToggle" role="group" aria-label="Order type">
+                                <button type="button" class="order-type-btn active" data-order-type="limit" aria-pressed="true">Limit</button>
+                                <button type="button" class="order-type-btn" data-order-type="market" aria-pressed="false">Market</button>
+                                <button type="button" class="order-type-btn" data-order-type="stop_limit" aria-pressed="false">Stop Limit</button>
+                            </div>
+
+                            <!-- Hidden only for a MARKET order. The amount, the presets and
+                                 the total stay visible for every order type. -->
+                            <div class="form-group mb-3" id="priceFields">
+                                <label class="form-label" for="orderPrice">Price (USDT)</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-tag form-icon"></i>
+                                    <input type="number" class="form-input" id="orderPrice" step="0.01">
                                 </div>
                             </div>
-                        <div id="marketNotice" class="alert alert-warning py-2 px-3 mb-3 small" role="status" aria-live="polite" hidden></div>
-                        <div class="action-buttons">
-                            <button type="button" class="btn-buy-large" onclick="placeOrder('buy')">
-                                <i class="fas fa-arrow-up me-2"></i> <span id="btnBuyText">Buy BTC</span>
-                            </button>
-                            <button type="button" class="btn-sell-large" onclick="placeOrder('sell')">
-                                <i class="fas fa-arrow-down me-2"></i> <span id="btnSellText">Sell BTC</span>
-                            </button>
-                        </div>
+
+                            <div class="form-group mb-3" id="stopFields" hidden>
+                                <label class="form-label" for="orderStopPrice">Stop price (USDT)</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-stop-circle form-icon"></i>
+                                    <input type="number" class="form-input" id="orderStopPrice" step="0.01">
+                                </div>
+                                <div class="form-hint">The order is sent to the market at the limit price once the stop price is reached.</div>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label class="form-label" for="orderAmount">Amount (<span id="tradeFormAmountLabel">BTC</span>)</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-coins form-icon" id="orderCoinIcon"></i>
+                                    <input type="number" class="form-input" id="orderAmount" placeholder="0.00"
+                                        step="0.0001">
+                                </div>
+                                <div class="amount-presets">
+                                    <button type="button" class="preset-btn" data-preset="25">25%</button>
+                                    <button type="button" class="preset-btn" data-preset="50">50%</button>
+                                    <button type="button" class="preset-btn" data-preset="75">75%</button>
+                                    <button type="button" class="preset-btn" data-preset="100">100%</button>
+                                </div>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label class="form-label" for="orderTotal" id="orderTotalLabel">Total (USDT)</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-calculator form-icon"></i>
+                                    <input type="number" class="form-input" id="orderTotal" placeholder="0.00"
+                                        readonly>
+                                </div>
+                            </div>
+
+                            <div id="marketNotice" class="alert alert-warning py-2 px-3 mb-3 small" role="status" aria-live="polite" hidden></div>
+                            <div id="orderStatus" class="order-status" role="status" aria-live="polite" hidden></div>
+                            <div class="action-buttons">
+                                <button type="button" class="btn-buy-large" data-order-side="buy">
+                                    <i class="fas fa-arrow-up me-2"></i> <span id="btnBuyText">Buy BTC</span>
+                                </button>
+                                <button type="button" class="btn-sell-large" data-order-side="sell">
+                                    <i class="fas fa-arrow-down me-2"></i> <span id="btnSellText">Sell BTC</span>
+                                </button>
+                            </div>
                         </form>
                     </div>
 
@@ -329,6 +348,10 @@
     <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
     <script src="../assets/js/market-registry.js"></script>
     <script src="../assets/js/market-ticker.js"></script>
+    <!-- Order-form mechanics and failure messages load before the page module
+         that drives them. -->
+    <script src="../assets/js/order-form.js"></script>
+    <script src="../assets/js/order-errors.js"></script>
     <script src="../assets/js/trade.js"></script>
     <script src="../assets/js/account-cache.js"></script>
     <script src="../assets/js/account-data.js"></script>

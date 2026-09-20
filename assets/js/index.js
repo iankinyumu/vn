@@ -19,22 +19,37 @@ if (ctx && typeof Chart !== 'undefined') {
     let chartInstance = null;
     const marketState = document.getElementById('marketState');
 
+    /* This widget is deliberately BTC-only: it is a single-asset summary card, not
+     * a pair explorer. It is labelled as such in the markup so nobody reads it as
+     * tracking the pair they selected on the trade page.
+     *
+     * The public mirror is tried first because api.binance.com is region-blocked
+     * from some networks; the primary host stays as a fallback. */
+    const DAILY_KLINES_URLS = [
+        'https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=30',
+        'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=30'
+    ];
+
     async function initDashboardChart() {
         let prices = [];
         let labels = [];
 
-        try {
-            const res = await fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=30');
-            if (res.ok) {
+        for (const url of DAILY_KLINES_URLS) {
+            try {
+                const res = await fetch(url);
+                if (!res.ok) continue;
                 const klines = await res.json();
                 prices = klines.map(k => parseFloat(k[4]));
                 labels = klines.map((_, i) => (i === klines.length - 1 ? 'Today' : `${klines.length - 1 - i}d ago`));
+                break;
+            } catch (e) {
+                console.warn('Daily kline host unavailable, trying the next one:', url, e.message);
             }
-        } catch (e) {
-            console.warn('Could not fetch Binance daily klines, using simulated seed:', e.message);
         }
 
         if (prices.length === 0) {
+            // Nothing is invented to fill the gap: the card says it is unavailable.
+            console.warn('Daily BTC klines are unavailable from every host; the chart will stay empty.');
             if (marketState) marketState.textContent = 'Unavailable';
             return;
         }

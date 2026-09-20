@@ -1,15 +1,29 @@
-/* assets/js/trade.js - 2026 Binance Live WebSocket & Candlestick/OHLC Engine */
+/* assets/js/trade.js - 2026 Binance Live WebSocket & Candlestick/OHLC Engine
+ *
+ * The page owns three things: the live chart, the pair universe (read from the
+ * market registry via window.SmartProfitMarkets) and the order form. Order-form
+ * mechanics - precision, presets, retry identity, the status region - live in
+ * order-form.js, and every failure sentence lives in order-errors.js, so the
+ * rules that decide what a customer is told can be tested without a chart.
+ *
+ * No price is ever invented here: an unpriced pair renders a placeholder.
+ */
 
 let liveMarket = {
-    symbol: 'BTCUSDT',
+    // The pair is filled in from the registry on load; there is deliberately no
+    // literal default pair in this file.
+    symbol: '',
+    baseCoin: '',
     interval: '1m',
     chartType: 'candle', // 'candle' | 'ohlc' | 'line'
-    // No seeded price: every number shown is either the live ticker or blank.
     currentPrice: 0,
     priceChange24h: 0,
     high24h: 0,
     low24h: 0,
     volume24h: '',
+    priceDecimals: 2,
+    quantityDecimals: 4,
+    selectedSide: 'buy',
     candles: [],
     latestCandle: null,
     ws: null,
@@ -44,26 +58,32 @@ function updateOhlcDisplay(candle) {
     const chgEl = document.getElementById('ohlcChange');
     const volEl = document.getElementById('ohlcVolume');
 
-    const open = typeof candle.open === 'number' ? candle.open : parseFloat(candle.open);
-    const high = typeof candle.high === 'number' ? candle.high : parseFloat(candle.high);
-    const low = typeof candle.low === 'number' ? candle.low : parseFloat(candle.low);
-    const close = typeof candle.close === 'number' ? candle.close : parseFloat(candle.close);
-    const vol = candle.volume !== undefined ? parseFloat(candle.volume) : 0;
+    const open = Number(candle.open);
+    const high = Number(candle.high);
+    const low = Number(candle.low);
+    const close = Number(candle.close);
+    const vol = candle.volume !== undefined ? Number(candle.volume) : 0;
+    if (!Number.isFinite(close)) return;
 
-    if (oEl) oEl.textContent = '$' + open.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    if (hEl) hEl.textContent = '$' + high.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    if (lEl) lEl.textContent = '$' + low.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    if (cEl) cEl.textContent = '$' + close.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const money = (value) => '$' + value.toLocaleString('en-US', {
+        minimumFractionDigits: liveMarket.priceDecimals,
+        maximumFractionDigits: liveMarket.priceDecimals
+    });
+
+    if (oEl) oEl.textContent = money(open);
+    if (hEl) hEl.textContent = money(high);
+    if (lEl) lEl.textContent = money(low);
+    if (cEl) cEl.textContent = money(close);
 
     if (chgEl) {
         const diff = close - open;
         const pct = open > 0 ? (diff / open) * 100 : 0;
         const isUp = diff >= 0;
         chgEl.className = isUp ? 'text-success fw-bold' : 'text-danger fw-bold';
-        chgEl.textContent = `${isUp ? '+' : ''}${pct.toFixed(2)}% (${isUp ? '+' : ''}$${diff.toFixed(2)})`;
+        chgEl.textContent = `${isUp ? '+' : ''}${pct.toFixed(2)}% (${isUp ? '+' : ''}$${diff.toFixed(liveMarket.priceDecimals)})`;
     }
     if (volEl && vol > 0) {
-        volEl.textContent = vol.toLocaleString('en-US', { maximumFractionDigits: 2 }) + ' BTC';
+        volEl.textContent = vol.toLocaleString('en-US', { maximumFractionDigits: 4 }) + (liveMarket.baseCoin ? ' ' + liveMarket.baseCoin : '');
     }
 }
 
@@ -86,6 +106,7 @@ function setWsStatus(status) {
 
 // --- Order Book & Recent Trades Synced to Binance Price ---
 async function generateOrderBook() {
+    if (!liveMarket.symbol) return;
     let asks = [], bids = [];
     try {
         const response = await fetch(`https://data-api.binance.vision/api/v3/depth?symbol=${encodeURIComponent(liveMarket.symbol)}&limit=10`);
@@ -98,24 +119,30 @@ async function generateOrderBook() {
     const bidsEl = document.getElementById('orderBookBids');
     const spreadEl = document.querySelector('.spread-price');
 
+    const priceText = (value) => value.toFixed(liveMarket.priceDecimals);
+    const quantityText = (value) => value.toFixed(Math.min(8, liveMarket.quantityDecimals));
+
     if (asksEl) {
-        asksEl.innerHTML = asks.reverse().map(a => `<div class="ob-mini-row ask"><span class="text-danger">$${a.price.toFixed(2)}</span><span>${a.amount.toFixed(4)}</span><span>$${(a.price * a.amount).toFixed(2)}</span></div>`).join('');
+        asksEl.innerHTML = asks.reverse().map(a => `<div class="ob-mini-row ask"><span class="text-danger">$${priceText(a.price)}</span><span>${quantityText(a.amount)}</span><span>$${(a.price * a.amount).toFixed(2)}</span></div>`).join('');
     }
     if (bidsEl) {
-        bidsEl.innerHTML = bids.map(b => `<div class="ob-mini-row bid"><span class="text-success">$${b.price.toFixed(2)}</span><span>${b.amount.toFixed(4)}</span><span>$${(b.price * b.amount).toFixed(2)}</span></div>`).join('');
+        bidsEl.innerHTML = bids.map(b => `<div class="ob-mini-row bid"><span class="text-success">$${priceText(b.price)}</span><span>${quantityText(b.amount)}</span><span>$${(b.price * b.amount).toFixed(2)}</span></div>`).join('');
     }
     if (spreadEl) {
         const midpoint = asks[0] && bids[0] ? (asks[0].price + bids[0].price) / 2 : liveMarket.currentPrice;
-        spreadEl.textContent = `$${midpoint.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        spreadEl.textContent = midpoint > 0
+            ? '$' + midpoint.toLocaleString('en-US', { minimumFractionDigits: liveMarket.priceDecimals, maximumFractionDigits: liveMarket.priceDecimals })
+            : '--';
     }
 }
 
 async function generateRecentTrades() {
+    if (!liveMarket.symbol) return;
     let trades = [];
     try {
         const response = await fetch(`https://data-api.binance.vision/api/v3/trades?symbol=${encodeURIComponent(liveMarket.symbol)}&limit=9`);
         if (!response.ok) throw new Error('trades unavailable');
-        trades = (await response.json()).reverse().map((trade) => ({ type: trade.isBuyerMaker ? 'sell' : 'buy', price: Number(trade.price).toFixed(2), amount: Number(trade.qty).toFixed(4), time: new Date(trade.time).toTimeString().split(' ')[0] }));
+        trades = (await response.json()).reverse().map((trade) => ({ type: trade.isBuyerMaker ? 'sell' : 'buy', price: Number(trade.price).toFixed(liveMarket.priceDecimals), amount: Number(trade.qty).toFixed(Math.min(8, liveMarket.quantityDecimals)), time: new Date(trade.time).toTimeString().split(' ')[0] }));
     } catch (error) { console.warn('Live trades unavailable.', error); return; }
     const el = document.getElementById('recentTrades');
     if (el) {
@@ -250,14 +277,14 @@ function initBinanceChart() {
 
     loadDataAndConnect(liveMarket.symbol, liveMarket.interval);
 }
-
 // --- Fetch Historical Binance Klines & Connect WebSocket ---
 async function loadDataAndConnect(symbol, interval) {
+    if (!symbol) return;
     setWsStatus('connecting');
 
     const restUrls = [
-        `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=120`,
-        `https://data-api.binance.vision/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=120`
+        `https://data-api.binance.vision/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=120`,
+        `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=120`
     ];
 
     let candles = [];
@@ -291,7 +318,9 @@ async function loadDataAndConnect(symbol, interval) {
     const last = candles[candles.length - 1];
     liveMarket.latestCandle = last;
     liveMarket.currentPrice = last.close;
+    applyPairPrecision(last.close);
     updateOhlcDisplay(last);
+    renderHeaderPrice(liveMarket.currentPrice, null);
 
     if (liveMarket.chart) {
         liveMarket.candleSeries.setData(candles);
@@ -371,36 +400,11 @@ function connectBinanceWebSocket(symbol, interval) {
                     liveMarket.currentPrice = lastPrice;
                     liveMarket.priceChange24h = changePct;
 
-                    const priceEl = document.getElementById('headerBtcPrice');
-                    const chgEl = document.getElementById('headerBtcChange');
-                    if (priceEl) {
-                        priceEl.textContent = '$' + lastPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                    }
-                    if (chgEl) {
-                        const isUp = changePct >= 0;
-                        chgEl.className = `live-change ${isUp ? 'text-success' : 'text-danger'}`;
-                        chgEl.textContent = `${isUp ? '+' : ''}${changePct.toFixed(2)}%`;
-                    }
-
-                    // Ticker track BTC update
-                    const tickerBtcPrice = document.getElementById('tickerBtcPrice');
-                    const tickerBtcChange = document.getElementById('tickerBtcChange');
-                    if (tickerBtcPrice) {
-                        tickerBtcPrice.textContent = '$' + lastPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                    }
-                    if (tickerBtcChange) {
-                        const isUp = changePct >= 0;
-                        tickerBtcChange.className = `ticker-change ${isUp ? 'positive' : 'negative'}`;
-                        tickerBtcChange.textContent = `${isUp ? '+' : ''}${changePct.toFixed(2)}%`;
-                    }
-
-                    // Auto populate order form if empty or market order
-                    const orderPriceInput = document.getElementById('orderPrice');
-                    const activeTypeBtn = document.querySelector('.order-type-btn.active');
-                    if (orderPriceInput && activeTypeBtn && activeTypeBtn.textContent.toLowerCase().includes('market')) {
-                        orderPriceInput.value = lastPrice.toFixed(2);
-                        updateTotal();
-                    }
+                    applyPairPrecision(lastPrice);
+                    renderHeaderPrice(lastPrice, changePct);
+                    // A market order is sized against the live price, so its
+                    // estimate has to move with the stream.
+                    if (currentOrderType() === 'market') updateTotal();
                 }
             } catch (err) {
                 console.error('WS parse error:', err);
@@ -420,6 +424,23 @@ function connectBinanceWebSocket(symbol, interval) {
     } catch (err) {
         console.error('Failed to create WebSocket:', err);
         setWsStatus('disconnected');
+    }
+}
+
+// --- Header price readout (pair-neutral: the symbol is whatever is selected) ---
+function renderHeaderPrice(price, changePct) {
+    const priceEl = document.getElementById('headerPrice');
+    const chgEl = document.getElementById('headerChange');
+    if (priceEl) {
+        priceEl.textContent = Number.isFinite(price) && price > 0
+            ? '$' + price.toLocaleString('en-US', { minimumFractionDigits: liveMarket.priceDecimals, maximumFractionDigits: liveMarket.priceDecimals })
+            : '--';
+    }
+    if (chgEl) {
+        const hasChange = Number.isFinite(changePct);
+        const isUp = hasChange && changePct >= 0;
+        chgEl.className = 'live-change' + (hasChange ? (isUp ? ' text-success' : ' text-danger') : '');
+        chgEl.textContent = hasChange ? `${isUp ? '+' : ''}${changePct.toFixed(2)}%` : '--';
     }
 }
 
@@ -506,7 +527,7 @@ function renderFallbackCanvas() {
         const pVal = maxP - (range / 4) * i;
         ctx.fillStyle = '#94a3b8';
         ctx.font = '10px monospace';
-        ctx.fillText('$' + pVal.toFixed(1), canvas.width - padding.right + 6, y + 3);
+        ctx.fillText('$' + pVal.toFixed(liveMarket.priceDecimals), canvas.width - padding.right + 6, y + 3);
     }
 
     const candleW = Math.max(2, (chartW / data.length) * 0.7);
@@ -579,85 +600,196 @@ function updateFallbackWithCandle(candle) {
     }
     renderFallbackCanvas();
 }
+/* ============================================================
+ * ORDER FORM
+ * The form is driven by two segmented controls: order type (market, limit,
+ * stop_limit) and side (buy, sell). The two large buttons stay the submit
+ * actions, and they also select the side a percent preset applies to.
+ * ============================================================ */
 
-// --- Order Form Logic ---
-function setOrderType(type) {
-    document.querySelectorAll('.order-type-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.order-type-btn').forEach(b => {
-        if (b.textContent.trim().toLowerCase().includes(type)) b.classList.add('active');
+const ORDER_TYPES = Object.freeze({ market: 'MARKET', limit: 'LIMIT', stop_limit: 'STOP_LIMIT' });
+const DEFAULT_ORDER_TYPE = 'limit';
+const PRICE_INPUT_IDS = ['orderPrice', 'orderStopPrice'];
+
+/** The selected order type, read from the button's data attribute (never text). */
+function currentOrderType() {
+    const active = document.querySelector('#orderTypeToggle .order-type-btn.active');
+    const type = active && active.dataset ? active.dataset.orderType : null;
+    return ORDER_TYPES[type] ? type : DEFAULT_ORDER_TYPE;
+}
+
+function priceInput(id) {
+    return document.getElementById(id);
+}
+
+/** The price an order is sized against: live for market, entered for the rest. */
+function effectivePrice() {
+    if (currentOrderType() === 'market') return liveMarket.currentPrice;
+    const typed = parseFloat(document.getElementById('orderPrice')?.value);
+    return Number.isFinite(typed) && typed > 0 ? typed : liveMarket.currentPrice;
+}
+
+function availableOf(asset) {
+    if (!asset) return 0;
+    const balances = (window.smartProfitAccountData && window.smartProfitAccountData.balances) || [];
+    const match = balances.find((balance) => balance.asset === asset);
+    return Number((match && match.available) || 0);
+}
+
+/**
+ * Derives the pair's price/quantity precision from the live price magnitude and
+ * writes it onto the inputs, so a sub-cent pair is not rounded to $0.00 and the
+ * amount step matches the engine's accepted precision.
+ */
+function applyPairPrecision(price) {
+    const decimals = Number.isFinite(price) && price > 0 ? price : liveMarket.currentPrice;
+    if (Number.isFinite(decimals) && decimals > 0) {
+        liveMarket.priceDecimals = window.SmartProfitOrderForm.decimalsForPrice(decimals);
+        liveMarket.quantityDecimals = window.SmartProfitOrderForm.decimalsForQuantity(decimals);
+    }
+
+    PRICE_INPUT_IDS.forEach((id) => {
+        const input = priceInput(id);
+        if (!input) return;
+        input.step = String(window.SmartProfitOrderForm.stepFor(liveMarket.priceDecimals));
+        // The placeholder mirrors the live price instead of a hardcoded number
+        // that would be wrong for every pair except the one it was copied from.
+        if (!input.value && Number.isFinite(decimals) && decimals > 0) {
+            input.placeholder = window.SmartProfitOrderForm.formatPrice(decimals, liveMarket.priceDecimals);
+        }
     });
-    const limitFields = document.getElementById('limitFields');
-    if (limitFields) {
-        limitFields.style.display = type === 'market' ? 'none' : 'block';
-    }
-    if (type === 'market') {
-        const orderPriceInput = document.getElementById('orderPrice');
-        if (orderPriceInput) orderPriceInput.value = liveMarket.currentPrice.toFixed(2);
-        updateTotal();
-    }
-}
 
-function setAmountPercent(pct) {
-    const total = Number((window.smartProfitAccountData?.balances || []).find((balance) => balance.asset === (liveMarket.baseCoin || 'BTC'))?.available || 0);
     const amountInput = document.getElementById('orderAmount');
-    if (amountInput) {
-        amountInput.value = (total * pct / 100).toFixed(4);
-        updateTotal();
-    }
+    if (amountInput) amountInput.step = String(window.SmartProfitOrderForm.stepFor(liveMarket.quantityDecimals));
 }
 
+/** Writes the total and its label. A market order's total is only an estimate. */
 function updateTotal() {
-    // No seeded fallback: an unpriced pair shows an empty total rather than a
-    // number the browser invented.
-    const price = parseFloat(document.getElementById('orderPrice')?.value) || liveMarket.currentPrice || 0;
+    const type = currentOrderType();
+    const price = type === 'market'
+        ? liveMarket.currentPrice
+        : (parseFloat(document.getElementById('orderPrice')?.value) || liveMarket.currentPrice);
     const amount = parseFloat(document.getElementById('orderAmount')?.value) || 0;
+    const labelEl = document.getElementById('orderTotalLabel');
     const totalEl = document.getElementById('orderTotal');
-    if (totalEl) totalEl.value = price > 0 ? (price * amount).toFixed(2) : '';
+    if (labelEl) labelEl.textContent = type === 'market' ? 'Estimated total (USDT)' : 'Total (USDT)';
+    if (totalEl) totalEl.value = price > 0 && amount > 0 ? (price * amount).toFixed(2) : '';
 }
 
-// The order endpoint refuses orders with stable machine strings that mean nothing
-// to a customer. The ones that surface during a rejected order are translated
-// here; every other failure is logged for support and replaced with a neutral
-// message, so no raw server text is ever shown to the customer.
-function friendlyOrderError(error) {
-    const message = String(error?.message || '').trim();
-    if (message === 'trading_restricted') return 'Your account is currently restricted from trading. Contact support for details.';
-    if (message === 'symbol_trading_paused') return 'Trading on this pair is temporarily paused.';
-    if (message.startsWith('symbol_not_tradable') || message.startsWith('unknown symbol')) return "This pair isn't available for trading right now.";
-    console.error('Unmapped demo order error.', error);
-    return "We couldn't place your order. Please try again.";
+/**
+ * Selects an order type. Only the price group is hidden for a market order: the
+ * amount, the presets and the total always apply, which is what makes a market
+ * order enterable at all.
+ */
+function setOrderType(type) {
+    if (!ORDER_TYPES[type]) return;
+    document.querySelectorAll('#orderTypeToggle .order-type-btn').forEach((button) => {
+        const active = button.dataset.orderType === type;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', String(active));
+    });
+
+    const priceFields = document.getElementById('priceFields');
+    const stopFields = document.getElementById('stopFields');
+    if (priceFields) priceFields.hidden = type === 'market';
+    if (stopFields) stopFields.hidden = type !== 'stop_limit';
+
+    window.SmartProfitOrderForm.clearStatus();
+    updateTotal();
 }
 
-async function placeOrder(type) {
-    const account = window.smartProfitAccountData?.account;
-    if (!account || account.execution_mode !== 'DEMO' || account.status !== 'ACTIVE') {
-        alert('An active practice account is required. Real-money trading is not available.');
-        return;
-    }
-    const amount = Number(document.getElementById('orderAmount')?.value);
-    const price = Number(document.getElementById('orderPrice')?.value);
-    const active = document.querySelector('.order-type-btn.active')?.textContent.trim().toLowerCase();
-    const orderType = active === 'market' ? 'MARKET' : active?.includes('stop') ? 'STOP_LIMIT' : 'LIMIT';
-    const button = document.querySelector(type === 'buy' ? '.btn-buy-large' : '.btn-sell-large');
-    if (!Number.isFinite(amount) || amount <= 0 || (orderType !== 'MARKET' && (!Number.isFinite(price) || price <= 0))) { alert('Enter a valid order amount and price.'); return; }
-    if (!window.getSupabaseClient) { alert('Authentication is still loading. Please try again.'); return; }
+/** Selects the side a percent preset calculates against. */
+function setOrderSide(side) {
+    const wanted = side === 'sell' ? 'sell' : 'buy';
+    liveMarket.selectedSide = wanted;
+    document.querySelectorAll('#sideToggle .side-btn').forEach((button) => {
+        const active = button.dataset.orderSide === wanted;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', String(active));
+    });
+    window.SmartProfitOrderForm.clearStatus();
+}
+
+/**
+ * Sizes the amount input from a percentage of the selected side's balance.
+ * BUY spends USDT and SELL spends the base asset; using one balance for both is
+ * why a new, USDT-only demo account always got zero.
+ */
+function setAmountPercent(percent) {
     const row = catalogRow(liveMarket.symbol);
-    if (!row || !row.orderable) { alert(tradabilityNotice(row)); return; }
-    button && (button.disabled = true);
-    try {
-        const client = await getSupabaseClient();
-        // Quotes are persisted by a server function; the order RPC never trusts browser price.
-        const { error: quoteError } = await client.functions.invoke('refresh-market-quote', { body: { symbol: liveMarket.symbol } });
-        if (quoteError) throw quoteError;
-        const clientOrderId = crypto.randomUUID();
-        const { data, error } = await client.rpc('submit_demo_order', { p_client_order_id: clientOrderId, p_symbol: liveMarket.symbol, p_side: type.toUpperCase(), p_type: orderType, p_quantity: amount, p_limit_price: orderType === 'MARKET' ? null : price, p_stop_price: orderType === 'STOP_LIMIT' ? price : null, p_idempotency_key: clientOrderId });
-        if (error) throw error;
-        alert(`Demo ${data.state === 'FILLED' ? 'order filled' : 'order accepted'}: ${data.id}`);
-        window.refreshAccountData?.();
-    } catch (error) { console.error('Demo order submission failed.', error); alert(friendlyOrderError(error)); }
-    finally { if (button) button.disabled = false; }
+    const side = liveMarket.selectedSide;
+    const price = effectivePrice();
+    // Precision is taken from the price the preset is actually sized against, so
+    // the result matches even before the live ticker has set a pair precision.
+    const decimals = price > 0
+        ? window.SmartProfitOrderForm.decimalsForQuantity(price)
+        : liveMarket.quantityDecimals;
+    const amount = window.SmartProfitOrderForm.amountFromPercent({
+        side: side,
+        percent: percent,
+        availableUsdt: availableOf('USDT'),
+        availableBase: availableOf(row && row.base_asset),
+        price: price,
+        decimals: decimals
+    });
+
+    const amountInput = document.getElementById('orderAmount');
+    if (amountInput) amountInput.value = amount > 0 ? amount.toFixed(decimals) : '';
+    window.SmartProfitOrderForm.clearStatus();
+    updateTotal();
 }
 
+function resetOrderFields() {
+    ['orderPrice', 'orderStopPrice', 'orderAmount', 'orderTotal'].forEach((id) => {
+        const input = document.getElementById(id);
+        if (input) input.value = '';
+    });
+    window.SmartProfitOrderForm.clearStatus();
+}
+
+/** Applies a registry row to every pair-dependent label and input. */
+function applyPairToForm(row) {
+    if (!row) return;
+    ['orderBookBaseLabel', 'tradeFormAmountLabel'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = row.base_asset;
+    });
+    const buyEl = document.getElementById('btnBuyText');
+    const sellEl = document.getElementById('btnSellText');
+    if (buyEl) buyEl.textContent = 'Buy ' + row.base_asset;
+    if (sellEl) sellEl.textContent = 'Sell ' + row.base_asset;
+
+    const pairText = document.getElementById('currentPairText');
+    const pairBadge = document.getElementById('currentPairBadge');
+    if (pairText) pairText.textContent = row.base_asset + '/USDT';
+    if (pairBadge) pairBadge.textContent = row.base_asset;
+
+    renderPairBalance(row);
+    applyPairPrecision(liveMarket.currentPrice);
+    updateTotal();
+}
+
+/**
+ * Shows the balance of the pair actually selected. The page used to render a
+ * fixed BTC card and a fixed ETH card whatever pair was on screen; the
+ * data-wallet-asset attribute is what account-data.js keeps in sync.
+ */
+function renderPairBalance(row) {
+    const base = row ? row.base_asset : '';
+    const available = availableOf(base);
+    const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 });
+
+    document.querySelectorAll('[data-wallet-asset-label]').forEach((node) => { node.textContent = base || '—'; });
+    document.querySelectorAll('[data-wallet-asset]').forEach((node) => {
+        node.dataset.walletAsset = base;
+        node.textContent = base ? available.toLocaleString('en-US', { maximumFractionDigits: 8 }) : '—';
+    });
+    document.querySelectorAll('[data-wallet-asset-usd]').forEach((node) => {
+        node.dataset.walletAssetUsd = base;
+        const mark = base === 'USDT' ? 1 : liveMarket.currentPrice;
+        node.textContent = base && mark > 0 ? '≈ ' + money.format(available * mark) : 'Quote unavailable';
+    });
+}
 // ============================================================
 // The pair universe is read from the market registry (window.SmartProfitMarkets
 // -> list_market_catalog). There is deliberately no coin array in this file:
@@ -698,8 +830,8 @@ function applyTradability(row) {
     if (form) form.querySelectorAll('input, button').forEach(el => { el.disabled = blocked; });
     const buyBtn = document.querySelector('.btn-buy-large');
     const sellBtn = document.querySelector('.btn-sell-large');
-    if (buyBtn) buyBtn.disabled = blocked;
-    if (sellBtn) sellBtn.disabled = blocked;
+    if (buyBtn) buyBtn.disabled = blocked || submitInFlight;
+    if (sellBtn) sellBtn.disabled = blocked || submitInFlight;
     const notice = document.getElementById('marketNotice');
     if (notice) {
         notice.hidden = !blocked;
@@ -715,45 +847,26 @@ function switchAsset(symbol) {
     if (!row) return;
     liveMarket.symbol = row.symbol;
     liveMarket.baseCoin = row.base_asset;
+    liveMarket.currentPrice = 0;
 
-    // Update pair selector display
-    const pairText = document.getElementById('currentPairText');
-    const pairBadge = document.getElementById('currentPairBadge');
-    if (pairText) pairText.textContent = `${row.base_asset}/USDT`;
-    if (pairBadge) pairBadge.textContent = row.base_asset;
-
-    // Update order form labels
-    ['orderBookBaseLabel', 'tradeFormAmountLabel'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = row.base_asset;
-    });
-    const buyEl = document.getElementById('btnBuyText');
-    const sellEl = document.getElementById('btnSellText');
-    if (buyEl) buyEl.textContent = `Buy ${row.base_asset}`;
-    if (sellEl) sellEl.textContent = `Sell ${row.base_asset}`;
-
+    resetOrderFields();
+    applyPairToForm(row);
     applyTradability(row);
 
-    // Reset header price
-    const priceEl = document.getElementById('headerBtcPrice');
-    const chgEl = document.getElementById('headerBtcChange');
-    if (priceEl) priceEl.textContent = '--';
-    if (chgEl) { chgEl.textContent = '--'; chgEl.className = 'live-change'; }
-
-    // Reset OHLC
-    ['ohlcOpen','ohlcHigh','ohlcLow','ohlcClose','ohlcChange','ohlcVolume'].forEach(id => {
+    // No tick has arrived for the new pair yet, so every price readout resets to
+    // a placeholder rather than showing the previous pair's numbers.
+    renderHeaderPrice(NaN, null);
+    ['ohlcOpen', 'ohlcHigh', 'ohlcLow', 'ohlcClose', 'ohlcChange', 'ohlcVolume'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.textContent = '--';
     });
 
-    // Update URL without reload
     try {
         const url = new URL(window.location.href);
         url.searchParams.set('symbol', symbol);
         history.replaceState(null, '', url.toString());
-    } catch(e) {}
+    } catch (e) {}
 
-    // Reload chart data & reconnect WebSocket
     loadDataAndConnect(symbol, liveMarket.interval);
 }
 
@@ -779,6 +892,204 @@ function initPairSelector() {
         </button>`).join('');
 }
 
+// ============================================================
+// ORDER SUBMISSION
+// ============================================================
+const intentStore = window.SmartProfitOrderForm.createIntentStore();
+let submitInFlight = false;
+
+const AMOUNT_REQUIRED = 'Enter an order amount.';
+const PRICE_REQUIRED = 'Enter a price for this order type.';
+const STOP_REQUIRED = 'Enter a stop price for a stop-limit order.';
+const BUY_STOP_RULE = 'For a buy stop-limit the stop price must be at or below the limit price.';
+const SELL_STOP_RULE = 'For a sell stop-limit the stop price must be at or above the limit price.';
+const AUTH_LOADING = 'Authentication is still loading. Please try again.';
+const PRACTICE_ACCOUNT_REQUIRED = 'An active practice account is required. Real-money trading is not available.';
+
+function setSubmitLock(locked) {
+    submitInFlight = locked;
+    [document.querySelector('.btn-buy-large'), document.querySelector('.btn-sell-large')].forEach(btn => {
+        if (btn) btn.disabled = locked;
+    });
+}
+
+function formatUsd(value) {
+    const decimals = liveMarket.priceDecimals;
+    return '$' + Number(value).toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+
+function formatQuantity(value) {
+    return Number(value).toLocaleString('en-US', { maximumFractionDigits: 8 });
+}
+
+/**
+ * The fill row for an order, so the confirmation can quote the real execution
+ * price and fee. RLS on public.fills already restricts this to the caller's own
+ * orders; a failure here only costs the extra detail, never the order.
+ */
+async function latestFill(client, orderId) {
+    try {
+        const { data, error } = await client
+            .from('fills')
+            .select('execution_price, quantity, fee, fee_asset')
+            .eq('order_id', orderId)
+            .order('executed_at', { ascending: false })
+            .limit(1);
+        if (error || !Array.isArray(data) || data.length === 0) return null;
+        return data[0];
+    } catch (error) {
+        console.warn('Fill detail unavailable; reporting the order state only.', error);
+        return null;
+    }
+}
+
+/** What the customer reads after a successful submission. Never an order id. */
+async function describeSuccess(client, order, row) {
+    const base = row.base_asset;
+
+    if (order.state === 'FILLED') {
+        const fill = await latestFill(client, order.id);
+        if (fill) {
+            const verb = order.side === 'BUY' ? 'Bought' : 'Sold';
+            return `${verb} ${formatQuantity(fill.quantity)} ${base} at ${formatUsd(fill.execution_price)} (fee ${Number(fill.fee).toFixed(2)} ${fill.fee_asset})`;
+        }
+        return 'Order filled.';
+    }
+
+    if (order.state === 'OPEN' || order.state === 'ACCEPTED' || order.state === 'PARTIALLY_FILLED') {
+        if (order.type === 'STOP_LIMIT') {
+            return `Stop-limit order placed. It triggers at ${formatUsd(order.stop_price)} and fills at ${formatUsd(order.limit_price)}.`;
+        }
+        return `Limit order placed. It will fill when the price reaches ${formatUsd(order.limit_price)}.`;
+    }
+
+    return 'Order accepted.';
+}
+
+/**
+ * Places a demo order for `side`.
+ *
+ * The order type comes from the segmented control's data attribute, the stop and
+ * limit prices are sent as two distinct fields, and the idempotency key is reused
+ * for an unchanged payload so a retry cannot create a second order.
+ */
+async function placeOrder(side) {
+    const wantedSide = side === 'sell' ? 'sell' : 'buy';
+
+    const account = window.smartProfitAccountData?.account;
+    if (!account || account.execution_mode !== 'DEMO' || account.status !== 'ACTIVE') {
+        window.SmartProfitOrderForm.setStatus('error', PRACTICE_ACCOUNT_REQUIRED);
+        return;
+    }
+    if (submitInFlight) return;
+
+    setOrderSide(wantedSide);
+
+    const type = currentOrderType();
+    const orderType = ORDER_TYPES[type];
+    const isMarket = type === 'market';
+    const amount = Number(document.getElementById('orderAmount')?.value);
+    const limitPrice = isMarket ? null : Number(document.getElementById('orderPrice')?.value);
+    const stopPrice = type === 'stop_limit' ? Number(document.getElementById('orderStopPrice')?.value) : null;
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+        window.SmartProfitOrderForm.setStatus('error', AMOUNT_REQUIRED);
+        return;
+    }
+    if (!isMarket && (!Number.isFinite(limitPrice) || limitPrice <= 0)) {
+        window.SmartProfitOrderForm.setStatus('error', PRICE_REQUIRED);
+        return;
+    }
+    if (type === 'stop_limit') {
+        if (!Number.isFinite(stopPrice) || stopPrice <= 0) {
+            window.SmartProfitOrderForm.setStatus('error', STOP_REQUIRED);
+            return;
+        }
+        // process_demo_orders fires only when the market price sits between the
+        // stop and the limit, which an inverted pair can never satisfy.
+        if (wantedSide === 'buy' && stopPrice > limitPrice) {
+            window.SmartProfitOrderForm.setStatus('error', BUY_STOP_RULE);
+            return;
+        }
+        if (wantedSide === 'sell' && stopPrice < limitPrice) {
+            window.SmartProfitOrderForm.setStatus('error', SELL_STOP_RULE);
+            return;
+        }
+    }
+    if (!window.getSupabaseClient) {
+        window.SmartProfitOrderForm.setStatus('error', AUTH_LOADING);
+        return;
+    }
+
+    const row = catalogRow(liveMarket.symbol);
+    if (!row || !row.orderable) {
+        window.SmartProfitOrderForm.setStatus('error', tradabilityNotice(row));
+        return;
+    }
+
+    setSubmitLock(true);
+    window.SmartProfitOrderForm.clearStatus();
+
+    try {
+        const client = await getSupabaseClient();
+
+        // Quotes are persisted by a server function; the order RPC never trusts a
+        // browser price. This is also the hop that CORS used to break.
+        const { error: quoteError } = await client.functions.invoke('refresh-market-quote', { body: { symbol: liveMarket.symbol } });
+        if (quoteError) {
+            const described = await window.SmartProfitOrderErrors.describeQuoteFailure(quoteError);
+            if (described) {
+                console.error(`Quote refresh failed (${described.code}).`, quoteError);
+                window.SmartProfitOrderForm.setStatus('error', described.message);
+            } else {
+                const reference = window.SmartProfitOrderErrors.createReferenceId();
+                console.error(`Unmapped quote refresh failure. Reference: ${reference}`, quoteError);
+                window.SmartProfitOrderForm.setStatus('error', window.SmartProfitOrderErrors.genericFailure(reference));
+            }
+            return;
+        }
+
+        const quantity = window.SmartProfitOrderForm.floorTo(amount, liveMarket.quantityDecimals);
+        const fingerprint = window.SmartProfitOrderForm.intentFingerprint({
+            symbol: liveMarket.symbol,
+            side: wantedSide,
+            type: orderType,
+            quantity: quantity,
+            limitPrice: limitPrice,
+            stopPrice: stopPrice
+        });
+        const clientOrderId = intentStore.keyFor(fingerprint);
+
+        const { data, error } = await client.rpc('submit_demo_order', {
+            p_client_order_id: clientOrderId,
+            p_symbol: liveMarket.symbol,
+            p_side: wantedSide.toUpperCase(),
+            p_type: orderType,
+            p_quantity: quantity,
+            p_limit_price: limitPrice,
+            p_stop_price: stopPrice,
+            p_idempotency_key: clientOrderId
+        });
+        if (error) throw error;
+
+        window.SmartProfitOrderForm.setStatus('success', await describeSuccess(client, data, row));
+        window.refreshAccountData?.();
+    } catch (error) {
+        const described = window.SmartProfitOrderErrors.describeOrderFailure(error);
+        if (described) {
+            console.error(`Demo order rejected (${described.code}).`, error);
+            window.SmartProfitOrderForm.setStatus('error', described.message);
+        } else {
+            const reference = window.SmartProfitOrderErrors.createReferenceId();
+            console.error(`Unmapped demo order failure. Reference: ${reference}`, error);
+            window.SmartProfitOrderForm.setStatus('error', window.SmartProfitOrderErrors.genericFailure(reference));
+        }
+    } finally {
+        setSubmitLock(false);
+        applyTradability(catalogRow(liveMarket.symbol));
+    }
+}
+
 // --- Wire Event Listeners & Initialize ---
 document.addEventListener('DOMContentLoaded', async function () {
     // The registry is the only authority on which pairs exist. ?symbol= selects
@@ -796,7 +1107,12 @@ document.addEventListener('DOMContentLoaded', async function () {
         console.error('Market registry unavailable.', error);
     }
 
-    const requested = catalogRow(urlSymbol) || catalogRow('BTCUSDT') || marketCatalog[0] || null;
+    // The default pair comes from the registry: the requested one if it is
+    // listed, otherwise the first pair that can actually be ordered.
+    const requested = catalogRow(urlSymbol)
+        || marketCatalog.find(row => row.orderable)
+        || marketCatalog[0]
+        || null;
     if (requested) {
         liveMarket.symbol = requested.symbol;
         liveMarket.baseCoin = requested.base_asset;
@@ -804,25 +1120,13 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     await initTickerTrack(client);
     initPairSelector();
+    applyPairToForm(requested);
     applyTradability(requested);
+    setOrderType(currentOrderType());
+
     generateOrderBook();
     generateRecentTrades();
     initBinanceChart();
-
-    // Sync initial labels to current asset
-    const baseCoin = liveMarket.baseCoin || 'BTC';
-    const pairText = document.getElementById('currentPairText');
-    const pairBadge = document.getElementById('currentPairBadge');
-    if (pairText) pairText.textContent = `${baseCoin}/USDT`;
-    if (pairBadge) pairBadge.textContent = baseCoin;
-    ['orderBookBaseLabel','tradeFormAmountLabel'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = baseCoin;
-    });
-    const buyEl = document.getElementById('btnBuyText');
-    const sellEl = document.getElementById('btnSellText');
-    if (buyEl) buyEl.textContent = `Buy ${baseCoin}`;
-    if (sellEl) sellEl.textContent = `Sell ${baseCoin}`;
 
     // Chart Type Buttons
     document.getElementById('chartTypeLine')?.addEventListener('click', () => setChartType('line'));
@@ -837,9 +1141,32 @@ document.addEventListener('DOMContentLoaded', async function () {
         });
     });
 
-    // Inputs
-    document.getElementById('orderPrice')?.addEventListener('input', updateTotal);
-    document.getElementById('orderAmount')?.addEventListener('input', updateTotal);
+    // Order type and side segmented controls
+    document.querySelectorAll('#orderTypeToggle .order-type-btn').forEach(btn => {
+        btn.addEventListener('click', () => setOrderType(btn.dataset.orderType));
+    });
+    document.querySelectorAll('#sideToggle .side-btn').forEach(btn => {
+        btn.addEventListener('click', () => setOrderSide(btn.dataset.orderSide));
+    });
+
+    // Percent presets
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.addEventListener('click', () => setAmountPercent(Number(btn.dataset.preset)));
+    });
+
+    // Submit actions
+    document.querySelectorAll('.btn-buy-large, .btn-sell-large').forEach(btn => {
+        btn.addEventListener('click', () => placeOrder(btn.dataset.orderSide === 'sell' ? 'sell' : 'buy'));
+    });
+
+    // Any edit clears the previous outcome, so a stale success never sits under a
+    // changed order.
+    ['orderPrice', 'orderStopPrice', 'orderAmount'].forEach(id => {
+        document.getElementById(id)?.addEventListener('input', () => {
+            window.SmartProfitOrderForm.clearStatus();
+            updateTotal();
+        });
+    });
 
     // Dynamic Interval Refresh
     setInterval(generateOrderBook, 4000);

@@ -60,7 +60,7 @@ function quoteFixture() {
         return Response.json({ result });
     };
     const admin = { from: () => ({ insert: (data) => ({ select: () => ({ abortSignal: () => ({ single: async () => ({ data: { ...data, id: String(++writes) } }) }) }) }) }) };
-    return { cache: () => createQuoteCache({ env, fetcher, now: () => time }), admin, values,
+    return { cache: () => createQuoteCache({ env, fetcher, now: () => time }), admin, values, fetcher,
         stats: () => ({ provider, writes }), tick: (n) => time += n, fail: () => fail = true };
 }
 
@@ -86,14 +86,25 @@ test('failed matching does not publish a successful cache entry and releases the
     assert.equal(retry.id, '2');
 });
 
-test('Redis outage/missing config never falls through to the database; rate limiting is per user', async () => {
+test('rate limiting is per user and a missing Redis no longer blocks quoting', async () => {
     const f = quoteFixture();
     for (let i = 0; i < 30; i++) await f.cache().rateLimit('a');
     await assert.rejects(f.cache().rateLimit('a'), (e) => e.status === 429);
     await f.cache().rateLimit('b');
-    f.fail(); await assert.rejects(f.cache().getSnapshot(f.admin, 'BTCUSDT'), (e) => e.status === 503);
-    assert.deepEqual(f.stats(), { provider: 0, writes: 0 });
-    await assert.rejects(createQuoteCache({ env: () => undefined }).getSnapshot(f.admin, 'BTCUSDT'), /not configured/);
+
+    // Upstash is an optimisation, not a dependency: with no credentials configured
+    // the cache degrades to a per-instance micro-cache and still returns a quote.
+    // The rate limiter it drops is pre-filter only; submit_demo_order keeps the
+    // authoritative database-side limit.
+    const degraded = createQuoteCache({ env: () => undefined, fetcher: f.fetcher, now: () => Date.now(), logger: { warn() {}, error() {} } });
+    const quote = await degraded.getSnapshot(f.admin, 'BTCUSDT');
+    assert.equal(quote.id, '1');
+    assert.equal(f.stats().provider, 1);
+
+    // A total upstream outage still fails closed: no snapshot row is written.
+    f.fail();
+    await assert.rejects(f.cache().getSnapshot(f.admin, 'ETHUSDT'), (e) => e.status === 503);
+    assert.equal(f.stats().writes, 1);
 });
 
 test('account pages reuse reads across navigation and refresh once after an order event', async () => {
