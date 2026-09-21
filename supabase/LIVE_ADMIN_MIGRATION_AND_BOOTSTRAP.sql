@@ -1147,7 +1147,7 @@ grant execute on function public.get_platform_overview() to authenticated;
 do $$
 declare
     v_user_id uuid;
-    v_owner_email text := 'ianwanjiru001@gmail.com';
+    v_owner_email text := 'smartprofitbinary@gmail.com';
 begin
     select id into v_user_id from auth.users
      where lower(email) = lower(v_owner_email) and email_confirmed_at is not null;

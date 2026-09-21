@@ -40,24 +40,18 @@ const SKELETON = `<!DOCTYPE html><html><body>
     <div data-wallet-asset="BTC"></div>
     <div data-wallet-asset-usd="BTC"></div>
     <form id="tradeForm">
-        <div id="sideToggle">
-            <button type="button" class="side-btn active" data-order-side="buy" aria-pressed="true">Buy</button>
-            <button type="button" class="side-btn" data-order-side="sell" aria-pressed="false">Sell</button>
-        </div>
-        <div id="orderTypeToggle">
-            <button type="button" class="order-type-btn active" data-order-type="limit" aria-pressed="true">Limit</button>
-            <button type="button" class="order-type-btn" data-order-type="market" aria-pressed="false">Market</button>
-            <button type="button" class="order-type-btn" data-order-type="stop_limit" aria-pressed="false">Stop Limit</button>
-        </div>
-        <div id="priceFields"><input id="orderPrice"></div>
-        <div id="stopFields" hidden><input id="orderStopPrice"></div>
+        <div id="priceFields"><input id="orderPrice" placeholder="--" readonly></div>
         <input id="orderAmount">
         <button type="button" class="preset-btn" data-preset="25">25%</button>
         <button type="button" class="preset-btn" data-preset="50">50%</button>
         <button type="button" class="preset-btn" data-preset="75">75%</button>
         <button type="button" class="preset-btn" data-preset="100">100%</button>
-        <label id="orderTotalLabel">Total (USDT)</label>
+        <label id="orderTotalLabel">Estimated total (USDT)</label>
         <input id="orderTotal" readonly>
+        <div class="form-hint">
+            <span>Fee 0.1%</span>
+            <span>Minimum 10 USDT</span>
+        </div>
         <button type="button" class="btn-buy-large" data-order-side="buy"><span id="btnBuyText">Buy BTC</span></button>
         <button type="button" class="btn-sell-large" data-order-side="sell"><span id="btnSellText">Sell BTC</span></button>
     </form>
@@ -179,14 +173,6 @@ function statusOf(document) {
     return { hidden: region.hidden, message: region.textContent, className: region.className };
 }
 
-function chooseOrderType(document, type) {
-    document.querySelector(`#orderTypeToggle .order-type-btn[data-order-type="${type}"]`).click();
-}
-
-function chooseSide(document, side) {
-    document.querySelector(`#sideToggle .side-btn[data-order-side="${side}"]`).click();
-}
-
 function submitCalls(calls) {
     return calls.rpc.filter((call) => call.name === 'submit_demo_order');
 }
@@ -268,6 +254,8 @@ test('selecting a listed but non-tradable pair disables the order form', async (
 
 test('selecting a paused pair disables the order form and says why', async () => {
     const { window, document } = await bootTradePage({ catalog: catalogWithPausedBitcoin() });
+    window.switchAsset('BTCUSDT');
+    await settle();
     const state = enabledState(document);
 
     assert.equal(state.inputsDisabled, true);
@@ -394,6 +382,11 @@ test('trade.html loads the registry, ticker and form modules before trade.js', (
     assert.ok(!html.includes('placeholder="67,845.32"'), 'the hardcoded price placeholder must be gone');
     assert.ok(!html.includes('headerBtcPrice'), 'the BTC-named header price must be renamed');
     assert.ok(html.includes('id="orderStatus"'), 'the inline status region must exist');
-    assert.ok(html.includes('id="orderStopPrice"'), 'stop-limit orders need their own stop-price input');
-    assert.ok(html.includes('data-order-type="stop_limit"'), 'order types must be matched by data attribute');
+    assert.ok(!html.includes('id="orderStopPrice"'), 'stop-limit orders and stop price input must be removed');
+    assert.ok(!html.includes('order-type-btn'), 'order-type toggle buttons must be removed');
+    assert.ok(html.includes('id="orderPrice"'), 'market price input must exist');
+    assert.ok(html.includes('id="orderAmount"'), 'amount input must exist');
+    assert.ok(html.includes('id="orderTotal"'), 'estimated total input must exist');
+    assert.ok(html.includes('Fee 0.1%'), 'fee note must be displayed');
+    assert.ok(html.includes('10 USDT'), '10 USDT minimum message must be displayed');
 });

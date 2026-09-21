@@ -321,6 +321,8 @@ async function loadDataAndConnect(symbol, interval) {
     applyPairPrecision(last.close);
     updateOhlcDisplay(last);
     renderHeaderPrice(liveMarket.currentPrice, null);
+    updateMarketPrice();
+    updateTotal();
 
     if (liveMarket.chart) {
         liveMarket.candleSeries.setData(candles);
@@ -379,6 +381,8 @@ function connectBinanceWebSocket(symbol, interval) {
                     };
                     liveMarket.latestCandle = candle;
                     liveMarket.currentPrice = candle.close;
+                    updateMarketPrice();
+                    updateTotal();
 
                     if (liveMarket.chart) {
                         liveMarket.candleSeries.update(candle);
@@ -402,9 +406,8 @@ function connectBinanceWebSocket(symbol, interval) {
 
                     applyPairPrecision(lastPrice);
                     renderHeaderPrice(lastPrice, changePct);
-                    // A market order is sized against the live price, so its
-                    // estimate has to move with the stream.
-                    if (currentOrderType() === 'market') updateTotal();
+                    updateMarketPrice();
+                    updateTotal();
                 }
             } catch (err) {
                 console.error('WS parse error:', err);
@@ -602,31 +605,18 @@ function updateFallbackWithCandle(candle) {
 }
 /* ============================================================
  * ORDER FORM
- * The form is driven by two segmented controls: order type (market, limit,
- * stop_limit) and side (buy, sell). The two large buttons stay the submit
- * actions, and they also select the side a percent preset applies to.
+ * Simplified to DEMO MARKET orders only. "Market price" and
+ * "Estimated total" are read-only, and "Amount" is the only
+ * editable field.
  * ============================================================ */
-
-const ORDER_TYPES = Object.freeze({ market: 'MARKET', limit: 'LIMIT', stop_limit: 'STOP_LIMIT' });
-const DEFAULT_ORDER_TYPE = 'limit';
-const PRICE_INPUT_IDS = ['orderPrice', 'orderStopPrice'];
-
-/** The selected order type, read from the button's data attribute (never text). */
-function currentOrderType() {
-    const active = document.querySelector('#orderTypeToggle .order-type-btn.active');
-    const type = active && active.dataset ? active.dataset.orderType : null;
-    return ORDER_TYPES[type] ? type : DEFAULT_ORDER_TYPE;
-}
 
 function priceInput(id) {
     return document.getElementById(id);
 }
 
-/** The price an order is sized against: live for market, entered for the rest. */
+/** The price an order is sized against: always the live market price. */
 function effectivePrice() {
-    if (currentOrderType() === 'market') return liveMarket.currentPrice;
-    const typed = parseFloat(document.getElementById('orderPrice')?.value);
-    return Number.isFinite(typed) && typed > 0 ? typed : liveMarket.currentPrice;
+    return liveMarket.currentPrice;
 }
 
 function availableOf(asset) {
@@ -648,54 +638,36 @@ function applyPairPrecision(price) {
         liveMarket.quantityDecimals = window.SmartProfitOrderForm.decimalsForQuantity(decimals);
     }
 
-    PRICE_INPUT_IDS.forEach((id) => {
-        const input = priceInput(id);
-        if (!input) return;
-        input.step = String(window.SmartProfitOrderForm.stepFor(liveMarket.priceDecimals));
-        // The placeholder mirrors the live price instead of a hardcoded number
-        // that would be wrong for every pair except the one it was copied from.
-        if (!input.value && Number.isFinite(decimals) && decimals > 0) {
-            input.placeholder = window.SmartProfitOrderForm.formatPrice(decimals, liveMarket.priceDecimals);
+    const priceInput = document.getElementById('orderPrice');
+    if (priceInput) {
+        priceInput.step = String(window.SmartProfitOrderForm.stepFor(liveMarket.priceDecimals));
+        if (Number.isFinite(decimals) && decimals > 0) {
+            priceInput.value = window.SmartProfitOrderForm.formatPrice(decimals, liveMarket.priceDecimals);
         }
-    });
+    }
 
     const amountInput = document.getElementById('orderAmount');
     if (amountInput) amountInput.step = String(window.SmartProfitOrderForm.stepFor(liveMarket.quantityDecimals));
 }
 
-/** Writes the total and its label. A market order's total is only an estimate. */
+function updateMarketPrice() {
+    const priceInput = document.getElementById('orderPrice');
+    if (!priceInput) return;
+    if (Number.isFinite(liveMarket.currentPrice) && liveMarket.currentPrice > 0) {
+        priceInput.value = window.SmartProfitOrderForm.formatPrice(liveMarket.currentPrice, liveMarket.priceDecimals);
+    } else {
+        priceInput.value = '';
+    }
+}
+
+/** Writes the estimated total for a market order (= live price x Amount). */
 function updateTotal() {
-    const type = currentOrderType();
-    const price = type === 'market'
-        ? liveMarket.currentPrice
-        : (parseFloat(document.getElementById('orderPrice')?.value) || liveMarket.currentPrice);
+    const price = liveMarket.currentPrice;
     const amount = parseFloat(document.getElementById('orderAmount')?.value) || 0;
     const labelEl = document.getElementById('orderTotalLabel');
     const totalEl = document.getElementById('orderTotal');
-    if (labelEl) labelEl.textContent = type === 'market' ? 'Estimated total (USDT)' : 'Total (USDT)';
+    if (labelEl) labelEl.textContent = 'Estimated total (USDT)';
     if (totalEl) totalEl.value = price > 0 && amount > 0 ? (price * amount).toFixed(2) : '';
-}
-
-/**
- * Selects an order type. Only the price group is hidden for a market order: the
- * amount, the presets and the total always apply, which is what makes a market
- * order enterable at all.
- */
-function setOrderType(type) {
-    if (!ORDER_TYPES[type]) return;
-    document.querySelectorAll('#orderTypeToggle .order-type-btn').forEach((button) => {
-        const active = button.dataset.orderType === type;
-        button.classList.toggle('active', active);
-        button.setAttribute('aria-pressed', String(active));
-    });
-
-    const priceFields = document.getElementById('priceFields');
-    const stopFields = document.getElementById('stopFields');
-    if (priceFields) priceFields.hidden = type === 'market';
-    if (stopFields) stopFields.hidden = type !== 'stop_limit';
-
-    window.SmartProfitOrderForm.clearStatus();
-    updateTotal();
 }
 
 /** Selects the side a percent preset calculates against. */
@@ -740,10 +712,10 @@ function setAmountPercent(percent) {
 }
 
 function resetOrderFields() {
-    ['orderPrice', 'orderStopPrice', 'orderAmount', 'orderTotal'].forEach((id) => {
-        const input = document.getElementById(id);
-        if (input) input.value = '';
-    });
+    const amountInput = document.getElementById('orderAmount');
+    if (amountInput) amountInput.value = '';
+    updateMarketPrice();
+    updateTotal();
     window.SmartProfitOrderForm.clearStatus();
 }
 
@@ -787,7 +759,7 @@ function renderPairBalance(row) {
     document.querySelectorAll('[data-wallet-asset-usd]').forEach((node) => {
         node.dataset.walletAssetUsd = base;
         const mark = base === 'USDT' ? 1 : liveMarket.currentPrice;
-        node.textContent = base && mark > 0 ? '≈ ' + money.format(available * mark) : 'Quote unavailable';
+        node.textContent = base && mark > 0 ? '≈ ' + money.format(available * mark) : '—';
     });
 }
 // ============================================================
@@ -899,10 +871,6 @@ const intentStore = window.SmartProfitOrderForm.createIntentStore();
 let submitInFlight = false;
 
 const AMOUNT_REQUIRED = 'Enter an order amount.';
-const PRICE_REQUIRED = 'Enter a price for this order type.';
-const STOP_REQUIRED = 'Enter a stop price for a stop-limit order.';
-const BUY_STOP_RULE = 'For a buy stop-limit the stop price must be at or below the limit price.';
-const SELL_STOP_RULE = 'For a sell stop-limit the stop price must be at or above the limit price.';
 const AUTH_LOADING = 'Authentication is still loading. Please try again.';
 const PRACTICE_ACCOUNT_REQUIRED = 'An active practice account is required. Real-money trading is not available.';
 
@@ -956,22 +924,15 @@ async function describeSuccess(client, order, row) {
         return 'Order filled.';
     }
 
-    if (order.state === 'OPEN' || order.state === 'ACCEPTED' || order.state === 'PARTIALLY_FILLED') {
-        if (order.type === 'STOP_LIMIT') {
-            return `Stop-limit order placed. It triggers at ${formatUsd(order.stop_price)} and fills at ${formatUsd(order.limit_price)}.`;
-        }
-        return `Limit order placed. It will fill when the price reaches ${formatUsd(order.limit_price)}.`;
-    }
-
     return 'Order accepted.';
 }
 
 /**
- * Places a demo order for `side`.
+ * Places a demo market order for `side`.
  *
- * The order type comes from the segmented control's data attribute, the stop and
- * limit prices are sent as two distinct fields, and the idempotency key is reused
- * for an unchanged payload so a retry cannot create a second order.
+ * The order type is always MARKET, limit and stop prices are null, and the
+ * idempotency key is reused for an unchanged payload so a retry cannot create
+ * a second order.
  */
 async function placeOrder(side) {
     const wantedSide = side === 'sell' ? 'sell' : 'buy';
@@ -985,45 +946,20 @@ async function placeOrder(side) {
 
     setOrderSide(wantedSide);
 
-    const type = currentOrderType();
-    const orderType = ORDER_TYPES[type];
-    const isMarket = type === 'market';
-    const amount = Number(document.getElementById('orderAmount')?.value);
-    const limitPrice = isMarket ? null : Number(document.getElementById('orderPrice')?.value);
-    const stopPrice = type === 'stop_limit' ? Number(document.getElementById('orderStopPrice')?.value) : null;
+    const row = catalogRow(liveMarket.symbol);
+    if (!row || !row.orderable) {
+        window.SmartProfitOrderForm.setStatus('error', tradabilityNotice(row));
+        return;
+    }
 
+    const amount = Number(document.getElementById('orderAmount')?.value);
     if (!Number.isFinite(amount) || amount <= 0) {
         window.SmartProfitOrderForm.setStatus('error', AMOUNT_REQUIRED);
         return;
     }
-    if (!isMarket && (!Number.isFinite(limitPrice) || limitPrice <= 0)) {
-        window.SmartProfitOrderForm.setStatus('error', PRICE_REQUIRED);
-        return;
-    }
-    if (type === 'stop_limit') {
-        if (!Number.isFinite(stopPrice) || stopPrice <= 0) {
-            window.SmartProfitOrderForm.setStatus('error', STOP_REQUIRED);
-            return;
-        }
-        // process_demo_orders fires only when the market price sits between the
-        // stop and the limit, which an inverted pair can never satisfy.
-        if (wantedSide === 'buy' && stopPrice > limitPrice) {
-            window.SmartProfitOrderForm.setStatus('error', BUY_STOP_RULE);
-            return;
-        }
-        if (wantedSide === 'sell' && stopPrice < limitPrice) {
-            window.SmartProfitOrderForm.setStatus('error', SELL_STOP_RULE);
-            return;
-        }
-    }
+
     if (!window.getSupabaseClient) {
         window.SmartProfitOrderForm.setStatus('error', AUTH_LOADING);
-        return;
-    }
-
-    const row = catalogRow(liveMarket.symbol);
-    if (!row || !row.orderable) {
-        window.SmartProfitOrderForm.setStatus('error', tradabilityNotice(row));
         return;
     }
 
@@ -1053,10 +989,10 @@ async function placeOrder(side) {
         const fingerprint = window.SmartProfitOrderForm.intentFingerprint({
             symbol: liveMarket.symbol,
             side: wantedSide,
-            type: orderType,
+            type: 'MARKET',
             quantity: quantity,
-            limitPrice: limitPrice,
-            stopPrice: stopPrice
+            limitPrice: null,
+            stopPrice: null
         });
         const clientOrderId = intentStore.keyFor(fingerprint);
 
@@ -1064,10 +1000,10 @@ async function placeOrder(side) {
             p_client_order_id: clientOrderId,
             p_symbol: liveMarket.symbol,
             p_side: wantedSide.toUpperCase(),
-            p_type: orderType,
+            p_type: 'MARKET',
             p_quantity: quantity,
-            p_limit_price: limitPrice,
-            p_stop_price: stopPrice,
+            p_limit_price: null,
+            p_stop_price: null,
             p_idempotency_key: clientOrderId
         });
         if (error) throw error;
@@ -1122,7 +1058,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     initPairSelector();
     applyPairToForm(requested);
     applyTradability(requested);
-    setOrderType(currentOrderType());
 
     generateOrderBook();
     generateRecentTrades();
@@ -1141,10 +1076,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         });
     });
 
-    // Order type and side segmented controls
-    document.querySelectorAll('#orderTypeToggle .order-type-btn').forEach(btn => {
-        btn.addEventListener('click', () => setOrderType(btn.dataset.orderType));
-    });
+    // Side selector
     document.querySelectorAll('#sideToggle .side-btn').forEach(btn => {
         btn.addEventListener('click', () => setOrderSide(btn.dataset.orderSide));
     });
@@ -1159,13 +1091,10 @@ document.addEventListener('DOMContentLoaded', async function () {
         btn.addEventListener('click', () => placeOrder(btn.dataset.orderSide === 'sell' ? 'sell' : 'buy'));
     });
 
-    // Any edit clears the previous outcome, so a stale success never sits under a
-    // changed order.
-    ['orderPrice', 'orderStopPrice', 'orderAmount'].forEach(id => {
-        document.getElementById(id)?.addEventListener('input', () => {
-            window.SmartProfitOrderForm.clearStatus();
-            updateTotal();
-        });
+    // Any edit clears the previous outcome and recalculates estimated total
+    document.getElementById('orderAmount')?.addEventListener('input', () => {
+        window.SmartProfitOrderForm.clearStatus();
+        updateTotal();
     });
 
     // Dynamic Interval Refresh

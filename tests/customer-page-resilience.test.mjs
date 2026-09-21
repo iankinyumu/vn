@@ -59,13 +59,9 @@ const TRADE_SKELETON = `<!DOCTYPE html><html><body>
     <div id="orderBookAsks"></div><div id="orderBookBids"></div><div class="spread-price"></div>
     <div id="recentTrades"></div><div id="openPositionsBody"></div><div id="openOrdersList"></div>
     <form id="tradeForm">
-        <button type="button" class="order-type-btn active">Limit</button>
-        <button type="button" class="order-type-btn">Market</button>
-        <div id="limitFields">
-            <input id="orderPrice" value="50000">
-            <input id="orderAmount" value="0.01">
-            <input id="orderTotal" readonly>
-        </div>
+        <div id="priceFields"><input id="orderPrice" placeholder="--" readonly></div>
+        <input id="orderAmount" value="0.01">
+        <input id="orderTotal" readonly>
         <button type="button" class="btn-buy-large"><span id="btnBuyText">Buy BTC</span></button>
         <button type="button" class="btn-sell-large"><span id="btnSellText">Sell BTC</span></button>
     </form>
@@ -157,7 +153,13 @@ async function bootTradePage({ catalog = CATALOG, catalogFails = false } = {}) {
     window.console.warn = () => {};
     window.console.error = () => {};
 
-    for (const file of ['assets/js/market-registry.js', 'assets/js/market-ticker.js', 'assets/js/trade.js']) {
+    for (const file of [
+        'assets/js/market-registry.js',
+        'assets/js/market-ticker.js',
+        'assets/js/order-form.js',
+        'assets/js/order-errors.js',
+        'assets/js/trade.js'
+    ]) {
         window.eval(fs.readFileSync(file, 'utf8'));
     }
     window.document.dispatchEvent(new window.Event('DOMContentLoaded'));

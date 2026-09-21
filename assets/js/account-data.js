@@ -106,7 +106,7 @@
         }, 0);
         const positionValue = openPositions.reduce((total, position) => total + (Number(position.quantity) * (quoteBySymbol.get(position.symbol) || 0)), 0);
 
-        setText('[data-unrealized-pnl]', missingQuote ? 'Quote unavailable' : money.format(unrealizedPnl));
+        setText('[data-unrealized-pnl]', missingQuote ? '—' : money.format(unrealizedPnl));
         if (body) {
             body.replaceChildren();
             if (!openPositions.length) {
@@ -125,8 +125,8 @@
                     addCell(row, position.symbol);
                     addCell(row, quantity.toLocaleString('en-US', { maximumFractionDigits: 8 }));
                     addCell(row, money.format(Number(position.average_entry_price)));
-                    addCell(row, mark ? money.format(mark) : 'Quote unavailable');
-                    addCell(row, mark ? money.format(pnl) : 'Quote unavailable');
+                    addCell(row, mark ? money.format(mark) : '—');
+                    addCell(row, mark ? money.format(pnl) : '—');
                     body.appendChild(row);
                 });
             }
@@ -232,10 +232,10 @@
             const asset = node.dataset.walletAssetUsd;
             const amount = Number(balances.find((balance) => balance.asset === asset)?.available || 0);
             const mark = asset === 'USD' || asset === 'USDT' ? 1 : projection.quoteBySymbol.get(`${asset}USDT`);
-            node.textContent = mark ? `≈ ${money.format(amount * mark)}` : 'Quote unavailable';
+            node.textContent = mark ? `≈ ${money.format(amount * mark)}` : '—';
         });
         setText('[data-open-orders-count]', String((orders || []).length));
-        setText('[data-total-equity]', projection.missingQuote ? 'Quote unavailable' : money.format(cashValue + projection.positionValue));
+        setText('[data-total-equity]', projection.missingQuote ? '—' : money.format(cashValue + projection.positionValue));
         setText('[data-account-load-status]', 'Balances may take a few seconds to update.');
 
         const profileForm = document.getElementById('profileForm');
