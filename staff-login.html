@@ -1,0 +1,110 @@
+ <!-- smartprofitbinary-frontend/pages/staff-login.html -->
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta name="description" content="SmartProfitBinary - Staff sign in">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Staff Sign In - SmartProfitBinary</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="../assets/css/glassmorphism.css" rel="stylesheet">
+    <link href="../assets/css/login.css" rel="stylesheet">
+    <link href="../assets/css/public-shell.css" rel="stylesheet">
+    <style>
+        .staff-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 14px;
+            padding: 6px 14px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 999px;
+            color: #cfd7e3;
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .staff-login-status {
+            min-height: 20px;
+            margin: 14px 0 0;
+            color: #9aa4b2;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        .staff-login-status.is-error { color: #fca5a5; }
+
+        .staff-scope-note {
+            margin: 20px 0 0;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            color: #7f8a99;
+            font-size: 11px;
+            line-height: 1.6;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body class="premium-theme auth-shell">
+
+    <div class="animated-bg">
+        <div class="particle particle-1"></div>
+        <div class="particle particle-2"></div>
+        <div class="particle particle-3"></div>
+        <div class="particle particle-4"></div>
+        <div class="particle particle-5"></div>
+        <div class="particle particle-6"></div>
+    </div>
+
+    <div class="back-home"><a href="index.html"><i class="fas fa-arrow-left"></i> Back to Home</a></div>
+
+    <div class="auth-wrapper">
+        <div class="auth-card">
+
+            <div class="staff-badge"><i class="fas fa-user-shield"></i> Staff access</div>
+            <h2 class="auth-title">Staff Sign In</h2>
+            <p class="auth-subtitle">Sign in with your staff account to open the operations console.</p>
+
+            <form id="staffLoginForm" onsubmit="handleStaffLogin(event)">
+                <div class="form-group">
+                    <label for="email">Staff Email Address</label>
+                    <i class="fas fa-envelope form-icon"></i>
+                    <input type="email" id="email" class="form-input" placeholder="you@smartprofitbinary.com" required
+                        autocomplete="username">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <i class="fas fa-lock form-icon"></i>
+                    <input type="password" id="password" class="form-input" placeholder="••••••••" required
+                        autocomplete="current-password" minlength="8">
+                </div>
+
+                <button type="submit" class="btn-signin">Sign In to Console</button>
+                <p id="staffLoginStatus" class="staff-login-status" role="status" aria-live="polite"></p>
+            </form>
+
+            <p class="staff-scope-note">
+                Staff sessions are stored separately from customer sessions and are never shared between them.
+                Customer accounts and password resets use the
+                <a href="login.html" style="color:#cfd7e3;">customer sign-in page</a>.
+            </p>
+
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/js/staff-auth.js"></script>
+    <script src="../assets/js/staff-login.js"></script>
+
+</body>
+
+</html>

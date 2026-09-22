@@ -33,6 +33,12 @@ export async function createTestDatabase() {
     await db.exec(`create function gen_random_bytes(p_length integer) returns bytea language sql as $$
         select substring(decode(replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', ''), 'hex') from 1 for p_length)
     $$;`);
+    await db.exec(`create function public.gen_random_uuid() returns uuid language sql as $$
+        select gen_random_uuid()
+    $$;`);
+    await db.exec(`create function public.digest(p_data text, p_algorithm text) returns bytea language sql as $$
+        select decode(md5(p_data), 'hex')
+    $$;`);
     await db.exec('create publication supabase_realtime;');
     for (const user of Object.values(identities)) {
         await db.query('insert into auth.users values($1,$2,now(),$3)', [user.id, user.email, JSON.stringify({ display_name: user.email.split('@')[0] })]);
@@ -66,7 +72,12 @@ export async function createTestDatabase() {
         '20260920330000_engine_operations.sql',
         '20260920340000_engine_access.sql',
         '20260920350000_engine_policy_publication.sql',
-        '20260920360000_engine_restriction_admin.sql'
+        '20260920360000_engine_restriction_admin.sql',
+        '20260920380000_engine_determinism_hardening.sql',
+        '20260920390000_engine_pgcrypto_qualification.sql',
+        '20260920400000_engine_contract_guardrails.sql',
+        '20260920410000_engine_policy_hardening.sql',
+        '20260920420000_engine_health_metrics.sql'
     ];
 
     for (const name of migrations) {

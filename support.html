@@ -1,0 +1,16 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Your support requests | SmartProfitBinary</title><link rel="stylesheet" href="../assets/css/admin.css"><link rel="stylesheet" href="../assets/css/support.css">
+<script defer src="../assets/js/auth.js"></script><script defer src="../assets/js/support-ui.js"></script><script defer src="../assets/js/customer-support.js"></script></head>
+<body><header><a class="brand" href="dashboard.html">SmartProfit<span>Binary</span></a><a href="contact.html">Contact support</a></header>
+<main><h1>Your support conversations</h1><p id="supportSession" role="status">Checking your session…</p>
+<a id="supportSignIn" href="login.html?redirect=support.html" hidden>Sign in to view your requests</a><button id="supportSignOut" hidden>Sign out</button>
+<section id="supportPanel" hidden></section>
+<details class="support-thread"><summary>Submit a new support request</summary><form id="newSupport"><fieldset id="newSupportFields" disabled>
+<legend>New request</legend><label for="supportFirstName">First name</label><input id="supportFirstName" maxlength="80" required autocomplete="given-name">
+<label for="supportLastName">Last name</label><input id="supportLastName" maxlength="80" required autocomplete="family-name">
+<label for="supportEmail">Contact email</label><input id="supportEmail" type="email" maxlength="254" required autocomplete="email">
+<label for="supportTopic">Topic</label><select id="supportTopic"><option value="account">Account help</option><option value="general">General inquiry</option><option value="trading">Trading support</option><option value="security">Security concern</option><option value="bug">Bug report</option><option value="other">Other</option></select>
+<label for="supportMessage">Message (10–5,000 characters)</label><textarea id="supportMessage" minlength="10" maxlength="5000" rows="5" required></textarea>
+<label><input id="supportConsent" type="checkbox" required> I consent to storing this request and contact details for support.</label>
+<button type="submit">Send request</button></fieldset></form><p id="newSupportStatus" role="status" aria-live="polite"></p></details>
+<noscript>Enable JavaScript to read and reply to support requests.</noscript></main></body></html>

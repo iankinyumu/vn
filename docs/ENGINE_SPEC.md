@@ -1,8 +1,15 @@
 # Astra engine specification
 
-Each index is scoped by `(index_code, execution_mode)`. A tick number is fixed by its schedule, and the settlement digit is drawn by rejection sampling HMAC-SHA-256 blocks: `HMAC(seed, "digit|mode|index|tick|counter")`; bytes below 250 map modulo ten. The displayed price is cosmetic and its final decimal digit is constrained to equal the settlement digit.
+Each index is scoped by `(index_code, execution_mode)`. A tick number is fixed by its schedule, and the settlement digit is drawn by rejection sampling HMAC-SHA-256 blocks: `HMAC(seed, "digit|mode|index|tick|counter")`; bytes below 250 map modulo ten. The displayed price is cosmetic and its final decimal digit is constrained to equal the settlement digit. The price walk is deterministic: it evolves log-price as `x + kappa * (ln(base) - x) + sigma * z`, where `z` is Box-Muller output from two 53-bit uniforms taken from `HMAC(seed, "walk|mode|index|tick|0")`. A database trigger rejects any tick whose displayed final digit differs from its settlement digit.
 
-Epochs are UTC-day, per-mode commit-reveal records. A commitment is SHA-256 of a 32-byte seed. The chain commits to the previous mode-local chain hash, mode, and commitment. A reveal permits verification that a historical seed produced the published digits; it does not prove an operator did not choose a favorable seed before committing, nor protect future Practice digits from a database superuser. Real seed custody must move outside the database before Real activation.
+The normative DEMO vectors use seed `000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f` (commitment `630dcd2966c4336691125448bbb25b4ff412a49c732db2c8abc1b8581bd710dd`):
+
+- `SPI10`, ticks 1-20: `2 8 3 9 8 6 1 6 7 8 7 7 6 1 9 0 1 8 2 5`
+- `SPI100`, ticks 1-20: `1 8 3 6 7 6 8 4 8 3 1 4 1 8 3 4 7 0 3 9`
+
+`npm test` executes these values against Node WebCrypto-compatible HMAC logic and a local PostgreSQL instance with `pgcrypto`; SQL and JavaScript must agree byte-for-byte.
+
+Epochs are UTC-day, per-mode commit-reveal records. A commitment is SHA-256 of a 32-byte seed. The chain is `SHA-256(prev_chain_hash || epoch_id || execution_mode || seed_commitment)` within each mode. Epoch fields are immutable apart from one final reveal. A reveal permits verification that a historical seed produced the published digits; it does not prove an operator did not choose a favorable seed before committing, nor protect future Practice digits from a database superuser. Real seed custody must move outside the database before Real activation.
 
 Contracts settle from their scheduled exit tick. EVEN, ODD, OVER, UNDER, MATCH, and DIFFER use their literal winning sets. Payout is `floor(stake × (1 − margin) × 10 / winning_digits, 2 decimal places)`. The engine reserves stake before opening and posts one balanced, idempotent settlement or refund ledger transaction.
 
