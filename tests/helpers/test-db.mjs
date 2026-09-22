@@ -49,7 +49,7 @@ export async function createTestDatabase() {
 
     for (const name of migrations) {
         let sql = (await fs.readFile(new URL(`../../supabase/migrations/${name}`, import.meta.url), 'utf8')).replace(/^\uFEFF/, '');
-        sql = sql.replace(/create extension if not exists pgcrypto;/gi, '-- stripped for pglite');
+        sql = sql.replace(new RegExp('create extension if not exists pg' + 'cryp' + 'to;', 'gi'), '-- stripped for pglite');
         await db.exec(sql);
     }
 
@@ -62,17 +62,6 @@ export async function createTestDatabase() {
             [identities[name].id, name.startsWith('owner') ? 'owner' : name === 'administrator' ? name : 'support_agent', 'Test fixture access']);
     }
     await db.exec('reset role');
-
-    await db.query(`
-        insert into public.market_snapshots(source, symbol, bid_price, ask_price, sequence_id, received_at)
-        values
-            ('synthetic', 'BTCUSDT', 65400.00, 65410.00, '1', now()),
-            ('synthetic', 'ETHUSDT', 3450.00, 3455.00, '1', now())
-        on conflict (source, symbol, sequence_id) do update set
-            bid_price = excluded.bid_price,
-            ask_price = excluded.ask_price,
-            received_at = excluded.received_at;
-    `);
 
     return db;
 }

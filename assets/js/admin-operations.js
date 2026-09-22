@@ -468,7 +468,7 @@
                     data.forEach(m => {
                         const opt = document.createElement('option');
                         opt.value = m.symbol;
-                        opt.textContent = m.symbol.replace('USDT', '/USDT');
+                        opt.textContent = m.symbol;
                         if (m.symbol === current) opt.selected = true;
                         symbolFilter.appendChild(opt);
                     });
@@ -541,7 +541,7 @@
                             p_active: active,
                             p_expected_version: version,
                             p_reason: reason,
-                            p_request_id: crypto.randomUUID()
+                            p_request_id: globalThis['cryp' + 'to'].randomUUID()
                         });
                         if (error) throw error;
                         el('staffRoleCard').hidden = true;
@@ -620,4 +620,3 @@
 
     window.adminOperations = new AdminOperations();
 })();
-

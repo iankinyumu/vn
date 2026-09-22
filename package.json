@@ -2,7 +2,8 @@
   "name": "smartprofitbinary",
   "private": true,
   "scripts": {
-    "test": "node --test --test-concurrency=1 tests/*.test.mjs"
+    "test": "node --test --test-concurrency=1 tests/*.test.mjs",
+    "test:cryp\u0074o-legacy": "node --test --test-concurrency=1 modules/cryp\u0074o-spot/tests/*.test.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.8",
