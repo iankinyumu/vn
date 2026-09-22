@@ -1,0 +1,335 @@
+<!-- smartprofitbinary-frontend/pages/trade.html -->
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta name="description" content="SmartProfitBinary - Professional Trading Platform">
+    <title>Trade - SmartProfitBinary</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="../assets/css/glassmorphism.css" rel="stylesheet">
+    <link href="../assets/css/style.css" rel="stylesheet">
+    <link href="../assets/css/trade.css" rel="stylesheet">
+    <link href="../assets/css/app-shell.css" rel="stylesheet">
+</head>
+
+<body class="premium-theme app-shell">
+    <script src="../assets/js/auth.js"></script>
+    <script>
+        requireAuth();
+    </script>
+
+    <div class="animated-bg">
+        <div class="particle particle-1"></div>
+        <div class="particle particle-2"></div>
+        <div class="particle particle-3"></div>
+        <div class="particle particle-4"></div>
+        <div class="particle particle-5"></div>
+        <div class="particle particle-6"></div>
+    </div>
+
+    <header class="premium-header">
+        <nav class="navbar navbar-expand-xl">
+            <div class="container-fluid px-4">
+                <a class="navbar-brand premium-logo" href="dashboard.html">
+                    <div class="logo-text"><span class="logo-primary">SmartProfit</span><span
+                            class="logo-secondary">Binary</span></div>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="mainNav">
+                    <ul class="navbar-nav ms-auto align-items-center gap-1">
+                        <li class="nav-item"><a class="nav-link" href="dashboard.html"><i class="fas fa-chart-line me-1"></i>Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link active" href="trade.html"><i class="fas fa-exchange-alt me-1"></i>Trade</a></li>
+                        <li class="nav-item"><a class="nav-link" href="profile.html"><i class="fas fa-user-circle me-1"></i>Profile</a></li>
+                        <li class="nav-item"><a class="nav-link" href="about.html">About</a></li>
+                        <li class="nav-item"><a class="nav-link" href="blog.html">Blog</a></li>
+                        <li class="nav-item"><a class="nav-link" href="contact.html">Contact</a></li>
+                        <li class="nav-item"><a class="nav-link" href="faq.html">FAQ</a></li>
+                        <li class="nav-item ms-2">
+                            <button onclick="logout()" class="btn btn-outline-danger btn-sm rounded-pill px-3">
+                                <i class="fas fa-sign-out-alt me-1"></i>Logout
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="live-ticker-bar">
+        <div class="ticker-container">
+            <div class="ticker-track" id="tickerTrack"></div>
+        </div>
+    </div>
+
+    <main class="trade-wrapper">
+        <div class="container-fluid px-4 py-4">
+
+            <!-- The second card tracks the base asset of the pair currently on
+                 screen; trade.js rewrites data-wallet-asset on every switch. -->
+            <div class="row g-3 mb-3 row-cols-2 row-cols-md-3 row-cols-xl-5">
+                <div class="col">
+                    <div class="premium-glass-card balance-card">
+                        <div class="balance-label">USDT Balance</div>
+                        <div class="balance-value" data-wallet-total-usd>—</div>
+                        <div class="balance-sub" data-account-load-status>Available balance</div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="premium-glass-card balance-card">
+                        <div class="balance-label"><span data-wallet-asset-label>—</span> Balance</div>
+                        <div class="balance-value" data-wallet-asset="BTC">—</div>
+                        <div class="balance-sub" data-wallet-asset-usd="BTC">—</div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="premium-glass-card balance-card">
+                        <div class="balance-label">Unrealized P&L</div>
+                        <div class="balance-value" data-unrealized-pnl>—</div>
+                        <div class="balance-sub">Across open positions</div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="premium-glass-card balance-card">
+                        <div class="balance-label">Open Orders</div>
+                        <div class="balance-value" data-open-orders-count>—</div>
+                        <div class="balance-sub">Pending or partially filled</div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="premium-glass-card balance-card">
+                        <div class="balance-label">Total Equity</div>
+                        <div class="balance-value" data-total-equity>—</div>
+                        <div class="balance-sub">Cash + open position value</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-xl-8">
+                    <div class="premium-glass-card chart-card mb-3">
+                        <div class="card-header-clean trade-chart-toolbar">
+                            <div class="chart-identity-controls">
+                                <!-- Asset Switcher Dropdown -->
+                                <div class="dropdown pair-dropdown" id="pairDropdownContainer">
+                                    <button class="btn btn-pair-dropdown dropdown-toggle d-flex align-items-center gap-2" type="button" id="pairSelectorBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <span class="pair-symbol-badge" id="currentPairBadge">BTC</span>
+                                        <span class="fw-bold fs-5 text-white" id="currentPairText">BTC/USDT</span>
+                                    </button>
+                                    <div class="dropdown-menu dropdown-menu-dark glass-dropdown-menu p-2 shadow-lg" aria-labelledby="pairSelectorBtn">
+                                        <div class="pair-list-scroll" id="pairListContainer">
+                                            <!-- Dynamically populated from JS -->
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="live-price-container">
+                                    <!-- Pair-neutral ids: these follow whichever pair is selected. -->
+                                    <span class="live-price" id="headerPrice">--</span>
+                                    <span class="live-change" id="headerChange">--</span>
+                                </div>
+                            </div>
+                            <div class="chart-display-controls">
+                                <div class="btn-group btn-group-sm" id="timeframeButtons">
+                                    <button class="btn btn-timeframe active" data-interval="1m">1m</button>
+                                    <button class="btn btn-timeframe" data-interval="5m">5m</button>
+                                    <button class="btn btn-timeframe" data-interval="15m">15m</button>
+                                    <button class="btn btn-timeframe" data-interval="1h">1H</button>
+                                    <button class="btn btn-timeframe" data-interval="4h">4H</button>
+                                    <button class="btn btn-timeframe" data-interval="1d">1D</button>
+                                </div>
+                                <div class="btn-group btn-group-sm ms-md-2" id="chartTypeButtons">
+                                    <button class="btn btn-timeframe" id="chartTypeLine" title="Line Chart"><i class="fas fa-chart-line"></i></button>
+                                    <button class="btn btn-timeframe active" id="chartTypeCandle" title="Candlestick Chart"><i class="fas fa-chart-bar"></i> Candles</button>
+                                    <button class="btn btn-timeframe" id="chartTypeOhlc" title="OHLC Bar Chart"><i class="fas fa-bars-staggered"></i> OHLC</button>
+                                </div>
+                                <div class="ws-status-badge ms-md-2" id="wsStatusBadge" title="WebSocket Stream Status">
+                                    <span class="ws-dot"></span> <span id="wsStatusText">LIVE</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chart-ohlc-bar px-3 py-2 d-flex gap-3 flex-wrap align-items-center" id="liveOhlcBar">
+                            <div class="ohlc-item"><span class="text-secondary">O:</span> <span id="ohlcOpen" class="text-white fw-bold">--</span></div>
+                            <div class="ohlc-item"><span class="text-secondary">H:</span> <span id="ohlcHigh" class="text-white fw-bold">--</span></div>
+                            <div class="ohlc-item"><span class="text-secondary">L:</span> <span id="ohlcLow" class="text-white fw-bold">--</span></div>
+                            <div class="ohlc-item"><span class="text-secondary">C:</span> <span id="ohlcClose" class="text-white fw-bold">--</span></div>
+                            <div class="ohlc-item"><span class="text-secondary">Chg:</span> <span id="ohlcChange" class="fw-bold">--</span></div>
+                            <div class="ohlc-item"><span class="text-secondary">Vol:</span> <span id="ohlcVolume" class="text-white fw-bold">--</span></div>
+                        </div>
+                        <div class="chart-wrapper position-relative" style="height:420px" id="tradeChartWrapper">
+                            <div id="lightweightChartContainer" style="width:100%;height:100%;"></div>
+                            <canvas id="tradeChart" style="display:none;"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="premium-glass-card">
+                                <div class="card-header-clean">
+                                    <h5 class="mb-0"><i class="fas fa-book me-2"></i>Order Book</h5>
+                                </div>
+                                <div class="ob-mini-header"><span>Price (USDT)</span><span>Amount
+                                        (<span id="orderBookBaseLabel">BTC</span>)</span><span>Total</span></div>
+                                <div class="ob-mini-asks" id="orderBookAsks"></div>
+                                <!-- No hardcoded BTC price here: an empty book shows a placeholder. -->
+                                <div class="ob-mini-spread"><span class="spread-price" id="orderBookSpreadPrice">--</span><small id="orderBookSpreadPercent">Spread:
+                                        --</small></div>
+                                <div class="ob-mini-bids" id="orderBookBids"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="premium-glass-card">
+                                <div class="card-header-clean">
+                                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Trades</h5>
+                                </div>
+                                <div class="recent-trades-header"><span>Price</span><span>Amount</span><span>Time</span>
+                                </div>
+                                <div class="recent-trades-list" id="recentTrades"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-4">
+                    <div class="premium-glass-card mb-3">
+                        <div class="card-header-clean">
+                            <h5 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>Place Order</h5>
+                        </div>
+                        <form id="tradeForm">
+                            <div class="form-group mb-3" id="priceFields">
+                                <label class="form-label" for="orderPrice">Market price (USDT)</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-tag form-icon"></i>
+                                    <input type="text" class="form-input" id="orderPrice" placeholder="--" readonly>
+                                </div>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label class="form-label" for="orderAmount">Amount (<span id="tradeFormAmountLabel">BTC</span>)</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-coins form-icon" id="orderCoinIcon"></i>
+                                    <input type="number" class="form-input" id="orderAmount" placeholder="0.00"
+                                        step="0.0001">
+                                </div>
+                                <div class="amount-presets">
+                                    <button type="button" class="preset-btn" data-preset="25">25%</button>
+                                    <button type="button" class="preset-btn" data-preset="50">50%</button>
+                                    <button type="button" class="preset-btn" data-preset="75">75%</button>
+                                    <button type="button" class="preset-btn" data-preset="100">100%</button>
+                                </div>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label class="form-label" for="orderTotal" id="orderTotalLabel">Estimated total (USDT)</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-calculator form-icon"></i>
+                                    <input type="number" class="form-input" id="orderTotal" placeholder="0.00"
+                                        readonly>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between form-hint mb-3">
+                                <span>Fee 0.1%</span>
+                                <span>Minimum 10 USDT</span>
+                            </div>
+
+                            <div id="marketNotice" class="alert alert-warning py-2 px-3 mb-3 small" role="status" aria-live="polite" hidden></div>
+                            <div id="orderStatus" class="order-status" role="status" aria-live="polite" hidden></div>
+                            <div class="action-buttons">
+                                <button type="button" class="btn-buy-large" data-order-side="buy">
+                                    <i class="fas fa-arrow-up me-2"></i> <span id="btnBuyText">Buy BTC</span>
+                                </button>
+                                <button type="button" class="btn-sell-large" data-order-side="sell">
+                                    <i class="fas fa-arrow-down me-2"></i> <span id="btnSellText">Sell BTC</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="premium-glass-card">
+                        <div class="card-header-clean">
+                            <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Open Positions</h5>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="transaction-table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Symbol</th>
+                                        <th>Quantity</th>
+                                        <th>Avg. Entry</th>
+                                        <th>Mark Price</th>
+                                        <th>Unrealized P&amp;L</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="openPositionsBody">
+                                    <tr>
+                                        <td colspan="5" class="text-secondary">Loading positions…</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="premium-glass-card">
+                        <div class="card-header-clean">
+                            <h5 class="mb-0"><i class="fas fa-list-check me-2"></i>Open Orders</h5>
+                        </div>
+                        <div class="open-orders-list" id="openOrdersList">
+                            <div class="open-order-item text-secondary">Loading orders…</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="premium-footer">
+        <div class="container-fluid px-4">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="footer-brand-small">SmartProfitBinary</div>
+                    <p class="footer-desc">Professional cryptocurrency and binary options trading platform.</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Quick Links</h6>
+                    <ul>
+                        <li><a href="about.html">About</a></li>
+                        <li><a href="blog.html">Blog</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h6>Support</h6>
+                    <ul>
+                        <li><a href="faq.html">FAQ</a></li>
+                        <li><a href="#">API Docs</a></li>
+                        <li><a href="#">Fees</a></li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="footer-divider">
+            <p class="text-center footer-bottom-text">&copy; 2026 SmartProfitBinary. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.2.1/chart.umd.min.js"></script>
+    <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+    <script src="../assets/js/market-registry.js"></script>
+    <script src="../assets/js/market-ticker.js"></script>
+    <!-- Order-form mechanics and failure messages load before the page module
+         that drives them. -->
+    <script src="../assets/js/order-form.js"></script>
+    <script src="../assets/js/order-errors.js"></script>
+    <script src="../assets/js/trade.js"></script>
+    <script src="../assets/js/account-cache.js"></script>
+    <script src="../assets/js/account-data.js"></script>
+</body>
+
+</html>

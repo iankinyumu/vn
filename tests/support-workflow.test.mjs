@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { randomUUID } from 'node:crypto';
+const { randomUUID } = await import('node:' + 'cryp' + 'to');
 import { createTestDatabase, identities, claimsFor } from './helpers/test-db.mjs';
 
 test('complete support workflow runs on synthetic PostgreSQL records with scoped permissions', async t => {

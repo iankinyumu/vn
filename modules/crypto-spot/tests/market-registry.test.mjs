@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { createTestDatabase, claimsFor } from './helpers/test-db.mjs';
+import { createTestDatabase, claimsFor } from '../../../tests/helpers/test-db.mjs';
 
 /* These tests cover the market registry, the object that decides whether a pair
  * can be ordered. submit_demo_order rejects unknown, non-tradable, and paused
