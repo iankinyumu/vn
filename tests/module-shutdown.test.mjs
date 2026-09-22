@@ -1,15 +1,10 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import fs from 'node:fs/promises';
 import test from 'node:test';
 import { createTestDatabase } from './helpers/test-db.mjs';
 
-const migrationUrl = new URL('../supabase/migrations/20260920100000_disable_' + 'cryp' + 'to_module.sql', import.meta.url);
-
 async function migratedDatabase() {
-    const db = await createTestDatabase();
-    await db.exec(await fs.readFile(migrationUrl, 'utf8'));
-    return db;
+    return createTestDatabase();
 }
 
 test('legacy order commands are shut down by the module guard', async () => {

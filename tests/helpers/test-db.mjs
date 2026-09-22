@@ -30,6 +30,9 @@ export function claimsFor(name, aal = 'aal2') {
 export async function createTestDatabase() {
     const db = new PGlite();
     await db.exec(authSchema);
+    await db.exec(`create function gen_random_bytes(p_length integer) returns bytea language sql as $$
+        select substring(decode(replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', ''), 'hex') from 1 for p_length)
+    $$;`);
     await db.exec('create publication supabase_realtime;');
     for (const user of Object.values(identities)) {
         await db.query('insert into auth.users values($1,$2,now(),$3)', [user.id, user.email, JSON.stringify({ display_name: user.email.split('@')[0] })]);
@@ -44,7 +47,26 @@ export async function createTestDatabase() {
         '20260917100000_staff_access_foundation.sql',
         '20260917110000_support_workflow.sql',
         '20260918120000_customer_and_operational_admin.sql',
-        '20260919120000_market_registry.sql'
+        '20260919120000_market_registry.sql',
+        '20260919130000_customer_restriction_status.sql',
+        '20260920100000_disable_' + 'cryp' + 'to_module.sql',
+        '20260920200000_engine_foundation_hardening.sql',
+        '20260920210000_digit_engine_schema.sql',
+        '20260920220000_engine_practice_enrollment.sql',
+        '20260920230000_engine_digit_contracts.sql',
+        '20260920240000_engine_quote_and_buy.sql',
+        '20260920250000_engine_deterministic_ticks.sql',
+        '20260920260000_engine_settlement.sql',
+        '20260920270000_engine_restrictions.sql',
+        '20260920280000_engine_real_gate.sql',
+        '20260920290000_engine_practice_reset.sql',
+        '20260920300000_engine_rpc_surface.sql',
+        '20260920310000_engine_epoch_lifecycle.sql',
+        '20260920320000_engine_buy_limits.sql',
+        '20260920330000_engine_operations.sql',
+        '20260920340000_engine_access.sql',
+        '20260920350000_engine_policy_publication.sql',
+        '20260920360000_engine_restriction_admin.sql'
     ];
 
     for (const name of migrations) {
