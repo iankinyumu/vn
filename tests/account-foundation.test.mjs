@@ -38,3 +38,13 @@ test('account keys are mode and account scoped and switching clears old state', 
     assert.equal(dom.window.smartProfitAccount.get().accountId, 'real-id');
     dom.window.close();
 });
+
+test('an absent or inactive Practice account does not fall back to another account', async () => {
+    const dom = new JSDOM('<!doctype html><body><select data-account-switcher></select></body>', { runScripts: 'outside-only', url: 'https://example.test/pages/dashboard.html' });
+    dom.window.getSupabaseClient = async () => ({ rpc: async (name) => ({ data: name === 'get_engine_config' ? { real_enabled: false } : name === 'list_my_accounts' ? [{ id: 'inactive-practice', execution_mode: 'DEMO', currency: 'USD', status: 'INACTIVE' }] : 'inactive-practice', error: null }) });
+    dom.window.eval(fs.readFileSync('assets/js/account-context.js', 'utf8'));
+    dom.window.eval(fs.readFileSync('assets/js/account-switcher.js', 'utf8'));
+    await assert.rejects(dom.window.initAccountSwitcher(), /Practice account is unavailable/);
+    assert.throws(() => dom.window.smartProfitAccount.get(), /active account is required/i);
+    dom.window.close();
+});
