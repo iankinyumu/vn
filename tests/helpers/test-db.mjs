@@ -82,7 +82,8 @@ export async function createTestDatabase() {
         '20260920440000_engine_customer_rpc_hardening.sql',
         '20260920450000_engine_real_gate_hardening.sql',
         '20260920460000_engine_epoch_uuid_fix.sql',
-        '20260920470000_engine_admin_rpc_surface.sql'
+        '20260920470000_engine_admin_rpc_surface.sql',
+        '20260920480000_engine_config_rpc.sql'
     ];
 
     for (const name of migrations) {
