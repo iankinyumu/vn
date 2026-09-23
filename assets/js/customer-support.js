@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
         event.preventDefault();if(!user||pending||!el('newSupport').reportValidity())return;
         const generation=epoch;
         const payload={p_first_name:el('supportFirstName').value.trim(),p_last_name:el('supportLastName').value.trim(),p_email:el('supportEmail').value.trim(),p_phone:'',p_subject:el('supportTopic').value,p_message:el('supportMessage').value.trim(),p_consent:el('supportConsent').checked};
-        const fingerprint=JSON.stringify(payload);if(!key||key.fingerprint!==fingerprint)key={fingerprint,id:globalThis['cryp'+'to'].randomUUID()};
+        const fingerprint=JSON.stringify(payload);if(!key||key.fingerprint!==fingerprint)key={fingerprint,id:window.crypto.randomUUID()};
         pending=true;el('newSupportFields').disabled=true;el('newSupportStatus').textContent='Saving request…';
         try{
             const {data,error}=await client.rpc('submit_support_ticket',{p_id:key.id,...payload});

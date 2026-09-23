@@ -29,6 +29,8 @@
                 option.disabled = account.execution_mode === 'REAL' && !config.real_enabled;
                 select.add(option);
             });
+            // Sessions start in Practice; the picker must show it whatever order the accounts arrive in.
+            select.value = practice.id;
             select.addEventListener('change', () => {
                 const selected = accounts.find((account) => account.id === select.value);
                 if (!selected || selected.status !== 'ACTIVE') return;

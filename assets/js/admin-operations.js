@@ -541,7 +541,7 @@
                             p_active: active,
                             p_expected_version: version,
                             p_reason: reason,
-                            p_request_id: globalThis['cryp' + 'to'].randomUUID()
+                            p_request_id: window.crypto.randomUUID()
                         });
                         if (error) throw error;
                         el('staffRoleCard').hidden = true;

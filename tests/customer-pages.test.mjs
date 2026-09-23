@@ -22,6 +22,13 @@ test('SmartProfit naming replaces the retired tool name in customer sources', ()
             if (fs.statSync(target).isFile()) assert.doesNotMatch(fs.readFileSync(target, 'utf8'), /astra/i, target);
         }
     }
+    const readme = fs.readFileSync('README.md', 'utf8');
+    assert.doesNotMatch(readme, /astra/i, 'README.md');
+    assert.match(readme, /^# SmartProfit\b/);
+    // Every repository path the README names must exist, so the document stays accurate as files move.
+    for (const [, reference] of readme.matchAll(/`((?:pages|assets|docs|supabase|scripts|tests|modules)\/[^`*<]+|[A-Z_]+\.md)`/g)) {
+        assert.ok(fs.existsSync(reference.replace(/\/$/, '')), `README.md names missing path ${reference}`);
+    }
 });
 
 test('every customer navigation surface links to the fairness verifier', () => {

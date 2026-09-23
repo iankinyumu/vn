@@ -15,12 +15,9 @@
 import { corsHeaders } from './cors.mjs';
 import { errorMessage, errorStatus, isErrorCode } from './errors.mjs';
 
-const REQUEST_ID_BYTES = 4;
-
-export function createRequestId(randomSource = globalThis['cryp' + 'to']) {
-    const bytes = new Uint8Array(REQUEST_ID_BYTES);
-    randomSource.getRandomValues(bytes);
-    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('').toUpperCase();
+// A request id is the first 32 random bits of a v4 UUID as eight uppercase hex characters.
+export function createRequestId(randomUUID = () => crypto.randomUUID()) {
+    return randomUUID().slice(0, 8).toUpperCase();
 }
 
 export function jsonResponse(body, { status = 200, requestOrigin = null, allowedOrigins = null, headers = {} } = {}) {
