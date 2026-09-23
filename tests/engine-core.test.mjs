@@ -24,6 +24,21 @@ test('practice enrolment is idempotent and creates USD virtual credit', async ()
     await db.close();
 });
 
+test('engine config returns the caller practice account and its policy limits', async () => {
+    const db = await createTestDatabase();
+    await db.query("select set_config('request.jwt.claims',$1,false)", [JSON.stringify(claimsFor('customer'))]);
+    await db.exec('set role authenticated');
+    const account = await db.query('select public.enroll_practice_account() id');
+    const config = await db.query('select public.get_engine_config() config');
+    assert.equal(config.rows[0].config.ledger_asset, 'USD');
+    assert.equal(config.rows[0].config.real_enabled, false);
+    assert.equal(config.rows[0].config.accounts.length, 1);
+    assert.equal(config.rows[0].config.accounts[0].id, account.rows[0].id);
+    assert.equal(Number(config.rows[0].config.accounts[0].limits.min_stake), 1);
+    await db.exec('reset role');
+    await db.close();
+});
+
 test('engine advances deterministic ticks with the price-digit invariant', async (t) => {
     const db = await createTestDatabase();
     const crypto = await db.query("select to_regprocedure('hmac(bytea,bytea,text)') available");
