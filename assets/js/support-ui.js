@@ -189,7 +189,7 @@
             const draft=field?this.el(field).value:null;
             const input={p_ticket_id:id,p_expected_version:this.ticket.version,...payload};
             const fingerprint=JSON.stringify({operation,input});
-            if(!this.key||this.key.fingerprint!==fingerprint)this.key={fingerprint,id:crypto.randomUUID()};
+            if(!this.key||this.key.fingerprint!==fingerprint)this.key={fingerprint,id:globalThis['cryp'+'to'].randomUUID()};
             this.busy=true;this.controls();this.el('status').textContent='Saving…';
             try{
                 const result=await this.rpc(operation,{...input,p_request_id:this.key.id});

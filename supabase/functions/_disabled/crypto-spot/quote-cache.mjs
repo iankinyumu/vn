@@ -16,7 +16,7 @@
  * control that actually protects the order path, and it is unaffected.
  */
 
-import { QuoteError, errorStatus } from './errors.mjs';
+import { QuoteError, errorStatus } from '../../_shared/errors.mjs';
 import { fetchBookTicker } from './market-data.mjs';
 
 export { QuoteError };

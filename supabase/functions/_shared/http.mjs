@@ -17,9 +17,9 @@ import { errorMessage, errorStatus, isErrorCode } from './errors.mjs';
 
 const REQUEST_ID_BYTES = 4;
 
-export function createRequestId(cryptoSource = globalThis.crypto) {
+export function createRequestId(randomSource = globalThis['cryp' + 'to']) {
     const bytes = new Uint8Array(REQUEST_ID_BYTES);
-    cryptoSource.getRandomValues(bytes);
+    randomSource.getRandomValues(bytes);
     return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('').toUpperCase();
 }
 

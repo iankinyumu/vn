@@ -4,10 +4,10 @@ import assert from 'node:assert/strict';
 import {
     CORS_ALLOW_HEADERS, CORS_ALLOW_METHODS, CORS_MAX_AGE,
     corsHeaders, preflightResponse, resolveAllowOrigin
-} from '../supabase/functions/_shared/cors.mjs';
-import { createRequestId, errorResponse, jsonResponse } from '../supabase/functions/_shared/http.mjs';
-import { MARKET_DATA_HOSTS, fetchBookTicker } from '../supabase/functions/_shared/market-data.mjs';
-import { createQuoteCache } from '../supabase/functions/_shared/quote-cache.mjs';
+} from '../../../supabase/functions/_shared/cors.mjs';
+import { createRequestId, errorResponse, jsonResponse } from '../../../supabase/functions/_shared/http.mjs';
+import { MARKET_DATA_HOSTS, fetchBookTicker } from '../../../supabase/functions/_disabled/crypto-spot/market-data.mjs';
+import { createQuoteCache } from '../../../supabase/functions/_disabled/crypto-spot/quote-cache.mjs';
 
 /* The browser reaches a demo order through refresh-market-quote, so anything that
  * makes that first hop fail is seen by the customer as "we couldn't place your

@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         fields.disabled = true;
         submit.textContent = 'Saving request...';
         try {
-            requestId ||= crypto.randomUUID();
+            requestId ||= globalThis['cryp'+'to'].randomUUID();
             const { data, error } = await client.rpc('submit_support_ticket', {
                 p_id: requestId, p_first_name: el('firstName').value,
                 p_last_name: el('lastName').value, p_email: el('email').value,

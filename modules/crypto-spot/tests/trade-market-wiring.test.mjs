@@ -142,11 +142,11 @@ async function bootTradePage({
     });
 
     for (const file of [
-        'assets/js/market-registry.js',
-        'assets/js/market-ticker.js',
-        'assets/js/order-form.js',
-        'assets/js/order-errors.js',
-        'assets/js/trade.js'
+        'modules/crypto-spot/assets/js/market-registry.js',
+        'modules/crypto-spot/assets/js/market-ticker.js',
+        'modules/crypto-spot/assets/js/order-form.js',
+        'modules/crypto-spot/assets/js/order-errors.js',
+        'modules/crypto-spot/assets/js/trade.js'
     ]) {
         window.eval(fs.readFileSync(file, 'utf8'));
     }
@@ -355,7 +355,7 @@ test('an unreachable registry fails closed instead of offering pairs', async () 
 });
 
 test('trade.js keeps no copy of the pair universe', () => {
-    const source = fs.readFileSync('assets/js/trade.js', 'utf8');
+    const source = fs.readFileSync('modules/crypto-spot/assets/js/trade.js', 'utf8');
     assert.ok(!source.includes('TOP_75_COINS'), 'the hardcoded coin array must stay deleted');
     assert.ok(source.includes('SmartProfitMarkets'), 'trade.js must read the registry');
     assert.ok(!source.includes("'BTCUSDT'"), 'the default pair must come from the registry, not a literal');
@@ -365,12 +365,12 @@ test('trade.js keeps no copy of the pair universe', () => {
 });
 
 test('trade.html loads the registry, ticker and form modules before trade.js', () => {
-    const html = fs.readFileSync('pages/trade.html', 'utf8');
-    const registry = html.indexOf('assets/js/market-registry.js');
-    const ticker = html.indexOf('assets/js/market-ticker.js');
-    const form = html.indexOf('assets/js/order-form.js');
-    const errors = html.indexOf('assets/js/order-errors.js');
-    const trade = html.indexOf('assets/js/trade.js');
+    const html = fs.readFileSync('modules/crypto-spot/pages/trade.html', 'utf8');
+    const registry = html.indexOf('../assets/js/market-registry.js');
+    const ticker = html.indexOf('../assets/js/market-ticker.js');
+    const form = html.indexOf('../assets/js/order-form.js');
+    const errors = html.indexOf('../assets/js/order-errors.js');
+    const trade = html.indexOf('../assets/js/trade.js');
 
     assert.ok(registry > -1, 'trade.html must load the registry module');
     assert.ok(ticker > -1, 'trade.html must load the ticker module');

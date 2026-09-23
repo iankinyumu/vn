@@ -13,7 +13,7 @@
  * worse than no quote: it would price a fill the market never offered.
  */
 
-import { QuoteError } from './errors.mjs';
+import { QuoteError } from '../../_shared/errors.mjs';
 
 export const MARKET_DATA_HOSTS = Object.freeze([
     'https://data-api.binance.vision',

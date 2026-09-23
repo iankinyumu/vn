@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import fs from 'node:fs';
-import { createQuoteCache } from '../supabase/functions/_shared/quote-cache.mjs';
+import { createQuoteCache } from '../../../supabase/functions/_disabled/crypto-spot/quote-cache.mjs';
 
 function browserCache(storage = {}) {
     Object.defineProperties(storage, {
@@ -12,7 +12,7 @@ function browserCache(storage = {}) {
     });
     let time = 1000;
     const context = { window: {}, sessionStorage: storage, Date: { now: () => time } };
-    vm.runInNewContext(fs.readFileSync(new URL('../assets/js/account-cache.js', import.meta.url), 'utf8'), context);
+    vm.runInNewContext(fs.readFileSync(new URL('../../../assets/js/account-cache.js', import.meta.url), 'utf8'), context);
     return { cache: context.window.smartProfitCache, storage, tick: (n) => time += n };
 }
 
@@ -131,7 +131,7 @@ test('account pages reuse reads across navigation and refresh once after an orde
         const context = { window: { smartProfitCache: cache, SMARTPROFIT_SUPABASE_CONFIG: { url: 'project' }, addEventListener() {}, location: { replace() { throw Error('unexpected redirect'); } } },
             document: { querySelectorAll: () => [], getElementById: () => null },
             getSupabaseClient: async () => client, console, setTimeout: cb => { timers.push(cb); return timers.length; }, clearTimeout() {} };
-        vm.runInNewContext(fs.readFileSync(new URL('../assets/js/account-data.js', import.meta.url), 'utf8'), context);
+        vm.runInNewContext(fs.readFileSync(new URL('../../../assets/js/account-data.js', import.meta.url), 'utf8'), context);
         return { context, timers };
     }
     async function settled() { for (let i = 0; i < 50; i++) await Promise.resolve(); }
