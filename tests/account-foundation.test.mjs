@@ -4,7 +4,7 @@ import test from 'node:test';
 import { JSDOM } from 'jsdom';
 
 function page() {
-    const dom = new JSDOM('<!doctype html><body><select data-account-switcher></select><div data-practice-ribbon></div></body>', { runScripts: 'outside-only' });
+    const dom = new JSDOM('<!doctype html><body><select data-account-switcher></select><div data-practice-ribbon></div></body>', { runScripts: 'outside-only', url: 'https://example.test/pages/dashboard.html' });
     const accounts = [{ id: 'practice-id', execution_mode: 'DEMO', currency: 'USD', status: 'ACTIVE' }, { id: 'real-id', execution_mode: 'REAL', currency: 'USD', status: 'ACTIVE' }];
     dom.window.getSupabaseClient = async () => ({ rpc: async (name) => ({ data: name === 'get_engine_config' ? { real_enabled: false } : name === 'list_my_accounts' ? accounts : 'practice-id', error: null }) });
     dom.window.eval(fs.readFileSync('assets/js/account-context.js', 'utf8'));
@@ -16,7 +16,7 @@ function page() {
 test('a session explicitly starts on Practice and Real is listed but disabled', async () => {
     const dom = page();
     await dom.window.initAccountSwitcher();
-    assert.deepEqual(dom.window.smartProfitAccount.get(), { accountId: 'practice-id', mode: 'DEMO', currency: 'USD' });
+    assert.deepEqual({ ...dom.window.smartProfitAccount.get() }, { accountId: 'practice-id', mode: 'DEMO', currency: 'USD' });
     const options = dom.window.document.querySelectorAll('option');
     assert.equal(options.length, 2);
     assert.equal(options[1].disabled, true);
