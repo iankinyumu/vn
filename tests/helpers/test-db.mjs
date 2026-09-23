@@ -80,7 +80,8 @@ export async function createTestDatabase() {
         '20260920420000_engine_health_metrics.sql',
         '20260920430000_engine_settlement_hardening.sql',
         '20260920440000_engine_customer_rpc_hardening.sql',
-        '20260920450000_engine_real_gate_hardening.sql'
+        '20260920450000_engine_real_gate_hardening.sql',
+        '20260920460000_engine_epoch_uuid_fix.sql'
     ];
 
     for (const name of migrations) {

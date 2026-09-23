@@ -28,7 +28,7 @@ try {
         create extension pgcrypto;
         create role anon; create role authenticated; create role service_role;
         create type public.execution_mode as enum ('DEMO','REAL'); create schema engine_private;
-        create table public.engine_indices(code text, execution_mode public.execution_mode, decimals smallint, base_price numeric, sigma_per_tick numeric, kappa numeric, status text, t0 timestamptz, primary key(code, execution_mode));
+        create table public.engine_indices(code text, execution_mode public.execution_mode, tick_interval_ms integer, decimals smallint, base_price numeric, sigma_per_tick numeric, kappa numeric, status text, t0 timestamptz, primary key(code, execution_mode));
         create table public.index_state(index_code text, execution_mode public.execution_mode, last_tick_no bigint, last_x numeric, last_price numeric, updated_at timestamptz, primary key(index_code, execution_mode));
         create table public.engine_epochs(id uuid primary key, execution_mode public.execution_mode, starts_at timestamptz, ends_at timestamptz, seed_commitment text, prev_chain_hash text, chain_hash text, committed_at timestamptz default now(), revealed_seed text, revealed_at timestamptz);
         create table engine_private.epoch_seeds(epoch_id uuid primary key, execution_mode public.execution_mode, seed bytea);
@@ -37,7 +37,7 @@ try {
         create table public.engine_policy_versions(version integer, tick_retention_days integer);
         create function public.engine_settle_tick(text, public.execution_mode, bigint) returns void language sql as 'select';
     `);
-    for (const name of ['20260920250000_engine_deterministic_ticks.sql', '20260920380000_engine_determinism_hardening.sql']) {
+    for (const name of ['20260920250000_engine_deterministic_ticks.sql', '20260920380000_engine_determinism_hardening.sql', '20260920460000_engine_epoch_uuid_fix.sql']) {
         await client.query(await readFile(new URL(`../supabase/migrations/${name}`, import.meta.url), 'utf8'));
     }
     const seed = '000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f';
@@ -60,11 +60,11 @@ try {
     `);
     assert.equal(invariantSweep.rows[0].failures, 0);
     await client.query(`
-        insert into public.engine_indices values ('SPI10','DEMO',3,1000,.0004,.0005,'ACTIVE',clock_timestamp()-interval '6 seconds');
+        insert into public.engine_indices values ('SPI10','DEMO',2000,3,1000,.0004,.0005,'ACTIVE',clock_timestamp()-interval '6 seconds');
         insert into public.index_state values ('SPI10','DEMO',0,null,null,clock_timestamp());
         select public.engine_advance();
     `);
-    const generated = await client.query(`select count(*)::integer ticks, min(last_x) <> ln(1000::numeric) evolved from public.index_state join public.index_ticks on index_code=code and index_state.execution_mode=index_ticks.execution_mode group by last_x`);
+    const generated = await client.query(`select count(*)::integer ticks, min(s.last_x) <> ln(1000::numeric) evolved from public.index_state s join public.index_ticks t on t.index_code=s.index_code and s.execution_mode=t.execution_mode group by s.last_x`);
     assert.ok(generated.rows.some((row) => row.ticks > 0 && row.evolved));
     console.log('PostgreSQL pgcrypto digit, walk, and price invariant vectors: PASS');
 } catch (error) {
