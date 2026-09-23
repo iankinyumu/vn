@@ -32,6 +32,29 @@ test('restriction parameter validation rejects unknown and non-positive limits',
     await db.close();
 });
 
+test('correlated per-tick exposure caps reject a contract before funds move', async () => {
+    const db = await createTestDatabase();
+    try {
+        await db.query("select set_config('request.jwt.claims',$1,false)", [JSON.stringify(claimsFor('customer'))]);
+        await db.exec('set role authenticated');
+        const account = await db.query('select public.enroll_practice_account() id');
+        await db.exec('reset role');
+        await db.exec("update public.index_state set last_tick_no=1,updated_at=now() where index_code='SPI10' and execution_mode='DEMO';");
+        await db.exec("insert into public.engine_policy_versions(version,effective_from,house_margin,min_ticks,max_ticks,max_settlement_delay_seconds,max_feed_lag_seconds,min_profit_ratio,tick_retention_days,enabled_contract_types,reason) values(2,now(),.035,1,10,30,10,.01,30,array['EVEN','ODD'],'Exposure cap test policy'); insert into public.engine_policy_limits values(2,'DEMO',1,1000,20,30,1);");
+        await db.exec('set role authenticated');
+        await assert.rejects(
+            db.query("select public.engine_buy_contract($1,'SPI10','EVEN',null,10,1,'exposure-cap')", [account.rows[0].id]),
+            /exposure_limit/
+        );
+        await db.exec('reset role');
+        const contracts = await db.query('select count(*)::integer count from public.engine_contracts where trading_account_id=$1', [account.rows[0].id]);
+        assert.equal(contracts.rows[0].count, 0);
+    } finally {
+        await db.exec('reset role');
+        await db.close();
+    }
+});
+
 test('settlement posts an idempotent win and clears the settled exposure bucket', async () => {
     const db = await createTestDatabase();
     await db.query("select set_config('request.jwt.claims',$1,false)", [JSON.stringify(claimsFor('customer'))]);
