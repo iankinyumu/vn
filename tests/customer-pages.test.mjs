@@ -32,7 +32,29 @@ test('SmartProfit naming replaces the retired tool name in customer sources', ()
 });
 
 test('every customer navigation surface links to the fairness verifier', () => {
+    // Pages that mount the shared shell get their navigation from shell.js, whose public and app menus both list Fairness.
+    const shell = fs.readFileSync('assets/js/shell.js', 'utf8');
+    for (const menu of ['PUBLIC_LINKS', 'APP_LINKS']) assert.match(shell.match(new RegExp(`${menu} = Object\\.freeze\\(\\[([\\s\\S]*?)\\]\\)`))[1], /href: 'fairness\.html'/, menu);
     for (const file of pages.filter((name) => !['404.html', 'forgot-password.html', 'staff-login.html', 'support.html', 'admin.html'].includes(name))) {
-        assert.match(fs.readFileSync(path.join('pages', file), 'utf8'), /fairness\.html/, file);
+        const source = fs.readFileSync(path.join('pages', file), 'utf8');
+        assert.ok(/fairness\.html/.test(source) || (/data-shell-header/.test(source) && source.includes('assets/js/shell.js')), file);
     }
+});
+
+/* The Phase 1 shutdown retired legacy data, not the customer design. Contact,
+   dashboard and profile keep the vn10 layout, repurposed for the indices. */
+test('contact, dashboard and profile keep their designed layouts on the shared shell', () => {
+    const page = (name) => fs.readFileSync(path.join('pages', name), 'utf8');
+    const expectations = {
+        'contact.html': ['contact.css', 'contact-hero', 'id="contactForm"', 'id="requestHistory"', 'assets/js/contact.js', 'data-shell-surface="public"'],
+        'dashboard.html': ['welcome-section', 'balance-card', 'stat-card', 'chart-card', 'data-index-rows', 'data-open-contracts', 'data-latest-ticks', 'assets/js/charts.js', 'data-shell-surface="app"'],
+        'profile.html': ['profile.css', 'profile-header-card', 'data-profile-tab="settings"', 'data-profile-tab="accounts"', 'id="profileForm"', 'data-shell-surface="app"'],
+    };
+    for (const [name, needles] of Object.entries(expectations)) {
+        const source = page(name);
+        for (const needle of needles) assert.ok(source.includes(needle), `${name} is missing ${needle}`);
+        assert.ok(source.includes('assets/js/shell.js'), `${name} must mount the shared shell`);
+        assert.doesNotMatch(source, /Order Book|24h Volume|Dominance|Listed Coins|API Keys|KYC|unsplash/i, `${name} still carries retired market content`);
+    }
+    assert.doesNotMatch(page('contact.html'), /value="(deposit|withdrawal)"/, 'Practice accounts have no funding topics');
 });

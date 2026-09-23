@@ -35,9 +35,9 @@ function fakeServer(count) {
     return { client, calls, channels, ticks, add, tickChannel: () => channels.filter((channel) => channel.topic.startsWith('ticks:')).at(-1) };
 }
 
-async function openTradePage(server) {
+async function openTradePage(server, query = '') {
     const html = fs.readFileSync('pages/trade.html', 'utf8');
-    const dom = new JSDOM(html, { runScripts: 'outside-only', url: 'https://example.test/pages/trade.html' });
+    const dom = new JSDOM(html, { runScripts: 'outside-only', url: `https://example.test/pages/trade.html${query}` });
     Object.defineProperty(dom.window, 'crypto', { value: webcrypto });
     const drawn = [];
     dom.window.drawIndexChart = (_canvas, ticks) => drawn.push(ticks.map((tick) => tick.tick_no));
@@ -69,6 +69,18 @@ async function waitFor(predicate, message, timeout = 2000) {
 }
 
 const contiguous = (numbers) => numbers.every((value, position) => position === 0 || value === numbers[position - 1] + 1);
+
+test('a dashboard link opens the trade page on the requested index, and an unknown index keeps the first', async () => {
+    for (const [query, expected] of [['?index=SPI25', 'SPI25'], ['?index=NOPE', 'SPI10']]) {
+        const server = fakeServer(5);
+        const page = await openTradePage(server, query);
+        try {
+            await waitFor(() => server.tickChannel(), 'no tick channel was opened');
+            assert.equal(page.document.querySelector('select[name="index"]').value, expected);
+            assert.equal(server.tickChannel().topic, `ticks:demo:${expected}`);
+        } finally { page.dom.window.close(); }
+    }
+});
 
 test('tick channel is private, authorised before joining, and removed when the index changes', async () => {
     const server = fakeServer(30);

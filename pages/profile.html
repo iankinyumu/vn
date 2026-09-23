@@ -1,1 +1,115 @@
-<!doctype html><html lang="en" data-bs-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Profile — SmartProfit</title><link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet"><link href="../assets/css/glassmorphism.css" rel="stylesheet"><link href="../assets/css/style.css" rel="stylesheet"><link href="../assets/css/app-shell.css" rel="stylesheet"><link href="../assets/css/mode-tokens.css" rel="stylesheet"></head><body class="premium-theme app-shell"><script src="../assets/js/auth.js"></script><script>requireAuth()</script><header class="premium-header"><nav class="navbar"><div class="container"><a class="navbar-brand premium-logo" href="dashboard.html">SmartProfit</a><div class="navbar-nav ms-auto"><a class="nav-link" href="dashboard.html">Dashboard</a><a class="nav-link" href="trade.html">Trade</a><a class="nav-link" href="fairness.html">Fairness</a><a class="nav-link active" href="profile.html">Profile</a><select class="account-switcher ms-2" data-account-switcher aria-label="Account"></select></div></div></nav></header><div class="practice-ribbon" data-practice-ribbon>PRACTICE · virtual funds</div><main class="container py-5"><section class="premium-glass-card p-4"><h1>Your profile</h1><p data-profile-status role="status" aria-live="polite"></p><dl class="row mb-0"><dt class="col-sm-3">Name</dt><dd class="col-sm-9" data-profile-name>Loading…</dd><dt class="col-sm-3">Email</dt><dd class="col-sm-9" data-profile-email>Loading…</dd></dl></section></main><script src="../assets/js/account-context.js"></script><script src="../assets/js/account-keys.js"></script><script src="../assets/js/account-switcher.js"></script><script src="../assets/js/profile-identity.js"></script><script>addEventListener('DOMContentLoaded',()=>initAccountSwitcher().catch(console.error))</script></body></html>
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Your SmartProfit profile: identity, sign-in security and account types.">
+    <title>Profile — SmartProfit</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="../assets/css/glassmorphism.css" rel="stylesheet">
+    <link href="../assets/css/profile.css" rel="stylesheet">
+    <link href="../assets/css/app-shell.css" rel="stylesheet">
+    <link href="../assets/css/mode-tokens.css" rel="stylesheet">
+</head>
+
+<body class="premium-theme app-shell" data-shell-surface="app" data-shell-active="profile">
+    <script src="../assets/js/auth.js"></script>
+    <script>requireAuth()</script>
+
+    <div class="animated-bg">
+        <div class="particle particle-1"></div>
+        <div class="particle particle-2"></div>
+        <div class="particle particle-3"></div>
+        <div class="particle particle-4"></div>
+        <div class="particle particle-5"></div>
+        <div class="particle particle-6"></div>
+    </div>
+
+    <div data-shell-header></div>
+
+    <main class="profile-wrapper">
+        <p data-profile-status role="status" aria-live="polite" class="text-secondary"></p>
+
+        <div class="profile-header-card">
+            <div class="avatar-wrapper">
+                <div class="avatar-img" data-profile-avatar aria-label="Profile initials">—</div>
+            </div>
+            <div class="profile-info">
+                <h3 class="profile-name" data-profile-name>Loading account…</h3>
+                <p class="profile-email"><i class="fas fa-envelope me-1"></i> <span data-profile-email></span></p>
+                <div class="profile-meta">
+                    <span><i class="fas fa-calendar-alt"></i> Joined: <b class="meta-value" data-profile-created>—</b></span>
+                    <span><i class="fas fa-layer-group"></i> Active account: <b class="meta-value" data-account-mode>—</b></span>
+                    <span><i class="fas fa-shield-halved"></i> Email: <b class="meta-value" data-profile-verified>—</b></span>
+                </div>
+            </div>
+            <div class="profile-actions">
+                <a href="dashboard.html" class="btn-action"><i class="fas fa-gauge-high"></i> Dashboard</a>
+                <a href="trade.html" class="btn-action"><i class="fas fa-chart-simple"></i> Trade</a>
+                <button type="button" data-profile-logout class="btn-action danger"><i class="fas fa-sign-out-alt"></i> Log out</button>
+            </div>
+        </div>
+
+        <div class="tab-nav" role="tablist" aria-label="Profile sections">
+            <button class="tab-btn active" type="button" role="tab" aria-selected="true" data-profile-tab="settings"><i class="fas fa-cog"></i> <span>Settings</span></button>
+            <button class="tab-btn" type="button" role="tab" aria-selected="false" data-profile-tab="security"><i class="fas fa-lock"></i> <span>Security</span></button>
+            <button class="tab-btn" type="button" role="tab" aria-selected="false" data-profile-tab="accounts"><i class="fas fa-layer-group"></i> <span>Accounts</span></button>
+        </div>
+
+        <div class="tab-content active" id="tab-settings" role="tabpanel">
+            <div class="settings-card">
+                <h5 class="settings-title"><i class="fas fa-user-edit"></i> Personal Information</h5>
+                <form id="profileForm">
+                    <div><label class="form-label" for="profileDisplayName">Display name</label>
+                        <div class="input-wrapper"><i class="fas fa-user form-icon"></i><input type="text" id="profileDisplayName" class="form-input" required maxlength="120" data-profile-display-name></div>
+                    </div>
+                    <div><label class="form-label" for="profileEmailInput">Email</label>
+                        <div class="input-wrapper"><i class="fas fa-envelope form-icon"></i><input type="email" id="profileEmailInput" class="form-input" data-profile-email-input readonly></div>
+                    </div>
+                    <button type="submit" class="btn btn-premium-primary mt-3">Save changes</button>
+                    <p class="strength-text mt-2" data-profile-save-status role="status" aria-live="polite"></p>
+                </form>
+            </div>
+        </div>
+
+        <div class="tab-content" id="tab-security" role="tabpanel">
+            <div class="settings-card">
+                <h5 class="settings-title"><i class="fas fa-key"></i> Password</h5>
+                <p class="text-secondary small">For your security, passwords are changed through an emailed reset link rather than on this page.</p>
+                <a href="forgot-password.html" class="btn btn-premium-primary mt-2">Send password reset link</a>
+            </div>
+            <div class="settings-card">
+                <h5 class="settings-title"><i class="fas fa-shield-halved"></i> Sign-in</h5>
+                <p class="text-secondary small mb-0">You are signed in with your email and password. Signing out here ends this browser's session.</p>
+            </div>
+        </div>
+
+        <div class="tab-content" id="tab-accounts" role="tabpanel">
+            <div class="settings-card">
+                <h5 class="settings-title"><i class="fas fa-layer-group"></i> Your accounts</h5>
+                <p class="text-secondary small">Balances and contract history for the active account are on the <a href="dashboard.html">dashboard</a>.</p>
+                <div style="overflow-x:auto">
+                    <table class="transaction-table">
+                        <thead><tr><th>Account</th><th>Currency</th><th>Status</th></tr></thead>
+                        <tbody data-profile-accounts><tr><td colspan="3">Loading accounts…</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div data-shell-footer></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/js/shell.js"></script>
+    <script src="../assets/js/account-context.js"></script>
+    <script src="../assets/js/account-keys.js"></script>
+    <script src="../assets/js/account-switcher.js"></script>
+    <script src="../assets/js/restriction-banner.js"></script>
+    <script src="../assets/js/profile-identity.js"></script>
+</body>
+
+</html>
