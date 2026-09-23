@@ -9,7 +9,10 @@ test('fairness WebCrypto verifier reproduces the published SPI10 vector', async 
     const dom = new JSDOM('<!doctype html><body></body>', { runScripts: 'outside-only', url: 'https://example.test/pages/fairness.html' });
     Object.defineProperty(dom.window, 'crypto', { value: webcrypto });
     dom.window.TextEncoder = TextEncoder;
+    const addListener = dom.window.addEventListener;
+    dom.window.addEventListener = () => {};
     dom.window.eval(fs.readFileSync('assets/js/fairness.js', 'utf8'));
+    dom.window.addEventListener = addListener;
     const seed = '000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f';
     const actual = [];
     for (let tick = 1; tick <= 20; tick++) actual.push(await dom.window.smartProfitFairness.digit(seed, 'DEMO', 'SPI10', tick));
