@@ -16,3 +16,10 @@ test('trade page maps every stable engine purchase failure to plain text', () =>
     }
     dom.window.close();
 });
+
+test('trade feed locks purchasing after three missed tick intervals', () => {
+    const source = fs.readFileSync('assets/js/trade.js', 'utf8');
+    assert.match(source, /const armStaleGuard/);
+    assert.match(source, /setTimeout\(\(\) => setStale\(true\), Number\(index\.selectedOptions\[0\]\.dataset\.interval\) \* 3\)/);
+    assert.match(source, /await reconcile\(\); await loadContracts\(\); armStaleGuard\(\)/);
+});
