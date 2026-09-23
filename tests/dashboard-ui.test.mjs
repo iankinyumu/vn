@@ -23,7 +23,9 @@ test('dashboard totals come from the lifetime server aggregate, not the latest 2
         list_my_contracts: latest,
     };
     const client = { rpc: async (name, args) => { calls.push({ name, args: JSON.parse(JSON.stringify(args ?? null)) }); return { data: responses[name] ?? null, error: null }; } };
-    dom.window.initAccountSwitcher = async () => ({ client, config: { accounts: [{ id: 'practice-id', limits: { min_stake: 1 } }] } });
+    const engine = ({ client, config: { accounts: [{ id: 'practice-id', limits: { min_stake: 1 } }] } });
+    dom.window.loadEngineConfig = async () => engine;
+    dom.window.initAccountSwitcher = async () => engine;
     dom.window.smartProfitAccount = { get: () => ({ accountId: 'practice-id', mode: 'DEMO', currency: 'USD' }) };
     dom.window.refreshRestrictionBanner = async () => {};
     const text = (selector) => dom.window.document.querySelector(selector).textContent;
@@ -55,7 +57,9 @@ test('dashboard index overview, chart, latest ticks and indices table come from 
         if (name === 'list_my_contracts') return { data: args.p_state === 'OPEN' ? [{ index_code: 'SPI10', contract_type: 'EVEN', barrier: null, stake: 10, payout: 19.3, entry_tick_no: 501, settle_tick_no: 505, state: 'OPEN' }] : [], error: null };
         return { data: null, error: null };
     } };
-    dom.window.initAccountSwitcher = async () => ({ client, config: { indices, enabled_contract_types: ['EVEN', 'ODD'], accounts: [] } });
+    const engine = ({ client, config: { indices, enabled_contract_types: ['EVEN', 'ODD'], accounts: [] } });
+    dom.window.loadEngineConfig = async () => engine;
+    dom.window.initAccountSwitcher = async () => engine;
     dom.window.smartProfitAccount = { get: () => ({ accountId: 'practice-id', mode: 'DEMO', currency: 'USD' }) };
     dom.window.refreshRestrictionBanner = async () => {};
     dom.window.drawIndexChart = (_canvas, series) => drawn.push(series.map((tick) => tick.tick_no));
@@ -83,4 +87,93 @@ test('dashboard index overview, chart, latest ticks and indices table come from 
         await wait(() => /Index 25/.test($('[data-chart-title]').textContent));
         assert.match($('[data-chart-title]').textContent, /SmartProfit Index 25 price/);
     } finally { dom.window.close(); }
+});
+
+/* The pages below run the real startup chain (account-context.js and
+   account-switcher.js) against a fake Supabase client, so a failing RPC takes
+   the same path it would in the browser. */
+const liveConfig = { real_enabled: false, enabled_contract_types: ['EVEN', 'ODD'], indices: [{ code: 'SPI10', display_name: 'SmartProfit Index 10', interval_ms: 2000, decimals: 3, status: 'ACTIVE' }] };
+const tickRows = (count) => Array.from({ length: count }, (_, n) => ({ index_code: 'SPI10', tick_no: 900 - n, price: (1000 + (900 - n) / 1000).toFixed(3), digit: (900 - n) % 10, scheduled_at: '2026-09-24T10:00:00Z' }));
+
+async function openDashboard(overrides = {}) {
+    const dom = new JSDOM(fs.readFileSync('pages/dashboard.html', 'utf8'), { runScripts: 'outside-only', url: 'https://example.test/pages/dashboard.html' });
+    const responses = {
+        enroll_practice_account: { data: 'practice-id' },
+        get_engine_config: { data: liveConfig },
+        list_my_accounts: { data: [{ id: 'practice-id', execution_mode: 'DEMO', currency: 'USD', status: 'ACTIVE' }] },
+        get_account_summary: { data: { available: 10000, currency: 'USD' } },
+        get_account_stats: { data: { wins: 0, losses: 0, voids: 0, open: 0, net_result: 0, currency: 'USD' } },
+        list_my_contracts: { data: [] },
+        get_recent_ticks: { data: tickRows(120) },
+        get_my_active_restrictions: { data: [] },
+        ...overrides,
+    };
+    const errors = [];
+    dom.window.console.error = (...args) => errors.push(args);
+    const client = { rpc: async (name) => ({ data: null, error: null, ...(responses[name] || {}) }) };
+    dom.window.getSupabaseClient = async () => client;
+    dom.window.drawIndexChart = () => {};
+    // The shell builds the switcher in the browser; the test provides the same mount point.
+    dom.window.document.querySelector('[data-shell-header]').innerHTML = '<select data-account-switcher></select><div data-restriction-banner hidden></div>';
+    for (const file of ['account-context.js', 'account-keys.js', 'account-switcher.js', 'restriction-banner.js', 'dashboard.js']) dom.window.eval(fs.readFileSync(`assets/js/${file}`, 'utf8'));
+    const $ = (selector) => dom.window.document.querySelector(selector);
+    const settle = async (predicate) => { const started = Date.now(); while (!predicate() && Date.now() - started < 2000) await new Promise((resolve) => setTimeout(resolve, 5)); };
+    return { dom, $, errors, settle };
+}
+
+test('a failed account call does not hide working market data and names what failed', async () => {
+    const page = await openDashboard({ get_account_stats: { data: null, error: { code: 'PGRST202', message: 'Could not find the function public.get_account_stats' }, status: 404 } });
+    const { $ } = page;
+    try {
+        await page.settle(() => $('[data-index-rows] tr') && /SmartProfit Index 10/.test($('[data-index-rows]').textContent) && /could not be loaded/.test($('[data-dashboard-status]').textContent));
+        assert.match($('[data-index-rows]').textContent, /SmartProfit Index 101000\.9000#900Open/);
+        assert.equal(page.dom.window.document.querySelectorAll('[data-latest-ticks] .ob-mini-row').length, 10);
+        assert.equal($('[data-index-count]').textContent, '1 / 1');
+        assert.equal($('[data-practice-balance]').textContent, 'USD 10000.00');
+        assert.equal($('[data-wins]').textContent, 'Unavailable');
+        assert.equal($('[data-net-result]').textContent, 'Unavailable');
+        assert.match($('[data-dashboard-status]').textContent, /Some account data could not be loaded: results\. Market data below is unaffected/);
+        assert.doesNotMatch($('[data-dashboard-status]').textContent, /get_account_stats|PGRST/);
+    } finally { page.dom.window.close(); }
+});
+
+test('a new Practice account sees real zeros and an explained empty history, not blanks', async () => {
+    const page = await openDashboard();
+    const { $ } = page;
+    try {
+        await page.settle(() => $('[data-wins]').textContent === '0' && /SmartProfit Index 10/.test($('[data-index-rows]').textContent));
+        assert.equal($('[data-practice-balance]').textContent, 'USD 10000.00');
+        assert.equal($('[data-net-result]').textContent, 'USD 0.00');
+        assert.equal($('[data-losses]').textContent, '0');
+        assert.equal($('[data-win-rate]').textContent, 'No results yet');
+        assert.match($('[data-contract-rows]').textContent, /No contracts yet\. Contracts you buy on the Trade page appear here\./);
+        assert.match($('[data-open-contracts]').textContent, /No open contracts\./);
+        assert.equal($('[data-dashboard-status]').textContent, '');
+        assert.equal($('[data-account-switcher]').value, 'practice-id');
+    } finally { page.dom.window.close(); }
+});
+
+test('a failed Practice enrollment says so and still shows the indices', async () => {
+    const page = await openDashboard({ enroll_practice_account: { data: null, error: { code: '42883', message: 'function public.enroll_practice_account() does not exist' }, status: 404 } });
+    const { $ } = page;
+    try {
+        await page.settle(() => /Practice account could not be opened/.test($('[data-dashboard-status]').textContent) && /SmartProfit Index 10/.test($('[data-index-rows]').textContent));
+        assert.match($('[data-dashboard-status]').textContent, /^Your Practice account could not be opened\. Reload the page; if this continues, contact support\.$/);
+        assert.equal($('[data-practice-balance]').textContent, 'Unavailable');
+        assert.equal($('[data-account-switcher]').disabled, true);
+        assert.match($('[data-account-switcher]').textContent, /Account unavailable/);
+        const logged = page.errors.find(([label]) => label === '[smartprofit] startup failed');
+        assert.deepEqual({ step: logged[1].step, status: logged[1].status, code: logged[1].code }, { step: 'enroll_practice_account', status: 404, code: '42883' });
+    } finally { page.dom.window.close(); }
+});
+
+test('an index with no published ticks says so instead of drawing an empty live chart', async () => {
+    const page = await openDashboard({ get_recent_ticks: { data: [] } });
+    const { $ } = page;
+    try {
+        await page.settle(() => /No ticks published yet/.test($('[data-chart-status]').textContent) && /No ticks yet/.test($('[data-index-rows]').textContent));
+        assert.equal($('[data-chart-status]').textContent, 'No ticks published yet for SmartProfit Index 10.');
+        assert.match($('[data-latest-ticks]').textContent, /No ticks published yet\./);
+        assert.equal($('[data-market-state]').textContent, 'No ticks published yet');
+    } finally { page.dom.window.close(); }
 });

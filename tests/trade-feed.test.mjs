@@ -29,21 +29,30 @@ function fakeServer(count) {
             if (name === 'get_recent_ticks') return { data: ticks.slice().reverse().slice(0, limit), error: null };
             if (name === 'get_ticks_since') return { data: ticks.filter((tick) => tick.tick_no > (args.p_after_tick_no ?? 0)).slice(0, limit), error: null };
             if (name === 'list_my_contracts') return { data: [], error: null };
+            if (name === 'get_account_summary') return { data: { available: balances[args.p_account_id] ?? 0, currency: 'USD' }, error: null };
+            if (name === 'engine_quote_contract') return { data: { payout: '19.30', profit: '9.30', win_probability: 0.5 }, error: null };
+            if (name === 'engine_buy_contract') { balances[args.p_account_id] -= args.p_stake; return { data: { id: 'contract-1' }, error: null }; }
             return { data: null, error: null };
         }
     };
-    return { client, calls, channels, ticks, add, tickChannel: () => channels.filter((channel) => channel.topic.startsWith('ticks:')).at(-1) };
+    const balances = { 'practice-id': 10000, 'second-id': 2500 };
+    return { client, calls, channels, ticks, add, balances, tickChannel: () => channels.filter((channel) => channel.topic.startsWith('ticks:')).at(-1) };
 }
 
-async function openTradePage(server, query = '') {
+const defaultConfig = () => ({ indices: [{ code: 'SPI10', display_name: 'SmartProfit Index 10', interval_ms: INTERVAL, decimals: 3 }, { code: 'SPI25', display_name: 'SmartProfit Index 25', interval_ms: INTERVAL, decimals: 3 }], enabled_contract_types: ['EVEN', 'ODD'] });
+
+async function openTradePage(server, query = '', { config = defaultConfig(), refreshedConfig = null, account = { accountId: 'practice-id', mode: 'DEMO', currency: 'USD' } } = {}) {
     const html = fs.readFileSync('pages/trade.html', 'utf8');
     const dom = new JSDOM(html, { runScripts: 'outside-only', url: `https://example.test/pages/trade.html${query}` });
     Object.defineProperty(dom.window, 'crypto', { value: webcrypto });
     const drawn = [];
     dom.window.drawIndexChart = (_canvas, ticks) => drawn.push(ticks.map((tick) => tick.tick_no));
     dom.window.refreshRestrictionBanner = async () => {};
-    dom.window.smartProfitAccount = { get: () => ({ accountId: 'practice-id', mode: 'DEMO', currency: 'USD' }) };
-    dom.window.initAccountSwitcher = async () => ({ client: server.client, config: { indices: [{ code: 'SPI10', display_name: 'SmartProfit Index 10', interval_ms: INTERVAL, decimals: 3 }, { code: 'SPI25', display_name: 'SmartProfit Index 25', interval_ms: INTERVAL, decimals: 3 }], enabled_contract_types: ['EVEN', 'ODD'] } });
+    let active = account;
+    dom.window.smartProfitAccount = { get: () => ({ ...active }) };
+    dom.window.initAccountSwitcher = async () => ({ client: server.client, config });
+    dom.window.loadEngineConfig = async () => ({ client: server.client, config: refreshedConfig || config });
+    dom.window.smartProfitTradeOptions = { configRetryMs: 30 };
     const document = dom.window.document;
     // Browsers expose form controls by name on the form, including controls
     // associated through a form="" attribute (the index picker). jsdom does not.
@@ -57,6 +66,10 @@ async function openTradePage(server, query = '') {
         buy: () => document.querySelector('[data-trade-form] [type="submit"]'),
         feedState: () => document.querySelector('[data-feed-state]').textContent,
         broadcast: (tick) => server.tickChannel().handlers.find((item) => item.type === 'broadcast').handler({ payload: tick }),
+        status: () => document.querySelector('[data-trade-status]').textContent,
+        balance: () => document.querySelector('[data-trade-balance]').textContent,
+        choice: (code) => document.querySelector(`[data-contract-type="${code}"]`),
+        switchAccount(next) { active = next; document.dispatchEvent(new dom.window.Event('smartprofit:clear-trade-state')); document.dispatchEvent(new dom.window.CustomEvent('smartprofit:account-changed')); },
     };
 }
 
@@ -164,4 +177,124 @@ test('a feed that is not subscribed goes stale, then polling recovers the chart 
         await new Promise((resolve) => setTimeout(resolve, INTERVAL * 2));
         assert.ok(server.calls.filter((call) => call.name === 'get_ticks_since').length <= polls + 1, 'polling continued while subscribed and fresh');
     } finally { page.dom.window.close(); }
+});
+
+async function goLive(server, page) {
+    await waitFor(() => server.tickChannel(), 'no tick channel was opened');
+    server.tickChannel().status('SUBSCRIBED');
+    await waitFor(() => page.feedState() === 'Live', 'the feed never went live');
+}
+const submitForm = (page) => page.document.querySelector('[data-trade-form]').dispatchEvent(new page.dom.window.Event('submit', { cancelable: true }));
+
+test('contract-type controls are real buttons for enabled types only, and drive the quote and the purchase', async () => {
+    const server = fakeServer(20);
+    const page = await openTradePage(server);
+    try {
+        await goLive(server, page);
+        const type = page.document.querySelector('select[name="type"]');
+        assert.deepEqual([...type.options].map((option) => option.value), ['EVEN', 'ODD']);
+        for (const code of ['EVEN', 'ODD']) { assert.equal(page.choice(code).tagName, 'BUTTON'); assert.equal(page.choice(code).type, 'button'); assert.equal(page.choice(code).disabled, false); }
+        for (const code of ['MATCH', 'DIFFER', 'OVER', 'UNDER']) { assert.equal(page.choice(code).disabled, true, code); assert.match(page.choice(code).textContent, /Not offered/); }
+        page.document.querySelector('input[name="stake"]').value = '10';
+        page.click = (element) => element.dispatchEvent(new page.dom.window.MouseEvent('click', { bubbles: true }));
+        page.click(page.choice('ODD'));
+        assert.equal(type.value, 'ODD');
+        assert.equal(page.choice('ODD').getAttribute('aria-pressed'), 'true');
+        assert.equal(page.choice('EVEN').getAttribute('aria-pressed'), 'false');
+        await waitFor(() => server.calls.some((call) => call.name === 'engine_quote_contract' && call.args.p_type === 'ODD'), 'the quote did not use the selected type');
+        await waitFor(() => /^Odd: payout 19\.30/.test(page.document.querySelector('[data-quote]').textContent), 'the quote was not shown for the selected type');
+        page.click(page.choice('MATCH'));
+        assert.equal(type.value, 'ODD', 'a type the policy does not enable cannot be selected');
+        // The quote debounce outlasts this test feed's stale window, so deliver a fresh tick before buying.
+        server.add(21);
+        page.broadcast(server.ticks[20]);
+        await waitFor(() => page.feedState() === 'Live' && !page.buy().disabled, 'the feed did not return to live');
+        submitForm(page);
+        await waitFor(() => server.calls.some((call) => call.name === 'engine_buy_contract'), 'no purchase was sent');
+        assert.equal(server.calls.find((call) => call.name === 'engine_buy_contract').args.p_type, 'ODD');
+        await waitFor(() => page.balance() === 'USD 9990.00', 'the purchase did not finish refreshing the account');
+    } finally { page.dom.window.close(); }
+});
+
+test('with no enabled contract types the page says so and Buy stays disabled even on a live feed', async () => {
+    const server = fakeServer(20);
+    const page = await openTradePage(server, '', { config: { ...defaultConfig(), enabled_contract_types: [] } });
+    try {
+        await goLive(server, page);
+        assert.equal(page.document.querySelector('[data-contract-family]').textContent, 'No contract types are enabled right now.');
+        assert.match(page.status(), /No contract types are enabled right now/);
+        assert.equal(page.buy().disabled, true);
+        submitForm(page);
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        assert.equal(server.calls.some((call) => call.name === 'engine_buy_contract'), false);
+    } finally { page.dom.window.close(); }
+});
+
+test('an empty index configuration is reported as unavailable and recovers when indices return', async () => {
+    const server = fakeServer(20);
+    const page = await openTradePage(server, '', { config: { indices: [], enabled_contract_types: ['EVEN', 'ODD'] }, refreshedConfig: defaultConfig() });
+    try {
+        await waitFor(() => page.feedState() === 'Unavailable', 'an empty configuration was not reported');
+        assert.match(page.status(), /No indices are open for trading right now/);
+        assert.equal(page.buy().disabled, true);
+        assert.equal(page.document.querySelector('select[name="index"]').options.length, 0, 'no index is invented');
+        assert.equal(server.calls.some((call) => call.name === 'get_recent_ticks'), false);
+        await waitFor(() => server.tickChannel()?.topic === 'ticks:demo:SPI10', 'the page did not recover when indices returned');
+        assert.equal(page.status(), '');
+        await goLive(server, page);
+        assert.equal(page.buy().disabled, false);
+    } finally { page.dom.window.close(); }
+});
+
+test('an index with no published ticks says so, keeps Buy disabled, and goes live when ticks arrive', async () => {
+    const server = fakeServer(0);
+    const page = await openTradePage(server);
+    try {
+        await waitFor(() => page.feedState() === 'No ticks yet', 'the empty feed was not reported');
+        assert.equal(page.document.querySelector('[data-live-price]').textContent, 'No ticks published yet');
+        assert.equal(page.buy().disabled, true);
+        server.tickChannel().status('CHANNEL_ERROR');
+        assert.equal(page.feedState(), 'No ticks yet', 'an empty feed is not presented as reconnecting');
+        server.add(5);
+        await waitFor(() => page.held().at(-1) === 5, 'polling never picked up the first ticks');
+        await waitFor(() => page.feedState() === 'Live · polling' && !page.buy().disabled, 'the feed did not recover');
+    } finally { page.dom.window.close(); }
+});
+
+test('the trade page shows the server Practice balance, refreshes it after a purchase and never carries it across accounts', async () => {
+    const server = fakeServer(20);
+    const page = await openTradePage(server);
+    try {
+        await waitFor(() => page.balance() === 'USD 10000.00', 'the Practice balance was not shown');
+        assert.match(page.document.querySelector('.order-panel').textContent, /Practice mode · virtual funds/);
+        await goLive(server, page);
+        page.document.querySelector('input[name="stake"]').value = '10';
+        submitForm(page);
+        await waitFor(() => page.balance() === 'USD 9990.00', 'the balance was not refreshed after the purchase');
+        page.switchAccount({ accountId: 'second-id', mode: 'DEMO', currency: 'USD' });
+        assert.equal(page.balance(), '—', 'the previous account balance was carried across the switch');
+        await waitFor(() => page.balance() === 'USD 2500.00', 'the new account balance was not loaded');
+        assert.ok(server.calls.filter((call) => call.name === 'get_account_summary').every((call) => ['practice-id', 'second-id'].includes(call.args.p_account_id)));
+    } finally { page.dom.window.close(); }
+});
+
+test('a startup failure is explained on the trade page and leaves nothing buyable', async () => {
+    const dom = new JSDOM(fs.readFileSync('pages/trade.html', 'utf8'), { runScripts: 'outside-only', url: 'https://example.test/pages/trade.html' });
+    Object.defineProperty(dom.window, 'crypto', { value: webcrypto });
+    dom.window.console.error = () => {};
+    const responses = { get_engine_config: { data: defaultConfig() }, enroll_practice_account: { data: null, error: { code: '42501', message: 'permission denied for function enroll_practice_account' }, status: 403 } };
+    dom.window.getSupabaseClient = async () => ({ rpc: async (name) => ({ data: null, error: null, ...(responses[name] || {}) }) });
+    const document = dom.window.document;
+    const form = document.querySelector('[data-trade-form]');
+    for (const control of form.elements) if (control.name && !(control.name in form)) Object.defineProperty(form, control.name, { get: () => form.elements.namedItem(control.name) });
+    for (const file of ['account-context.js', 'account-keys.js', 'account-switcher.js', 'trade.js']) dom.window.eval(fs.readFileSync(`assets/js/${file}`, 'utf8'));
+    try {
+        await waitFor(() => document.querySelector('[data-feed-state]').textContent === 'Unavailable', 'the startup failure was not shown');
+        assert.equal(document.querySelector('[data-trade-status]').textContent, 'Your Practice account could not be opened. Reload the page; if this continues, contact support.');
+        assert.equal(document.querySelector('[data-trade-form] [type="submit"]').disabled, true);
+        assert.equal(document.querySelector('select[name="index"]').disabled, true);
+        assert.equal(document.querySelector('[data-account-switcher]').disabled, true);
+        assert.equal(document.querySelector('[data-trade-balance]').textContent, 'Unavailable');
+        assert.doesNotMatch(document.body.textContent, /permission denied|42501|Reference:/);
+    } finally { dom.window.close(); }
 });
