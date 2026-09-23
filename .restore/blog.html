@@ -1,0 +1,208 @@
+﻿<!-- smartprofitbinary-frontend/pages/blog.html -->
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta name="description" content="SmartProfitBinary Blog - Latest cryptocurrency news, guides, and market analysis">
+    <title>Blog - SmartProfitBinary</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="../assets/css/glassmorphism.css" rel="stylesheet">
+    <link href="../assets/css/style.css" rel="stylesheet">
+    <link href="../assets/css/blog.css" rel="stylesheet">
+    <link href="../assets/css/public-shell.css" rel="stylesheet">
+</head>
+
+<body class="premium-theme public-shell">
+
+    <div class="animated-bg">
+        <div class="particle particle-1"></div>
+        <div class="particle particle-2"></div>
+        <div class="particle particle-3"></div>
+        <div class="particle particle-4"></div>
+        <div class="particle particle-5"></div>
+        <div class="particle particle-6"></div>
+    </div>
+
+    <header class="premium-header">
+        <nav class="navbar navbar-expand-xl">
+            <div class="container-fluid px-4">
+                <a class="navbar-brand premium-logo" href="dashboard.html">
+                    <div class="logo-text"><span class="logo-primary">SmartProfit</span><span
+                            class="logo-secondary">Binary</span></div>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="mainNav">
+                    <ul class="navbar-nav ms-auto align-items-center gap-1">
+                        <li class="nav-item"><a class="nav-link" href="dashboard.html"><i class="fas fa-chart-line me-1"></i>Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link" href="trade.html"><i class="fas fa-exchange-alt me-1"></i>Trade</a></li>
+                        <li class="nav-item"><a class="nav-link" href="profile.html"><i class="fas fa-user-circle me-1"></i>Profile</a></li>
+                        <li class="nav-item"><a class="nav-link" href="about.html">About</a></li>
+                        <li class="nav-item"><a class="nav-link active" href="blog.html">Blog</a></li>
+                        <li class="nav-item"><a class="nav-link" href="contact.html">Contact</a></li>
+                        <li class="nav-item"><a class="nav-link" href="faq.html">FAQ</a></li>
+                        <li class="nav-item ms-2"><button onclick="logout()" class="btn btn-outline-danger btn-sm rounded-pill px-3"><i class="fas fa-sign-out-alt me-1"></i>Logout</button></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="blog-wrapper">
+        <div class="container-fluid px-4 py-4">
+
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="premium-glass-card blog-hero">
+                        <div class="row align-items-center">
+                            <div class="col-lg-8">
+                                <h1 class="blog-hero-title">Crypto <span class="text-gradient-animated">Blog</span></h1>
+                                <p class="blog-hero-subtitle">Stay updated with the latest news, tutorials, and market
+                                    insights from the world of cryptocurrency.</p>
+                            </div>
+                            <div class="col-lg-4">
+                                <div class="search-wrapper w-100">
+                                    <i class="fas fa-search search-icon"></i>
+                                    <input type="search" class="premium-search w-100" placeholder="Search articles...">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="blog-categories-wrapper mb-4">
+                <div class="blog-categories">
+                    <button class="blog-cat-btn active" onclick="filterPosts('all')">All Posts</button>
+                    <button class="blog-cat-btn" onclick="filterPosts('market')"><i class="fas fa-chart-line me-1"></i>
+                        Market Analysis</button>
+                    <button class="blog-cat-btn" onclick="filterPosts('tutorial')"><i
+                            class="fas fa-graduation-cap me-1"></i> Tutorials</button>
+                    <button class="blog-cat-btn" onclick="filterPosts('news')"><i class="fas fa-newspaper me-1"></i>
+                        News</button>
+                    <button class="blog-cat-btn" onclick="filterPosts('defi')"><i class="fas fa-robot me-1"></i>
+                        DeFi</button>
+                    <button class="blog-cat-btn" onclick="filterPosts('nft')"><i class="fas fa-image me-1"></i>
+                        NFT</button>
+                    <button class="blog-cat-btn" onclick="filterPosts('security')"><i
+                            class="fas fa-shield-halved me-1"></i> Security</button>
+                    <button class="blog-cat-btn" onclick="filterPosts('mining')"><i class="fas fa-microchip me-1"></i>
+                        Mining</button>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-12">
+                    <h5 class="section-title"><i class="fas fa-fire me-2"></i>Featured Posts</h5>
+                </div>
+                <div class="col-lg-6">
+                    <div class="premium-glass-card blog-card featured">
+                        <div class="blog-card-img"><img
+                                src="https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=800"
+                                alt="Bitcoin ETF"><span class="blog-tag tag-market">Market Analysis</span></div>
+                        <div class="blog-card-body">
+                            <div class="blog-meta-top"><span><i class="far fa-calendar"></i> Sep 11, 2026</span><span><i
+                                        class="far fa-clock"></i> 8 min read</span></div>
+                            <h3 class="blog-card-title">Bitcoin Post-Halving Era & Sovereign Reserves: Macro Trajectory in 2026</h3>
+                            <p class="blog-card-excerpt">Global institutional capital and sovereign treasury adoption continue to surge past previous records. We analyze post-halving structural supply shifts, spot ETF maturation, and the path to global reserve asset status...</p>
+                            <div class="blog-card-footer">
+                                <div class="blog-author"><img
+                                        src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40"
+                                        alt="Author"><span>John Smith</span></div><a href="blog-single.html"
+                                    class="btn-read-more">Read More <i class="fas fa-arrow-right"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="premium-glass-card blog-card featured">
+                        <div class="blog-card-img"><img
+                                src="https://images.unsplash.com/photo-1621761191319-c6fb62004040?w=800"
+                                alt="Ethereum"><span class="blog-tag tag-tutorial">Tutorial</span></div>
+                        <div class="blog-card-body">
+                            <div class="blog-meta-top"><span><i class="far fa-calendar"></i> Sep 09, 2026</span><span><i
+                                        class="far fa-clock"></i> 12 min read</span></div>
+                            <h3 class="blog-card-title">Ethereum Restaking Ecosystem & Layer-2 Blob Economics: Complete 2026 Guide</h3>
+                            <p class="blog-card-excerpt">Explore the modern Ethereum yield landscape across EigenLayer, Symbiotic, and liquid restaking tokens. Discover how proto-danksharding and sub-cent L2 execution fees unlocked high-frequency decentralized applications...</p>
+                            <div class="blog-card-footer">
+                                <div class="blog-author"><img
+                                        src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40"
+                                        alt="Author"><span>Sarah Davis</span></div><a href="blog-single.html"
+                                    class="btn-read-more">Read More <i class="fas fa-arrow-right"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h5 class="section-title"><i class="fas fa-clock me-2"></i>Latest Posts</h5>
+                </div>
+            </div>
+
+            <div class="row g-3" id="blogPostsGrid"></div>
+
+            <div class="row mt-4">
+                <div class="col-12">
+                    <nav class="blog-pagination">
+                        <ul class="pagination-list">
+                            <li class="page-item"><a href="#" class="page-link-prev"><i class="fas fa-chevron-left"></i>
+                                    Previous</a></li>
+                            <li class="page-item"><a href="#" class="page-num active">1</a></li>
+                            <li class="page-item"><a href="#" class="page-num">2</a></li>
+                            <li class="page-item"><a href="#" class="page-num">3</a></li>
+                            <li class="page-item"><a href="#" class="page-num">4</a></li>
+                            <li class="page-item"><span class="page-dots">...</span></li>
+                            <li class="page-item"><a href="#" class="page-num">12</a></li>
+                            <li class="page-item"><a href="#" class="page-link-next">Next <i
+                                        class="fas fa-chevron-right"></i></a></li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="premium-footer">
+        <div class="container-fluid px-4">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="footer-brand-small">SmartProfitBinary</div>
+                    <p class="footer-desc">Professional cryptocurrency and binary options trading platform.</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Quick Links</h6>
+                    <ul>
+                        <li><a href="about.html">About</a></li>
+                        <li><a href="blog.html">Blog</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h6>Support</h6>
+                    <ul>
+                        <li><a href="faq.html">FAQ</a></li>
+                        <li><a href="#">API Docs</a></li>
+                        <li><a href="#">Fees</a></li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="footer-divider">
+            <p class="text-center footer-bottom-text">&copy; 2026 SmartProfitBinary. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/blog.js"></script>
+</body>
+
+</html>

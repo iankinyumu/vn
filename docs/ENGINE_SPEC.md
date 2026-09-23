@@ -1,4 +1,4 @@
-# Astra engine specification
+# SmartProfit engine specification
 
 Each index is scoped by `(index_code, execution_mode)`. A tick number is fixed by its schedule, and the settlement digit is drawn by rejection sampling HMAC-SHA-256 blocks: `HMAC(seed, "digit|mode|index|tick|counter")`; bytes below 250 map modulo ten. The displayed price is cosmetic and its final decimal digit is constrained to equal the settlement digit. The price walk is deterministic: it evolves log-price as `x + kappa * (ln(base) - x) + sigma * z`, where `z` is Box-Muller output from two 53-bit uniforms taken from `HMAC(seed, "walk|mode|index|tick|0")`. A database trigger rejects any tick whose displayed final digit differs from its settlement digit.
 

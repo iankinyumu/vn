@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 import { createTestDatabase } from './helpers/test-db.mjs';
 
@@ -19,8 +18,25 @@ test('legacy order commands are shut down by the module guard', async () => {
 
 test('active source has no legacy feed references', () => {
     const terms = ['bina' + 'nce', 'bit' + 'coin', '\\bb' + 'tc\\b', '\\beth\\b', 'usd' + 't', 'cryp' + 'to', 'market_' + 'symbol', 'market-' + 'registry', 'market-' + 'ticker', 'fcsa' + 'pi', 'upst' + 'ash'];
-    const result = spawnSync('rg', ['-rni', '-g', '!**/_disabled/**', '-e', terms.join('|'), 'pages', 'assets', 'supabase/functions', 'README.md', 'package.json', '.env.example'], { encoding: 'utf8' });
-    assert.equal(result.status, 1, result.stdout);
+    const matcher = new RegExp(terms.join('|'), 'i');
+    const roots = ['pages', 'assets', 'supabase/functions', 'README.md', 'package.json', '.env.example'];
+    const matches = [];
+    const visit = (target) => {
+        if (!fs.existsSync(target)) return;
+        const stat = fs.statSync(target);
+        if (stat.isDirectory()) {
+            for (const entry of fs.readdirSync(target, { withFileTypes: true })) {
+                if (entry.isDirectory() && entry.name === '_disabled') continue;
+                visit(`${target}/${entry.name}`);
+            }
+            return;
+        }
+        const contents = fs.readFileSync(target);
+        if (contents.includes(0)) return;
+        if (matcher.test(contents.toString('utf8'))) matches.push(target);
+    };
+    roots.forEach(visit);
+    assert.deepEqual(matches, [], `legacy feed references found in: ${matches.join(', ')}`);
 });
 
 test('the repository root contains no duplicate frontend pages', () => {
