@@ -87,7 +87,8 @@ export async function createTestDatabase() {
         '20260920490000_engine_rpc_grants.sql',
         '20260920500000_engine_permissions_hardening.sql',
         '20260920510000_engine_account_stats.sql',
-        '20260920520000_engine_contract_realtime.sql'
+        '20260920520000_engine_contract_realtime.sql',
+        '20260920530000_engine_admin_operations.sql'
     ];
 
     for (const name of migrations) {

@@ -157,17 +157,17 @@
         <button id="tabSupport" class="tab-btn active" data-tab="supportPanel" type="button">
           <i class="fas fa-headset me-1"></i> Support
         </button>
-        <button id="tabOverview" class="tab-btn" data-tab="overviewPanel" type="button">
+        <button id="tabOverview" class="tab-btn" data-tab="overviewPanel" type="button" hidden>
           <i class="fas fa-chart-pie me-1"></i> Overview
         </button>
-        <button id="tabCustomers" class="tab-btn" data-tab="customersPanel" type="button">
+        <button id="tabCustomers" class="tab-btn" data-tab="customersPanel" type="button" hidden>
           <i class="fas fa-users me-1"></i> Customers
         </button>
-        <button id="tabTrading" class="tab-btn" data-tab="tradingPanel" type="button">
-          <i class="fas fa-exchange-alt me-1"></i> Demo Trading
+        <button id="tabContracts" class="tab-btn" data-tab="contractsPanel" type="button" hidden>
+          <i class="fas fa-exchange-alt me-1"></i> Contracts
         </button>
-        <button id="tabMarkets" class="tab-btn" data-tab="marketsPanel" type="button">
-          <i class="fas fa-bolt me-1"></i> Markets
+        <button id="tabEngine" class="tab-btn" data-tab="enginePanel" type="button" hidden>
+          <i class="fas fa-bolt me-1"></i> Engine
         </button>
         <button id="tabStaff" class="tab-btn" data-tab="staffPanel" type="button" hidden>
           <i class="fas fa-user-shield me-1"></i> Staff
@@ -242,141 +242,246 @@
           </div>
           <div class="row g-4">
             <div class="col-md-6">
-              <h4 class="h6 text-uppercase text-secondary fw-bold mb-2">Demo Wallet Balances</h4>
-              <ul id="customerBalancesList" class="list-group list-group-flush bg-white rounded border"></ul>
+              <h4 class="h6 text-uppercase text-secondary fw-bold mb-2">Accounts &amp; Balances</h4>
+              <ul id="customerAccountsList" class="list-group list-group-flush bg-white rounded border"></ul>
             </div>
             <div class="col-md-6">
-              <h4 class="h6 text-uppercase text-secondary fw-bold mb-2">Trading Restrictions</h4>
+              <h4 class="h6 text-uppercase text-secondary fw-bold mb-2">Restrictions</h4>
+              <p id="restrictionListStatus" role="status" aria-live="polite" class="text-secondary small mb-2"></p>
               <ul id="customerRestrictionsList" class="list-group list-group-flush bg-white rounded border mb-3"></ul>
-              <form id="applyRestrictionForm" class="p-3 rounded bg-white border">
-                <label for="restrictionReason" class="form-label small text-uppercase text-secondary fw-bold">Restrict Demo Trading</label>
-                <div class="input-group">
-                  <input id="restrictionReason" placeholder="Reason (3-500 chars)" minlength="3" maxlength="500" required class="form-control form-control-sm bg-light">
-                  <button type="submit" class="btn btn-danger btn-sm px-3">
-                    <i class="fas fa-ban me-1"></i> Apply Restriction
-                  </button>
+              <form id="applyRestrictionForm" class="p-3 rounded bg-white border" hidden>
+                <h5 class="form-label small text-uppercase text-secondary fw-bold">Apply a restriction</h5>
+                <div class="row g-2 mb-2">
+                  <label class="col-sm-4 small">Severity <select id="restrictionSeverity" class="form-select form-select-sm"></select></label>
+                  <label class="col-sm-4 small">Type <select id="restrictionType" class="form-select form-select-sm"></select></label>
+                  <label class="col-sm-4 small">Scope <select id="restrictionScope" class="form-select form-select-sm"></select></label>
                 </div>
+                <fieldset id="restrictionParams" class="row g-2 mb-2" hidden>
+                  <legend class="small text-secondary mb-1">Limits (fill at least one)</legend>
+                  <label class="col-sm-4 small">Max stake <input data-param="max_stake" type="number" min="0.01" step="0.01" class="form-control form-control-sm"></label>
+                  <label class="col-sm-4 small">Max open contracts <input data-param="max_open_contracts" type="number" min="1" step="1" class="form-control form-control-sm"></label>
+                  <label class="col-sm-4 small">Max daily net loss <input data-param="max_daily_net_loss" type="number" min="0.01" step="0.01" class="form-control form-control-sm"></label>
+                  <label class="col-sm-4 small">Max amount per day <input data-param="max_amount_per_day" type="number" min="0.01" step="0.01" class="form-control form-control-sm"></label>
+                </fieldset>
+                <label class="d-block small mb-2">Expires (optional, your local time) <input id="restrictionExpires" type="datetime-local" class="form-control form-control-sm"></label>
+                <label class="d-block small mb-2">Reason (audited) <input id="restrictionReason" placeholder="Reason (3-500 characters)" minlength="3" maxlength="500" required class="form-control form-control-sm bg-light"></label>
+                <label class="d-block small mb-2" data-reverify hidden>Authenticator code <input inputmode="numeric" maxlength="6" autocomplete="one-time-code" class="form-control form-control-sm"></label>
+                <button type="submit" class="btn btn-danger btn-sm px-3"><i class="fas fa-ban me-1"></i> Apply restriction</button>
+                <p id="restrictionStatus" role="status" aria-live="polite" class="text-secondary small mt-2 mb-0"></p>
               </form>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- 4. Demo Trading Oversight Module -->
-      <section id="tradingPanel" class="admin-tab-panel" hidden aria-labelledby="tradingTitle">
+      <!-- 4. Contracts Module -->
+      <section id="contractsPanel" class="admin-tab-panel" hidden aria-labelledby="contractsTitle">
         <div class="d-flex justify-content-between align-items-center mb-3">
-          <h2 id="tradingTitle" class="h5 text-dark fw-bold mb-0">Demo Trading Surveillance</h2>
-          <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 rounded-pill">
-            <span class="status-dot dot-active me-1"></span> Live Feed
-          </span>
+          <h2 id="contractsTitle" class="h5 text-dark fw-bold mb-0">Contracts</h2>
+          <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 rounded-pill">Newest first</span>
         </div>
-
-        <!-- Modern Trading Filter Bar -->
-        <form id="tradingFilterForm" class="modern-filter-bar mb-4">
+        <form id="contractFilterForm" class="modern-filter-bar mb-4">
           <div class="filter-item">
-            <label for="orderSymbolFilter" class="form-label small text-uppercase text-secondary fw-bold mb-1">
-              <i class="fas fa-coins me-1 text-primary"></i> Instrument
-            </label>
-            <select id="orderSymbolFilter" class="form-select">
-              <option value="">All Instruments</option>
-              <!-- Populated dynamically from live market data -->
+            <label for="contractModeFilter" class="form-label small text-uppercase text-secondary fw-bold mb-1">Account type</label>
+            <select id="contractModeFilter" class="form-select">
+              <option value="">All</option>
+              <option value="DEMO">Practice</option>
+              <option value="REAL">Real</option>
             </select>
           </div>
           <div class="filter-item">
-            <label for="orderStateFilter" class="form-label small text-uppercase text-secondary fw-bold mb-1">
-              <i class="fas fa-tags me-1 text-primary"></i> Order State
-            </label>
-            <select id="orderStateFilter" class="form-select">
-              <option value="">All States</option>
-              <option value="OPEN">OPEN</option>
-              <option value="FILLED">FILLED</option>
-              <option value="CANCELLED">CANCELLED</option>
-              <option value="REJECTED">REJECTED</option>
+            <label for="contractAccountFilter" class="form-label small text-uppercase text-secondary fw-bold mb-1">Account ID</label>
+            <input id="contractAccountFilter" class="form-control" placeholder="Any account" autocomplete="off">
+          </div>
+          <div class="filter-item">
+            <label for="contractIndexFilter" class="form-label small text-uppercase text-secondary fw-bold mb-1">Index</label>
+            <select id="contractIndexFilter" class="form-select">
+              <option value="">All indices</option>
+              <option value="SPI10">SPI10</option>
+              <option value="SPI25">SPI25</option>
+              <option value="SPI50">SPI50</option>
+              <option value="SPI75">SPI75</option>
+              <option value="SPI100">SPI100</option>
             </select>
           </div>
-          <button type="submit" class="btn btn-premium-primary align-self-end">
-            <i class="fas fa-sliders-h me-1"></i> Filter Orders
-          </button>
+          <div class="filter-item">
+            <label for="contractStateFilter" class="form-label small text-uppercase text-secondary fw-bold mb-1">State</label>
+            <select id="contractStateFilter" class="form-select">
+              <option value="">All states</option>
+              <option value="OPEN">Open</option>
+              <option value="WON">Won</option>
+              <option value="LOST">Lost</option>
+              <option value="VOID">Void</option>
+            </select>
+          </div>
+          <div class="filter-item">
+            <label for="contractFromFilter" class="form-label small text-uppercase text-secondary fw-bold mb-1">From (UTC)</label>
+            <input id="contractFromFilter" type="date" class="form-control">
+          </div>
+          <div class="filter-item">
+            <label for="contractToFilter" class="form-label small text-uppercase text-secondary fw-bold mb-1">To (UTC)</label>
+            <input id="contractToFilter" type="date" class="form-control">
+          </div>
+          <button type="submit" class="btn btn-premium-primary align-self-end"><i class="fas fa-sliders-h me-1"></i> Filter</button>
         </form>
-
-        <p id="tradingStatus" role="status" aria-live="polite" class="text-secondary small mb-2"></p>
+        <p id="contractsStatus" role="status" aria-live="polite" class="text-secondary small mb-2"></p>
         <div class="table-responsive">
           <table class="table align-middle">
             <thead>
               <tr>
-                <th class="ps-3">Order ID</th>
-                <th>Customer</th>
-                <th>Symbol</th>
-                <th>Side</th>
-                <th>Type</th>
-                <th>Qty</th>
-                <th>Price</th>
+                <th class="ps-3">Created</th>
+                <th>Contract</th>
+                <th>Account type</th>
+                <th>Account</th>
+                <th>Index</th>
+                <th>Contract type</th>
+                <th>Stake</th>
+                <th>Payout</th>
                 <th>State</th>
-                <th>Submitted</th>
+                <th>Entry → settle tick</th>
                 <th class="text-end pe-3">Action</th>
               </tr>
             </thead>
-            <tbody id="ordersTableBody"></tbody>
+            <tbody id="contractsTableBody"></tbody>
           </table>
         </div>
-
-        <!-- Order Fill Inspector Drawer -->
-        <div id="orderDetailCard" class="detail-card mt-4" hidden>
+        <div id="contractDetailCard" class="detail-card mt-4" hidden>
           <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
-            <h3 id="orderDetailTitle" class="h5 text-dark fw-bold mb-0">Order Execution Details</h3>
-            <button id="closeOrderDetail" type="button" class="btn btn-light btn-sm rounded-pill px-3 border">
-              <i class="fas fa-times me-1"></i> Close Inspector
-            </button>
+            <h3 id="contractDetailTitle" class="h5 text-dark fw-bold mb-0">Contract detail</h3>
+            <button id="closeContractDetail" type="button" class="btn btn-light btn-sm rounded-pill px-3 border"><i class="fas fa-times me-1"></i> Close</button>
           </div>
-          <div id="orderDetailContent"></div>
+          <div id="contractDetailContent"></div>
+          <form id="contractVoidForm" class="p-3 rounded bg-white border mt-3" hidden>
+            <label for="contractVoidReason" class="form-label small text-uppercase text-secondary fw-bold">Void and refund (Owner only, audited)</label>
+            <textarea id="contractVoidReason" class="form-control bg-light mb-2" minlength="10" maxlength="500" required placeholder="Reason (at least 10 characters)"></textarea>
+            <label class="d-block small mb-2" data-reverify hidden>Authenticator code <input inputmode="numeric" maxlength="6" autocomplete="one-time-code" class="form-control form-control-sm"></label>
+            <button type="submit" class="btn btn-danger btn-sm px-3"><i class="fas fa-undo me-1"></i> Void contract</button>
+          </form>
+          <p id="contractVoidStatus" role="status" aria-live="polite" class="text-secondary small mt-2 mb-0"></p>
         </div>
       </section>
 
-      <!-- 5. Market Health & Controls Module -->
-      <section id="marketsPanel" class="admin-tab-panel" hidden aria-labelledby="marketsTitle">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h2 id="marketsTitle" class="h5 text-dark fw-bold mb-0">Market Controls &amp; Feeds</h2>
-          <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-3 py-2 rounded-pill">
-            Circuit Breakers
-          </span>
+      <!-- 5. Engine Module -->
+      <section id="enginePanel" class="admin-tab-panel" hidden aria-labelledby="engineTitle">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <h2 id="engineTitle" class="h5 text-dark fw-bold mb-0">Engine</h2>
+          <div class="d-flex gap-2 align-items-center">
+            <label for="engineModeFilter" class="small text-secondary">Account type</label>
+            <select id="engineModeFilter" class="form-select form-select-sm w-auto">
+              <option value="">All</option>
+              <option value="DEMO">Practice</option>
+              <option value="REAL">Real</option>
+            </select>
+            <button id="engineRefresh" type="button" class="btn btn-light btn-sm rounded-pill px-3 border"><i class="fas fa-redo me-1"></i> Refresh</button>
+          </div>
         </div>
-        <p id="marketsStatus" role="status" aria-live="polite" class="text-secondary small mb-2"></p>
-        <div class="table-responsive">
+        <p id="engineStatus" role="status" aria-live="polite" class="text-secondary small mb-2"></p>
+
+        <h3 class="h6 text-uppercase text-secondary fw-bold">Indices</h3>
+        <div class="table-responsive mb-3">
           <table class="table align-middle">
             <thead>
               <tr>
-                <th class="ps-3">Symbol</th>
-                <th>Bid Price</th>
-                <th>Ask Price</th>
-                <th>Last Quote</th>
-                <th>Freshness</th>
-                <th>Status</th>
-                <th class="text-end pe-3">Control</th>
+                <th class="ps-3">Index</th><th>Account type</th><th>Trading</th><th>Health</th><th>Last tick</th><th>Lag</th><th>Missing (1 h)</th><th>Stuck</th><th>Retrying</th><th>χ²</th><th>Longest run</th><th class="text-end pe-3">Control</th>
               </tr>
             </thead>
-            <tbody id="marketsTableBody"></tbody>
+            <tbody id="engineHealthBody"></tbody>
+          </table>
+        </div>
+        <div id="indexStatusCard" class="detail-card mb-4" hidden>
+          <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+            <h4 id="indexStatusTitle" class="h6 text-dark fw-bold mb-0">Change trading status</h4>
+            <button id="indexStatusCancel" type="button" class="btn btn-light btn-sm rounded-pill px-3 border"><i class="fas fa-times me-1"></i> Cancel</button>
+          </div>
+          <form id="indexStatusForm" class="p-3 rounded bg-white border">
+            <input type="hidden" id="indexStatusIndex">
+            <input type="hidden" id="indexStatusMode">
+            <input type="hidden" id="indexStatusTarget">
+            <label for="indexStatusReason" class="form-label small text-uppercase text-secondary fw-bold">Reason (audited)</label>
+            <input id="indexStatusReason" class="form-control bg-light mb-2" minlength="10" maxlength="500" required placeholder="Reason (at least 10 characters)">
+            <button type="submit" class="btn btn-premium-primary btn-sm"><i class="fas fa-check me-1"></i> Confirm</button>
+          </form>
+          <p id="indexStatusMessage" role="status" aria-live="polite" class="text-secondary small mt-2 mb-0"></p>
+        </div>
+
+        <h3 class="h6 text-uppercase text-secondary fw-bold">Policy</h3>
+        <p id="enginePolicyCurrent" class="small"></p>
+        <div class="table-responsive mb-3">
+          <table class="table align-middle small">
+            <thead><tr><th class="ps-3">Version</th><th>Effective</th><th>Margin</th><th>Contract types</th><th>Practice stake</th><th>Ticks</th><th>Reason</th></tr></thead>
+            <tbody id="enginePolicyHistory"></tbody>
+          </table>
+        </div>
+        <form id="policyPublishForm" class="p-3 rounded bg-white border mb-4" hidden>
+          <h4 class="h6 text-dark fw-bold">Publish a new policy version</h4>
+          <p class="small text-secondary">Applies to new purchases only; open contracts keep their own version.</p>
+          <div class="row g-2 mb-2">
+            <label class="col-sm-3 small">House margin <input id="policyHouseMargin" type="number" step="0.0001" class="form-control form-control-sm" required></label>
+            <label class="col-sm-3 small">Min ticks <input id="policyMinTicks" type="number" step="1" class="form-control form-control-sm" required></label>
+            <label class="col-sm-3 small">Max ticks <input id="policyMaxTicks" type="number" step="1" class="form-control form-control-sm" required></label>
+            <label class="col-sm-3 small">Min profit ratio <input id="policyMinProfit" type="number" step="0.0001" class="form-control form-control-sm" required></label>
+            <label class="col-sm-3 small">Max settlement delay (s) <input id="policySettlementDelay" type="number" step="1" class="form-control form-control-sm" required></label>
+            <label class="col-sm-3 small">Max feed lag (s) <input id="policyFeedLag" type="number" step="1" class="form-control form-control-sm" required></label>
+            <label class="col-sm-3 small">Tick retention (days) <input id="policyRetention" type="number" step="1" class="form-control form-control-sm" required></label>
+            <label class="col-sm-3 small">Margin overrides (JSON) <input id="policyOverrides" class="form-control form-control-sm" value="{}"></label>
+          </div>
+          <fieldset class="mb-2 small">
+            <legend class="small text-secondary mb-1">Enabled contract types</legend>
+            <label class="me-3"><input type="checkbox" name="policyType" value="EVEN"> EVEN</label>
+            <label class="me-3"><input type="checkbox" name="policyType" value="ODD"> ODD</label>
+            <label class="me-3"><input type="checkbox" name="policyType" value="OVER"> OVER</label>
+            <label class="me-3"><input type="checkbox" name="policyType" value="UNDER"> UNDER</label>
+            <label class="me-3"><input type="checkbox" name="policyType" value="MATCH"> MATCH</label>
+            <label class="me-3"><input type="checkbox" name="policyType" value="DIFFER"> DIFFER</label>
+          </fieldset>
+          <div class="row g-2 mb-2">
+            <label class="col-sm-4 small">Practice min stake <input id="policyMinStake" type="number" step="0.01" class="form-control form-control-sm" required></label>
+            <label class="col-sm-4 small">Practice max stake <input id="policyMaxStake" type="number" step="0.01" class="form-control form-control-sm" required></label>
+            <label class="col-sm-4 small">Max open contracts <input id="policyMaxOpen" type="number" step="1" class="form-control form-control-sm" required></label>
+            <label class="col-sm-4 small">Max buys per minute <input id="policyMaxBuys" type="number" step="1" class="form-control form-control-sm" required></label>
+            <label class="col-sm-4 small">Max liability per tick <input id="policyMaxLiability" type="number" step="0.01" class="form-control form-control-sm" required></label>
+          </div>
+          <label class="d-block small mb-2">Reason (audited) <input id="policyReason" class="form-control form-control-sm bg-light" minlength="10" maxlength="500" required placeholder="Reason (at least 10 characters)"></label>
+          <button type="submit" class="btn btn-premium-primary btn-sm"><i class="fas fa-upload me-1"></i> Publish policy</button>
+          <p id="policyPublishStatus" role="status" aria-live="polite" class="text-secondary small mt-2 mb-0"></p>
+        </form>
+
+        <h3 class="h6 text-uppercase text-secondary fw-bold">Exposure by settle tick</h3>
+        <div class="table-responsive mb-4">
+          <table class="table align-middle small">
+            <thead><tr><th class="ps-3">Account type</th><th>Index</th><th>Settle tick</th><th>Worst-case liability</th><th>Net house loss by exit digit</th></tr></thead>
+            <tbody id="engineExposureBody"></tbody>
           </table>
         </div>
 
-        <!-- Market Status Change Card -->
-        <div id="symbolActionCard" class="detail-card mt-4" hidden>
+        <h3 class="h6 text-uppercase text-secondary fw-bold">Epochs</h3>
+        <div class="table-responsive mb-4">
+          <table class="table align-middle small">
+            <thead><tr><th class="ps-3">Day</th><th>Account type</th><th>Seed commitment</th><th>Chain hash</th><th>Committed</th><th>Reveal status</th></tr></thead>
+            <tbody id="engineEpochsBody"></tbody>
+          </table>
+        </div>
+
+        <h3 class="h6 text-uppercase text-secondary fw-bold">Stuck contracts</h3>
+        <div class="table-responsive mb-3">
+          <table class="table align-middle small">
+            <thead><tr><th class="ps-3">Contract</th><th>Account type</th><th>Index</th><th>Settle tick</th><th>Why</th><th>Attempts</th><th>Last error</th><th class="text-end pe-3">Action</th></tr></thead>
+            <tbody id="engineStuckBody"></tbody>
+          </table>
+        </div>
+        <div id="engineVoidCard" class="detail-card" hidden>
           <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
-            <h3 id="symbolActionTitle" class="h5 text-dark fw-bold mb-0">Update Trading Status</h3>
-            <button id="symbolActionCancel" type="button" class="btn btn-light btn-sm rounded-pill px-3 border">
-              <i class="fas fa-times me-1"></i> Cancel
-            </button>
+            <h4 id="engineVoidTitle" class="h6 text-dark fw-bold mb-0">Void contract</h4>
+            <button id="engineVoidCancel" type="button" class="btn btn-light btn-sm rounded-pill px-3 border"><i class="fas fa-times me-1"></i> Cancel</button>
           </div>
-          <form id="symbolActionForm" class="p-3 rounded bg-white border">
-            <input type="hidden" id="symbolActionTarget">
-            <input type="hidden" id="symbolActionPaused">
-            <div class="mb-3">
-              <label for="symbolActionReason" class="form-label small text-uppercase text-secondary fw-bold">Operator Reason (Audit Logged)</label>
-              <input id="symbolActionReason" placeholder="Reason (3-500 chars)" minlength="3" maxlength="500" required class="form-control bg-light">
-            </div>
-            <button id="symbolActionSubmit" type="submit" class="btn btn-premium-primary">
-              <i class="fas fa-check me-1"></i> Confirm Status Change
-            </button>
+          <form id="engineVoidForm" class="p-3 rounded bg-white border">
+            <input type="hidden" id="engineVoidContract">
+            <label for="engineVoidReason" class="form-label small text-uppercase text-secondary fw-bold">Reason (audited)</label>
+            <textarea id="engineVoidReason" class="form-control bg-light mb-2" minlength="10" maxlength="500" required placeholder="Reason (at least 10 characters)"></textarea>
+            <label class="d-block small mb-2" data-reverify hidden>Authenticator code <input inputmode="numeric" maxlength="6" autocomplete="one-time-code" class="form-control form-control-sm"></label>
+            <button type="submit" class="btn btn-danger btn-sm px-3"><i class="fas fa-undo me-1"></i> Void contract</button>
           </form>
+          <p id="engineVoidStatus" role="status" aria-live="polite" class="text-secondary small mt-2 mb-0"></p>
         </div>
       </section>
 
@@ -436,10 +541,12 @@
               <label for="staffRoleReason" class="form-label small text-uppercase text-secondary fw-bold">Operator Reason (Audit Log)</label>
               <input id="staffRoleReason" placeholder="Reason (3-500 chars)" minlength="3" maxlength="500" required class="form-control bg-light">
             </div>
+            <label class="d-block small mb-3" data-reverify hidden>Authenticator code <input inputmode="numeric" maxlength="6" autocomplete="one-time-code" class="form-control form-control-sm"></label>
             <button type="submit" class="btn btn-premium-primary">
               <i class="fas fa-save me-1"></i> Save Privilege Role
             </button>
           </form>
+          <p id="staffRoleStatus" role="status" aria-live="polite" class="text-secondary small mt-2 mb-0"></p>
         </div>
       </section>
 
