@@ -77,7 +77,10 @@ export async function createTestDatabase() {
         '20260920390000_engine_pgcrypto_qualification.sql',
         '20260920400000_engine_contract_guardrails.sql',
         '20260920410000_engine_policy_hardening.sql',
-        '20260920420000_engine_health_metrics.sql'
+        '20260920420000_engine_health_metrics.sql',
+        '20260920430000_engine_settlement_hardening.sql',
+        '20260920440000_engine_customer_rpc_hardening.sql',
+        '20260920450000_engine_real_gate_hardening.sql'
     ];
 
     for (const name of migrations) {

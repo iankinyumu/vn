@@ -24,7 +24,7 @@ for (const file of engineFiles) {
         found++;
         const [, name, body] = match;
         if (!/^public\.engine_|^public\.(enroll_practice_account|reset_practice_balance|enable_real_accounts)$/.test(name) || allow.has(name)) continue;
-        const conditional = /\bif\b[^;]*\bexecution_mode\b|\bcase\b[^;]*\bexecution_mode\b/i.exec(body);
+        const conditional = /(?:^|\n)\s*if\s+[^;\r\n]*\bexecution_mode\b|(?:^|\n)\s*case\s+[^;\r\n]*\bexecution_mode\b/i.exec(body);
         if (conditional) {
             const line = body.slice(0, conditional.index).split(/\r?\n/).length;
             console.error(`${file}:${line}: undeclared execution_mode branch in ${name}`);

@@ -11,7 +11,7 @@ begin
  ) order by i.execution_mode,i.sort_order),'[]'::jsonb) into v_result
  from public.engine_indices i join public.index_state s on s.index_code=i.code and s.execution_mode=i.execution_mode
  left join lateral (
-  select greatest(0,floor(extract(epoch from now()-greatest(i.t0,now()-interval '1 hour')))*1000/i.tick_interval_ms)::integer-count(*)::integer) count
+  select greatest(0, (floor(extract(epoch from (now() - greatest(i.t0, now() - interval '1 hour'))) * 1000 / i.tick_interval_ms))::integer - count(*)::integer) count
   from public.index_ticks t where t.index_code=i.code and t.execution_mode=i.execution_mode and t.scheduled_at>=now()-interval '1 hour'
  ) missing on true
  left join lateral (select count(*)::integer count from public.engine_contracts c where c.index_code=i.code and c.execution_mode=i.execution_mode and c.state='OPEN' and c.settle_tick_no<=s.last_tick_no) stuck on true
