@@ -11,7 +11,8 @@
         const client = await window.getSupabaseClient();
         await rpc(client, 'enroll_practice_account');
         const config = await rpc(client, 'get_engine_config');
-        const accounts = (await rpc(client, 'list_my_accounts')) || config.accounts || [];
+        const accounts = await rpc(client, 'list_my_accounts');
+        if (!Array.isArray(accounts)) throw new Error('Accounts could not be loaded.');
         const practice = accounts.find((account) => account.execution_mode === 'DEMO' && account.status === 'ACTIVE');
         if (!practice) throw new Error('Practice account is unavailable.');
         const select = document.querySelector('[data-account-switcher]');
@@ -32,6 +33,7 @@
                 const selected = accounts.find((account) => account.id === select.value);
                 if (!selected || selected.status !== 'ACTIVE') return;
                 window.smartProfitAccountKeys?.clearAccountScoped();
+                window.smartProfitCache?.clear();
                 document.dispatchEvent(new Event('smartprofit:clear-trade-state'));
                 choose(selected);
             });
