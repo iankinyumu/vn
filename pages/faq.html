@@ -1,1 +1,144 @@
-<!doctype html><html lang="en" data-bs-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>FAQ — SmartProfit</title><link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet"><link href="../assets/css/glassmorphism.css" rel="stylesheet"><link href="../assets/css/style.css" rel="stylesheet"><link href="../assets/css/public-shell.css" rel="stylesheet"></head><body class="premium-theme public-shell"><header class="premium-header"><nav class="navbar"><div class="container"><a class="navbar-brand premium-logo" href="index.html">SmartProfit</a><a class="nav-link" href="fairness.html">Fairness</a></div></nav></header><main class="container py-5"><section class="premium-glass-card p-5"><h1>Frequently asked questions</h1><p>Practice funds are virtual. Each digit is independent, and past digits do not predict the next one.</p></section></main></body></html>
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta name="description"
+        content="Answers on digit contracts, payouts, the house margin, practice funds, restrictions and how to verify fairness.">
+    <title>FAQ — SmartProfit</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="../assets/css/glassmorphism.css" rel="stylesheet">
+    <link href="../assets/css/style.css" rel="stylesheet">
+    <link href="../assets/css/faq.css" rel="stylesheet">
+    <link href="../assets/css/public-shell.css" rel="stylesheet">
+</head>
+
+<body class="premium-theme public-shell" data-shell-surface="public" data-shell-active="faq">
+    <div data-shell-header></div>
+
+    <main class="faq-wrapper">
+        <div class="container-fluid px-4 py-4">
+
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="premium-glass-card faq-hero text-center">
+                        <div class="faq-hero-icon"><i class="fas fa-circle-question"></i></div>
+                        <h1 class="faq-hero-title">Frequently Asked <span class="text-gradient-animated">Questions</span></h1>
+                        <p class="faq-hero-subtitle">How the indices work, how payouts are priced, what practice funds can do, and what the fairness proof honestly covers.</p>
+                        <div class="search-wrapper faq-search">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="search" class="premium-search" id="faqSearch"
+                                placeholder="Search the questions..." aria-label="Search the questions">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-12">
+                    <div class="faq-categories-wrapper">
+                        <div class="faq-categories" id="faqCategories">
+                            <button class="faq-cat-btn active" data-category="all"><i class="fas fa-list"></i> All</button>
+                            <button class="faq-cat-btn" data-category="general"><i class="fas fa-circle-info"></i> General</button>
+                            <button class="faq-cat-btn" data-category="contracts"><i class="fas fa-dice"></i> Contracts</button>
+                            <button class="faq-cat-btn" data-category="payouts"><i class="fas fa-percent"></i> Payouts</button>
+                            <button class="faq-cat-btn" data-category="account"><i class="fas fa-user"></i> Account</button>
+                            <button class="faq-cat-btn" data-category="fairness"><i class="fas fa-scale-balanced"></i> Fairness</button>
+                            <button class="faq-cat-btn" data-category="restrictions"><i class="fas fa-shield-halved"></i> Restrictions</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-lg-8">
+
+                    <div class="faq-section" id="faqList"></div>
+                    <p class="text-center mt-3" id="faqEmpty" hidden>No question matches that search.</p>
+
+                    <div class="premium-glass-card faq-contact-card text-center mt-3">
+                        <h5><i class="fas fa-headset me-2"></i> Still stuck?</h5>
+                        <p>Send a support request from the contact page and track its status there.</p>
+                        <div class="faq-contact-btns">
+                            <a href="contact.html" class="btn btn-premium-primary"><i class="fas fa-envelope me-2"></i> Contact support</a>
+                            <a href="fairness.html" class="btn btn-glass-premium"><i class="fas fa-scale-balanced me-2"></i> Run the verifier</a>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="sidebar-sticky">
+
+                        <div class="premium-glass-card sidebar-card">
+                            <h5 class="sidebar-title"><i class="fas fa-clock me-2"></i> Where to look next</h5>
+                            <div class="quick-help-list">
+                                <div class="quick-help-item">
+                                    <div class="qh-icon"><i class="fas fa-chart-simple"></i></div>
+                                    <div class="qh-info">
+                                        <h6>Trading page</h6>
+                                        <p>Live ticks, standing quotes and open contracts</p>
+                                    </div>
+                                </div>
+                                <div class="quick-help-item">
+                                    <div class="qh-icon"><i class="fas fa-gauge-high"></i></div>
+                                    <div class="qh-info">
+                                        <h6>Dashboard</h6>
+                                        <p>Practice balance, win and loss counts, recent contracts</p>
+                                    </div>
+                                </div>
+                                <div class="quick-help-item">
+                                    <div class="qh-icon"><i class="fas fa-scale-balanced"></i></div>
+                                    <div class="qh-info">
+                                        <h6>Fairness</h6>
+                                        <p>Recompute digits from a revealed seed</p>
+                                    </div>
+                                </div>
+                                <div class="quick-help-item">
+                                    <div class="qh-icon"><i class="fas fa-headset"></i></div>
+                                    <div class="qh-info">
+                                        <h6>Support</h6>
+                                        <p>Requests are saved to your account; response times are not guaranteed</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="premium-glass-card sidebar-card highlight-card text-center">
+                            <div class="sidebar-cta-icon"><i class="fas fa-flask"></i></div>
+                            <h5>New to digit contracts?</h5>
+                            <p>Open a practice account and watch a full settlement cycle before risking anything real. There is nothing to deposit.</p>
+                            <a href="register.html" class="btn btn-premium-primary w-100">Create a practice account</a>
+                        </div>
+
+                        <div class="premium-glass-card sidebar-card">
+                            <h5 class="sidebar-title"><i class="fas fa-star me-2"></i> Popular questions</h5>
+                            <div class="popular-questions">
+                                <a href="#faq-margin" class="pop-q-item"><i class="fas fa-chevron-right"></i> How are payouts priced?</a>
+                                <a href="#faq-independence" class="pop-q-item"><i class="fas fa-chevron-right"></i> Can past digits predict the next one?</a>
+                                <a href="#faq-funds" class="pop-q-item"><i class="fas fa-chevron-right"></i> Are practice funds withdrawable?</a>
+                                <a href="#faq-verify" class="pop-q-item"><i class="fas fa-chevron-right"></i> How do I verify fairness?</a>
+                                <a href="#faq-real" class="pop-q-item"><i class="fas fa-chevron-right"></i> Is funded trading available?</a>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <div data-shell-footer></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/shell.js"></script>
+    <script src="../assets/js/faq.js"></script>
+</body>
+
+</html>

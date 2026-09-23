@@ -1,0 +1,261 @@
+﻿<!-- smartprofitbinary-frontend/pages/profile.html -->
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta name="description" content="SmartProfitBinary - User Profile & Account Settings">
+    <title>My Profile - SmartProfitBinary</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="../assets/css/glassmorphism.css" rel="stylesheet">
+    <link href="../assets/css/profile.css" rel="stylesheet">
+    <link href="../assets/css/app-shell.css" rel="stylesheet">
+
+</head>
+
+<body class="premium-theme app-shell">
+    <script src="../assets/js/auth.js"></script>
+    <script>
+        requireAuth();
+    </script>
+
+    <div class="animated-bg">
+        <div class="particle particle-1"></div>
+        <div class="particle particle-2"></div>
+        <div class="particle particle-3"></div>
+        <div class="particle particle-4"></div>
+        <div class="particle particle-5"></div>
+        <div class="particle particle-6"></div>
+    </div>
+
+    <header class="premium-header">
+        <nav class="navbar navbar-expand-xl">
+            <div class="container-fluid px-4">
+                <a class="navbar-brand premium-logo" href="dashboard.html">
+                    <div class="logo-text"><span class="logo-primary">SmartProfit</span><span
+                            class="logo-secondary">Binary</span></div>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="mainNav">
+                    <ul class="navbar-nav ms-auto align-items-center gap-1">
+                        <li class="nav-item"><a class="nav-link" href="dashboard.html"><i class="fas fa-chart-line me-1"></i>Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link" href="trade.html"><i class="fas fa-exchange-alt me-1"></i>Trade</a></li>
+                        <li class="nav-item"><a class="nav-link active" href="profile.html"><i class="fas fa-user-circle me-1"></i>Profile</a></li>
+                        <li class="nav-item"><a class="nav-link" href="about.html">About</a></li>
+                        <li class="nav-item"><a class="nav-link" href="blog.html">Blog</a></li>
+                        <li class="nav-item"><a class="nav-link" href="contact.html">Contact</a></li>
+                        <li class="nav-item"><a class="nav-link" href="faq.html">FAQ</a></li>
+                        <li class="nav-item ms-2">
+                            <button onclick="logout()" class="btn btn-outline-danger btn-sm rounded-pill px-3">
+                                <i class="fas fa-sign-out-alt me-1"></i>Logout
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="live-ticker-bar">
+        <div class="ticker-container">
+            <div class="ticker-track" id="tickerTrack"></div>
+        </div>
+    </div>
+
+    <main class="profile-wrapper">
+
+        <div id="accountRestrictionBanner" class="alert alert-danger py-2 px-3 mb-3 small" role="status" aria-live="polite" hidden></div>
+
+        <!-- Profile Header -->
+        <div class="profile-header-card">
+            <div class="avatar-wrapper">
+                <div class="avatar-img" data-profile-avatar aria-label="Profile avatar">ΓÇö</div>
+            </div>
+            <div class="profile-info">
+                <h3 class="profile-name" data-profile-name>Loading accountΓÇª</h3>
+                <p class="profile-email"><i class="fas fa-envelope me-1"></i> <span data-profile-email></span></p>
+                <div class="profile-meta">
+                    <span><i class="fas fa-calendar-alt"></i> Joined: <b class="meta-value" data-profile-created>ΓÇö</b></span>
+                    <span><i class="fas fa-layer-group"></i> Account: <b class="meta-value" data-account-mode>ΓÇö</b></span>
+                </div>
+            </div>
+            <div class="profile-actions">
+                <div class="btn-group" role="group" aria-label="Execution mode">
+                    <button type="button" class="btn btn-outline-info btn-sm" data-mode-option="DEMO">DEMO</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-mode-option="REAL" disabled title="Real trading is disabled">REAL</button>
+                </div>
+                <a href="trade.html" class="btn-action"><i class="fas fa-chart-line"></i> Trade</a>
+                <button type="button" onclick="logout()" class="btn-action danger"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('settings')"><i class="fas fa-cog"></i>
+                <span>Settings</span></button>
+            <button class="tab-btn" onclick="switchTab('api')"><i class="fas fa-key"></i> <span>API Keys</span></button>
+            <button class="tab-btn" onclick="switchTab('history')"><i class="fas fa-history"></i>
+                <span>Transactions</span></button>
+            <button class="tab-btn" onclick="switchTab('kyc')"><i class="fas fa-id-card"></i> <span>KYC</span></button>
+        </div>
+
+        <!-- Tab: Account Settings -->
+        <div class="tab-content active" id="tab-settings">
+            <div class="settings-card">
+                <h5 class="settings-title"><i class="fas fa-user-edit"></i> Personal Information</h5>
+                <form id="profileForm">
+                <div><label class="form-label">Display Name</label>
+                    <div class="input-wrapper"><i class="fas fa-user form-icon"></i><input type="text" id="profileDisplayName"
+                            class="form-input" required maxlength="120" data-profile-display-name></div>
+                </div>
+                <div><label class="form-label">Email</label>
+                    <div class="input-wrapper"><i class="fas fa-envelope form-icon"></i><input type="email"
+                            class="form-input" data-profile-email-input readonly></div>
+                </div>
+                <button type="submit" class="btn btn-premium-primary mt-3">Save Changes</button>
+                <p class="strength-text mt-2" data-profile-save-status></p>
+                </form>
+            </div>
+
+            <div class="settings-card">
+                <h5 class="settings-title"><i class="fas fa-lock"></i> Change Password</h5>
+                <p class="text-secondary small">Use the password-reset link below; password editing on this page is not active.</p>
+                <div><label class="form-label">Current Password</label>
+                    <div class="input-wrapper"><i class="fas fa-lock form-icon"></i><input type="password"
+                            class="form-input" placeholder="ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó"></div>
+                </div>
+                <div class="form-row">
+                    <div><label class="form-label">New Password</label>
+                        <div class="input-wrapper"><i class="fas fa-key form-icon"></i><input type="password"
+                                class="form-input" placeholder="ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó"></div>
+                    </div>
+                    <div><label class="form-label">Confirm Password</label>
+                        <div class="input-wrapper"><i class="fas fa-shield-halved form-icon"></i><input type="password"
+                                class="form-input" placeholder="ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó"></div>
+                    </div>
+                </div>
+                <a href="forgot-password.html" class="btn btn-premium-primary mt-3">Send Password Reset Link</a>
+            </div>
+
+            <div class="settings-card">
+                <h5 class="settings-title"><i class="fas fa-bell"></i> Notifications & Security</h5>
+                <p class="text-secondary small">These settings are not yet stored. All controls are disabled.</p>
+                <div class="toggle-row">
+                    <div class="toggle-info">
+                        <h6>Email Notifications</h6>
+                        <p>Receive trade confirmations & alerts via email</p>
+                    </div>
+                    <label class="toggle-switch"><input type="checkbox" checked><span
+                            class="toggle-slider"></span></label>
+                </div>
+                <div class="toggle-row">
+                    <div class="toggle-info">
+                        <h6>Two-Factor Authentication (2FA)</h6>
+                        <p>Add extra security layer to your account</p>
+                    </div>
+                    <label class="toggle-switch"><input type="checkbox" checked><span
+                            class="toggle-slider"></span></label>
+                </div>
+                <div class="toggle-row">
+                    <div class="toggle-info">
+                        <h6>SMS Alerts</h6>
+                        <p>Get price alerts via SMS</p>
+                    </div>
+                    <label class="toggle-switch"><input type="checkbox"><span class="toggle-slider"></span></label>
+                </div>
+                <div class="toggle-row">
+                    <div class="toggle-info">
+                        <h6>Anti-Phishing Code</h6>
+                        <p>Protect against phishing emails</p>
+                    </div>
+                    <label class="toggle-switch"><input type="checkbox" checked><span
+                            class="toggle-slider"></span></label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: API Keys -->
+        <div class="tab-content" id="tab-api">
+            <div class="settings-card">
+                <h5 class="settings-title"><i class="fas fa-key"></i> API Management</h5>
+                <p style="color:var(--text-secondary);font-size:13px;margin:0">API access is not available yet.</p>
+            </div>
+        </div>
+
+        <!-- Tab: Transaction History -->
+        <div class="tab-content" id="tab-history">
+            <div class="settings-card">
+                <h5 class="settings-title"><i class="fas fa-history"></i> Transaction History</h5>
+                <div style="overflow-x:auto">
+                    <table class="transaction-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Correlation ID</th>
+                                <th>Idempotency Key</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionHistoryBody">
+                            <tr><td colspan="5">Loading transaction historyΓÇª</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: KYC Verification -->
+        <div class="tab-content" id="tab-kyc">
+            <div class="settings-card">
+                <h5 class="settings-title"><i class="fas fa-id-card"></i> KYC Verification</h5>
+                <p style="color:var(--text-secondary);font-size:13px;margin:0">KYC verification is not implemented. No identity status, limits, or document-upload capability is available.</p>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="premium-footer">
+        <div class="container-fluid px-4">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="footer-brand-small">SmartProfitBinary</div>
+                    <p class="footer-desc">Professional cryptocurrency and binary options trading platform.</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Quick Links</h6>
+                    <ul>
+                        <li><a href="about.html">About</a></li>
+                        <li><a href="blog.html">Blog</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h6>Support</h6>
+                    <ul>
+                        <li><a href="faq.html">FAQ</a></li>
+                        <li><a href="#">API Docs</a></li>
+                        <li><a href="#">Fees</a></li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="footer-divider">
+            <p class="text-center footer-bottom-text">&copy; 2026 SmartProfitBinary. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/js/market-registry.js"></script>
+    <script src="../assets/js/market-ticker.js"></script>
+    <script src="../assets/js/profile.js"></script>
+    <script src="../assets/js/account-cache.js"></script>
+    <script src="../assets/js/account-data.js"></script>
+</body>
+
+</html>

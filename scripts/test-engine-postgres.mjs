@@ -2,15 +2,31 @@ import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { createHmac } from 'node:crypto';
 import { readFile, rm } from 'node:fs/promises';
+import { createServer } from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
-import { promisify } from 'node:util';
+import { inspect, promisify } from 'node:util';
 import EmbeddedPostgres from 'embedded-postgres';
 
 const execFileAsync = promisify(execFile);
-const databaseDir = path.join(os.tmpdir(), `astra-engine-${process.pid}-${Date.now()}`);
-const postgres = new EmbeddedPostgres({ databaseDir, port: 55442, user: 'postgres', password: 'postgres', persistent: false, onLog: () => {}, onError: () => {} });
+const databaseDir = path.join(os.tmpdir(), `smartprofit-engine-${process.pid}-${Date.now()}`);
+const port = await findFreePort();
+const postgres = new EmbeddedPostgres({ databaseDir, port, user: 'postgres', password: 'postgres', persistent: false, onLog: () => {}, onError: () => {} });
 let client;
+
+/* A stale cluster left behind by an interrupted run keeps its port bound, and
+   embedded-postgres rejects with a bare `undefined` when its port is busy. Ask
+   the OS for a port that is free right now instead of hard-coding one. */
+function findFreePort() {
+    return new Promise((resolve, reject) => {
+        const probe = createServer();
+        probe.once('error', reject);
+        probe.listen(0, '127.0.0.1', () => {
+            const { port: freePort } = probe.address();
+            probe.close(() => resolve(freePort));
+        });
+    });
+}
 
 function javascriptDigit(seed, mode, index, tickNo) {
     for (let counter = 0; ; counter++) {
@@ -68,7 +84,8 @@ try {
     assert.ok(generated.rows.some((row) => row.ticks > 0 && row.evolved));
     console.log('PostgreSQL pgcrypto digit, walk, and price invariant vectors: PASS');
 } catch (error) {
-    console.error(error);
+    if (error instanceof Error) console.error(`Engine PostgreSQL harness failed: ${error.stack}`);
+    else console.error(`Engine PostgreSQL harness failed with a non-Error value: ${inspect(error)}`);
     process.exitCode = 1;
 } finally {
     if (client) await client.end().catch(() => {});
