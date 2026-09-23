@@ -8,6 +8,10 @@
 **Updated:** 18 September 2026  
 **Location:** Project root; this is a local planning document, not a database migration.
 
+### Digit-index engine addendum
+
+The active operational product is the Practice digit-index engine, not spot-market execution. The admin Trading and Markets concepts map to Contracts and Engine: staff use `contracts.read` for contract inspection, `engine.read` for health/exposure, `engine.manage` for policy and index status, and Owner-only `contracts.void` for a manual refund. Every engine view and action is mode-filtered; REAL remains unavailable until the separate readiness gate is satisfied. Legacy spot references below are historical planning context only and do not authorize active customer or staff workflows.
+
 ### Implementation progress — 18 September 2026
 
 Work follows the dependency order in sections 23 and 28, one phase at a time. Requirements in sections 1–22 define the acceptance boundaries rather than independent screen-building tasks.
