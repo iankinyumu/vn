@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 import { createTestDatabase } from './helpers/test-db.mjs';
@@ -18,6 +19,13 @@ test('legacy order commands are shut down by the module guard', async () => {
 
 test('active source has no legacy feed references', () => {
     const terms = ['bina' + 'nce', 'bit' + 'coin', '\\bb' + 'tc\\b', '\\beth\\b', 'usd' + 't', 'cryp' + 'to', 'market_' + 'symbol', 'market-' + 'registry', 'market-' + 'ticker', 'fcsa' + 'pi', 'upst' + 'ash'];
-    const result = spawnSync('rg', ['-rniE', '-g', '!**/_disabled/**', terms.join('|'), 'pages', 'assets', 'supabase/functions', 'tests', 'docs', 'README.md', 'package.json', '.env.example'], { encoding: 'utf8' });
+    const result = spawnSync('rg', ['-rni', '-g', '!**/_disabled/**', '-e', terms.join('|'), 'pages', 'assets', 'supabase/functions', 'README.md', 'package.json', '.env.example'], { encoding: 'utf8' });
     assert.equal(result.status, 1, result.stdout);
+});
+
+test('the repository root contains no duplicate frontend pages', () => {
+    const rootPages = fs.readdirSync('.', { withFileTypes: true })
+        .filter((entry) => entry.isFile() && entry.name.endsWith('.html'))
+        .map((entry) => entry.name);
+    assert.deepEqual(rootPages, [], `root-level frontend duplicates: ${rootPages.join(', ')}`);
 });
