@@ -307,5 +307,17 @@ test('staff see v3 health; customers see gate status; only engine managers confi
     assert.match(await asUser(db, 'agent', () => errorOf(db.query(`select public.engine_v3_set_shadow('DEMO','SPI100',true,'agents may not do this')`))), /forbidden/);
     assert.match(await asUser(db, 'ian', () => errorOf(db.query(`select public.engine_v3_configure('production','{}'::jsonb,'environment is immutable once set')`))), /engine_v3_environment_immutable/);
     const status = (await customer(() => db.query('select public.get_engine_v3_status() s'))).rows[0].s;
-    assert.equal(status.find((i) => i.index_code === 'SPI50').engine_generation, 3);
+    const spi50 = status.find((i) => i.index_code === 'SPI50');
+    assert.equal(spi50.engine_generation, 3);
+    // Observed volatility is published with its target and window, and matches an independent computation.
+    const vol = health.volatility.find((v) => v.index_code === 'SPI50')['1h'];
+    const ticks = await rpc(db, `select price::float8 p,previous_price::float8 q from public.index_ticks where index_code='SPI50' and generation_version=3 order by tick_no desc limit 1800`);
+    const r = ticks.map((t) => Math.log(t.p / t.q));
+    const mean = r.reduce((a, b) => a + b, 0) / r.length;
+    const sd = Math.sqrt(r.reduce((a, b) => a + (b - mean) ** 2, 0) / (r.length - 1));
+    assert.equal(vol.window_ticks, ticks.length);
+    assert.equal(Number(vol.target_annual), 0.5);
+    assert.ok(Math.abs(Number(vol.observed_annual) - sd * Math.sqrt(15_768_000)) < 1e-5, `${vol.observed_annual} vs ${sd * Math.sqrt(15_768_000)}`);
+    assert.equal(vol.status, 'insufficient_data');
+    assert.equal(spi50.volatility_1d.target_annual, 0.5);
 });
