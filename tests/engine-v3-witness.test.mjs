@@ -113,3 +113,40 @@ test('a production database refuses weakened thresholds, non-KMS custody and REA
         await assert.rejects(asUser(db, 'ian', () => db.query(`select public.engine_v3_schedule_cutover('REAL','SPI10',0,'REAL is not permitted here')`)), /engine_v3_practice_only/);
     } finally { await close(); }
 });
+
+test('the real AWS KMS SDK loads and the kms:aws path constructs without credentials or network', async () => {
+    const { awsKmsClient } = await import('../engine/v3/service/custody.mjs');
+    const client = await awsKmsClient('eu-west-1');
+    assert.equal(typeof client.encrypt, 'function');
+    assert.equal(typeof client.decrypt, 'function');
+    const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+    assert.match(pkg.dependencies['@aws-sdk/client-kms'], /^\d+\.\d+\.\d+$/, 'runtime dependency pinned to an exact version');
+});
+
+test('production preflight refuses local custody, unavailable KMS, unpinned keys, missing witnesses and missing parameters', async () => {
+    const { preflight } = await import('../engine/v3/service/preflight.mjs');
+    const signer = Ed25519Signer.generate('prod-key-1');
+    const params = { SPI10: { annual_vol_bp: 1000, anchor_units: 10000000, kappa_e12: 534835, min_units: 500000, max_units: 200000000, genesis_tick_no: 5, genesis_units: 10000000 } };
+    const witnesses = [{ name: 'digicert', roots: [new Uint8Array(1)] }, { name: 'sectigo', roots: [new Uint8Array(1)] }];
+    const echoKms = { encrypt: async (i) => ({ KeyId: i.KeyId, CiphertextBlob: Buffer.from(i.Plaintext) }), decrypt: async (i) => ({ Plaintext: Buffer.from(i.CiphertextBlob) }) };
+    const kms = new AwsKmsCustody({ keyId: 'arn:aws:kms:eu-west-1:111111111111:key/prod', client: echoKms });
+    const good = { dbEnv: 'production', requiredWitnesses: ['digicert', 'sectigo'], indices: ['SPI10'], custody: kms, signer,
+        trust: { keys: { 'prod-key-1': signer.publicKey.toString('hex') } }, witnesses, params };
+    assert.deepEqual(await preflight(good), []);
+    const failing = {
+        'local custody': { custody: new LocalCustody(randomBytes(32)) },
+        'KMS unavailable': { custody: new AwsKmsCustody({ keyId: 'arn:x', client: { encrypt: async () => { throw new Error('AccessDeniedException'); }, decrypt: async () => ({}) } }) },
+        'empty trust manifest': { trust: { keys: {} } },
+        'unpublished signing key': { trust: { keys: { 'prod-key-1': '00'.repeat(32) } } },
+        'missing witness': { witnesses: witnesses.slice(0, 1) },
+        'witness without roots': { witnesses: [witnesses[0], { name: 'sectigo', roots: [] }] },
+        'missing parameters': { params: {} },
+        'incomplete parameters': { params: { SPI10: { ...params.SPI10, genesis_units: '' } } },
+        'REAL mode': { mode: 'REAL' },
+        'unconfigured database': { dbEnv: null },
+    };
+    for (const [name, override] of Object.entries(failing)) {
+        const failures = await preflight({ ...good, ...override });
+        assert.ok(failures.length > 0, `${name} must fail preflight`);
+    }
+});

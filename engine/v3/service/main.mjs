@@ -14,6 +14,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import pg from 'pg';
 import { AwsKmsCustody, LocalCustody, awsKmsClient } from './custody.mjs';
+import { loadTrustManifest, preflight } from './preflight.mjs';
 import { Ed25519Signer } from './signer.mjs';
 import { DEFAULT_TSAS, Rfc3161Witness, pinnedRoots } from './witness.mjs';
 import { EngineWorker } from './worker.mjs';
@@ -37,17 +38,20 @@ if (process.argv[2] === '--init-signing-key') {
     process.exit(0);
 }
 
-if ((env.ENGINE_MODE || 'DEMO') !== 'DEMO') throw new Error('Only DEMO is permitted; REAL requires the separate REAL readiness gate.');
 const store = await custody();
 const wrappedKey = JSON.parse(readFileSync(env.ENGINE_SIGNING_KEY_FILE, 'utf8'));
 const signer = await Ed25519Signer.unwrap(store, signingEnv(), { ...wrappedKey, ciphertext: Buffer.from(wrappedKey.ciphertext, 'base64') });
 const roots = pinnedRoots();
 const witnesses = (env.ENGINE_WITNESSES || 'digicert,sectigo').split(',').map((name) => new Rfc3161Witness({ name, url: DEFAULT_TSAS[name], roots: roots[name] }));
-const params = JSON.parse(readFileSync(env.ENGINE_PARAMS_FILE, 'utf8'));
+const params = env.ENGINE_PARAMS_FILE ? JSON.parse(readFileSync(env.ENGINE_PARAMS_FILE, 'utf8')) : null;
 
 const db = new pg.Client({ connectionString: env.ENGINE_DATABASE_URL });
 await db.connect();
 const worker = new EngineWorker({ db, mode: 'DEMO', workerId: env.ENGINE_WORKER_ID || 'engine-v3-worker', params, custody: store, signer, witnesses, log });
+const state = await worker.rpc('engine_v3_writer_state', ['DEMO']);
+const failures = await preflight({ dbEnv: state.env, requiredWitnesses: state.settings.required_witnesses, indices: state.indices.map((i) => i.index),
+    custody: store, signer, trust: loadTrustManifest(), witnesses, params, mode: env.ENGINE_MODE || 'DEMO' });
+if (failures.length) { log('error', 'preflight failed; refusing to start', { failures }); await db.end(); process.exit(3); }
 while (!(await worker.acquireLeadership())) { log('info', 'standby: another worker holds the lock'); await new Promise((r) => setTimeout(r, 5000)); }
 await worker.registerSigningKey();
 log('info', 'engine v3 worker started', { custody: store.provider, keyId: signer.keyId });
