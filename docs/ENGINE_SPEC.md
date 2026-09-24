@@ -16,3 +16,7 @@ The proof is therefore tamper evidence, not an external-randomness claim: it pro
 Contracts settle from their scheduled exit tick. EVEN, ODD, OVER, UNDER, MATCH, and DIFFER use their literal winning sets. Payout is `floor(stake × (1 − margin) × 10 / winning_digits, 2 decimal places)`. The engine reserves stake before opening and posts one balanced, idempotent settlement or refund ledger transaction.
 
 The hosted migration requires `pg_cron` 1.5 or later. It schedules the engine every second, epoch reveal every minute, and retention daily. Tick inserts send a private Broadcast payload through `realtime.send` on `ticks:demo:<index>`. The project must retain Realtime Broadcast authorization; the migration grants authenticated users receive access to the Practice topics only.
+
+## Version 3 (proposed, not active)
+
+`docs/adr/0001-synthetic-engine-v3.md` specifies a candidate version 3: HKDF-separated keys, length-framed canonical encodings, a committed model configuration, a tick hash chain, and SPI-N defined as a target annualised volatility of N %. It is **not** used for any tick or contract. Every live index still generates version 2 ticks, and version 1 and 2 verification is unchanged. The Node reference generator (`engine/v3/generator.mjs`), the WebCrypto verifier (`verifier/v3/verify.mjs`) and the SQL functions in `engine_private` (migration `20260924100000`) all reproduce `engine/v3/vectors.json`. Seed custody, witnessed commitments and cutover are later phases. Until they are complete, nothing in this section changes what the fairness page proves.

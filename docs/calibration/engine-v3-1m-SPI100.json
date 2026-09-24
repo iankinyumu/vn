@@ -1,0 +1,213 @@
+{
+  "spec": "v3.0",
+  "generated_at": "2026-09-24T06:30:49.347Z",
+  "commit": "d9e48acf75bf2f2eae635bfb1fe7dece6c7b0429",
+  "engine_files_uncommitted": true,
+  "node": "v24.20.0",
+  "command": "node scripts/engine-v3-calibrate.mjs --ticks 1000000 --seeds 4 --first-seed 0 --indices SPI100 --out docs/calibration/engine-v3-1m-SPI100",
+  "bands": {
+    "volFull": 0.01,
+    "volDay": 0.03,
+    "driftZ": 5,
+    "acfZ": 5,
+    "kurtosis": [
+      -0.15,
+      -0.05
+    ],
+    "maxAbsE": 6,
+    "digitChi": 33.72,
+    "pairChi": 137.20528580249547,
+    "runPerMillion": 12,
+    "logDevSd": 8
+  },
+  "results": [
+    {
+      "metrics": {
+        "index": "SPI100",
+        "seed": "calibration-0",
+        "ticks": 1000000,
+        "seconds": 123.744,
+        "target_vol": 0.9999999993125399,
+        "realised_vol": 1.0000240503526718,
+        "vol_ratio_error": 0.00002405104014835402,
+        "worst_day_vol_error": 0.0058083837420848106,
+        "drift_z": -0.10875856644876872,
+        "lag1_acf_z": 0.7308813499207077,
+        "excess_kurtosis": -0.1035923040997857,
+        "max_abs_e": 4.442082583147287,
+        "digit_chi2": 11.799259999999999,
+        "pair_chi2": 83.1210187143845,
+        "longest_run_per_million": 6,
+        "min_price": 7540.806,
+        "max_price": 11236.838,
+        "max_log_dev_sd": 1.1591948083525336,
+        "digits": [
+          100497,
+          99903,
+          100199,
+          99450,
+          99968,
+          99665,
+          100593,
+          99934,
+          99683,
+          100108
+        ]
+      },
+      "checks": {
+        "vol": true,
+        "vol_day": true,
+        "drift": true,
+        "acf": true,
+        "kurtosis": true,
+        "tails": true,
+        "digits": true,
+        "pairs": true,
+        "runs": true,
+        "range": true
+      },
+      "pass": true
+    },
+    {
+      "metrics": {
+        "index": "SPI100",
+        "seed": "calibration-1",
+        "ticks": 1000000,
+        "seconds": 207.063,
+        "target_vol": 0.9999999993125399,
+        "realised_vol": 0.9991362921118951,
+        "vol_ratio_error": -0.0008637072012385172,
+        "worst_day_vol_error": 0.008608159116395453,
+        "drift_z": -0.08808311345404203,
+        "lag1_acf_z": 0.4729654451049478,
+        "excess_kurtosis": -0.09905313543455696,
+        "max_abs_e": 4.426093170925116,
+        "digit_chi2": 7.577660000000001,
+        "pair_chi2": 73.73123260579877,
+        "longest_run_per_million": 7,
+        "min_price": 7857.647,
+        "max_price": 10638.702,
+        "max_log_dev_sd": 0.990162861119946,
+        "digits": [
+          100335,
+          99477,
+          100110,
+          99559,
+          99894,
+          100099,
+          100312,
+          99931,
+          100175,
+          100108
+        ]
+      },
+      "checks": {
+        "vol": true,
+        "vol_day": true,
+        "drift": true,
+        "acf": true,
+        "kurtosis": true,
+        "tails": true,
+        "digits": true,
+        "pairs": true,
+        "runs": true,
+        "range": true
+      },
+      "pass": true
+    },
+    {
+      "metrics": {
+        "index": "SPI100",
+        "seed": "calibration-2",
+        "ticks": 1000000,
+        "seconds": 165.213,
+        "target_vol": 0.9999999993125399,
+        "realised_vol": 1.0012029434030358,
+        "vol_ratio_error": 0.0012029440913228218,
+        "worst_day_vol_error": 0.010250183557966697,
+        "drift_z": 1.2119934107443415,
+        "lag1_acf_z": -1.2210996932890161,
+        "excess_kurtosis": -0.10340501049446926,
+        "max_abs_e": 4.444543067858882,
+        "digit_chi2": 9.71378,
+        "pair_chi2": 86.88026543366864,
+        "longest_run_per_million": 6,
+        "min_price": 8195.415,
+        "max_price": 14039.557,
+        "max_log_dev_sd": 1.3934425777664234,
+        "digits": [
+          99828,
+          99588,
+          100195,
+          99716,
+          99857,
+          99654,
+          100177,
+          100065,
+          100295,
+          100625
+        ]
+      },
+      "checks": {
+        "vol": true,
+        "vol_day": true,
+        "drift": true,
+        "acf": true,
+        "kurtosis": true,
+        "tails": true,
+        "digits": true,
+        "pairs": true,
+        "runs": true,
+        "range": true
+      },
+      "pass": true
+    },
+    {
+      "metrics": {
+        "index": "SPI100",
+        "seed": "calibration-3",
+        "ticks": 1000000,
+        "seconds": 134.974,
+        "target_vol": 0.9999999993125399,
+        "realised_vol": 1.000019219481045,
+        "vol_ratio_error": 0.000019220168518518932,
+        "worst_day_vol_error": 0.00623791442913002,
+        "drift_z": -0.06733685155082401,
+        "lag1_acf_z": 0.966344600445055,
+        "excess_kurtosis": -0.1008346925639958,
+        "max_abs_e": 4.794303944270798,
+        "digit_chi2": 5.79016,
+        "pair_chi2": 83.59989261258299,
+        "longest_run_per_million": 6,
+        "min_price": 8738.315,
+        "max_price": 11586.238,
+        "max_log_dev_sd": 0.604669612158503,
+        "digits": [
+          99824,
+          99847,
+          100301,
+          100425,
+          99769,
+          100177,
+          99801,
+          100228,
+          99877,
+          99751
+        ]
+      },
+      "checks": {
+        "vol": true,
+        "vol_day": true,
+        "drift": true,
+        "acf": true,
+        "kurtosis": true,
+        "tails": true,
+        "digits": true,
+        "pairs": true,
+        "runs": true,
+        "range": true
+      },
+      "pass": true
+    }
+  ]
+}

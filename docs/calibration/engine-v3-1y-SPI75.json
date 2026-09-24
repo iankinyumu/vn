@@ -1,0 +1,72 @@
+{
+  "spec": "v3.0",
+  "generated_at": "2026-09-24T07:11:32.431Z",
+  "commit": "d9e48acf75bf2f2eae635bfb1fe7dece6c7b0429",
+  "engine_files_uncommitted": true,
+  "node": "v24.20.0",
+  "command": "node scripts/engine-v3-calibrate.mjs --ticks 15768000 --seeds 1 --first-seed 100 --indices SPI75 --out docs/calibration/engine-v3-1y-SPI75",
+  "bands": {
+    "volFull": 0.01,
+    "volDay": 0.03,
+    "driftZ": 5,
+    "acfZ": 5,
+    "kurtosis": [
+      -0.15,
+      -0.05
+    ],
+    "maxAbsE": 6,
+    "digitChi": 33.72,
+    "pairChi": 137.20528580249547,
+    "runPerMillion": 12,
+    "logDevSd": 8
+  },
+  "results": [
+    {
+      "metrics": {
+        "index": "SPI75",
+        "seed": "calibration-100",
+        "ticks": 15768000,
+        "seconds": 2402.966,
+        "target_vol": 0.749999999484405,
+        "realised_vol": 0.749986689762191,
+        "vol_ratio_error": -0.00001774629629758273,
+        "worst_day_vol_error": 0.009666548385524165,
+        "drift_z": -0.9522353337250448,
+        "lag1_acf_z": -1.6427505985012907,
+        "excess_kurtosis": -0.10000172847172939,
+        "max_abs_e": 4.655790752326551,
+        "digit_chi2": 7.711267123287671,
+        "pair_chi2": 78.82749303260073,
+        "longest_run_per_million": 9,
+        "min_price": 6401.565,
+        "max_price": 13960.867,
+        "max_log_dev_sd": 2.442464669484934,
+        "digits": [
+          1576391,
+          1578018,
+          1576569,
+          1577028,
+          1576404,
+          1578819,
+          1577865,
+          1576106,
+          1575963,
+          1574837
+        ]
+      },
+      "checks": {
+        "vol": true,
+        "vol_day": true,
+        "drift": true,
+        "acf": true,
+        "kurtosis": true,
+        "tails": true,
+        "digits": true,
+        "pairs": true,
+        "runs": true,
+        "range": true
+      },
+      "pass": true
+    }
+  ]
+}

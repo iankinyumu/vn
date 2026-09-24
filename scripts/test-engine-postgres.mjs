@@ -35,6 +35,68 @@ function javascriptDigit(seed, mode, index, tickNo) {
     }
 }
 
+/* The SQL v3 functions are a third implementation; they must reproduce the
+   frozen vectors that the Node generator and WebCrypto verifier also match. */
+async function verifyV3Vectors(db) {
+    const v = JSON.parse(await readFile(new URL('../engine/v3/vectors.json', import.meta.url), 'utf8'));
+    const one = async (sql, params) => (await db.query(sql, params)).rows[0];
+    const hexOf = async (sql, params) => (await one(`select encode((${sql}), 'hex') value`, params)).value;
+    assert.equal(await hexOf(`engine_private.v3_hkdf32(decode($1,'hex'), decode($2,'hex'), decode($3,'hex'))`,
+        [v.rfc5869_case1.salt, v.rfc5869_case1.ikm, v.rfc5869_case1.info]), v.rfc5869_case1.okm_first_32);
+    assert.equal(await hexOf(`engine_private.v3_tick_message(0, 0)`), v.encoding.tick_msg_zero);
+    assert.equal(await hexOf(`engine_private.v3_tick_message(18446744073709551615, 4294967295)`), v.encoding.tick_msg_max);
+    for (const [index, sigma] of Object.entries(v.sigma_e12)) {
+        const entry = v.config.indices.find((e) => e.index === index);
+        assert.equal((await one(`select engine_private.v3_sigma_e12($1, $2)::text value`, [entry.annual_vol_bp, entry.tick_interval_ms])).value, sigma);
+    }
+    const configHash = await hexOf(`engine_private.v3_config_hash($1, $2, $3::jsonb)`, [v.config.env, v.config.mode, JSON.stringify(v.config.indices)]);
+    assert.equal(configHash, v.config.config_hash);
+    for (const epoch of v.epochs) {
+        assert.equal(await hexOf(`engine_private.v3_seed_hash(decode($1,'hex'))`, [epoch.seed]), epoch.seed_hash);
+        assert.equal(await hexOf(`engine_private.v3_epoch_commitment('test','DEMO',$1,decode($2,'hex'),decode($3,'hex'),decode($4,'hex'))`,
+            [epoch.epoch_start_ms, epoch.seed_hash, configHash, epoch.prev_commitment]), epoch.commitment);
+        for (const [index, keys] of Object.entries(epoch.keys)) {
+            for (const [purpose, name] of [['price-move', 'move'], ['price-digit', 'digit']]) {
+                assert.equal(await hexOf(`engine_private.v3_derive_key(decode($1,'hex'),$2,'test','DEMO',$3,$4)`, [epoch.seed, purpose, index, epoch.epoch_start_ms]), keys[name]);
+            }
+        }
+    }
+    const priceSql = `select p.price_units::text, p.digit, p.z::text, p.parity, p.residue, p.digit_counter::text, p.coarse::text
+        from engine_private.v3_price(engine_private.v3_derive_key(decode($1,'hex'),'price-move','test','DEMO',$2,$3),
+         engine_private.v3_derive_key(decode($1,'hex'),'price-digit','test','DEMO',$2,$3),$4,$5,$6,$7,$8,$9,$10) p`;
+    for (const [index, rows] of Object.entries(v.series)) {
+        const e = v.config.indices.find((entry) => entry.index === index);
+        assert.equal(await hexOf(`engine_private.v3_genesis_hash('test','DEMO',$1,$2,$3,decode($4,'hex'))`, [index, e.genesis_tick_no, e.genesis_units, configHash]), v.genesis_hash[index]);
+        for (const row of rows) {
+            const seed = v.epochs.find((epoch) => epoch.epoch_start_ms === row.epoch_start_ms).seed;
+            const got = await one(priceSql, [seed, index, row.epoch_start_ms, row.tick_no, row.prev_units, e.anchor_units, e.sigma_e12, e.kappa_e12, e.min_units, e.max_units]);
+            assert.deepEqual(
+                [got.price_units, Number(got.digit), got.z, Number(got.parity), Number(got.residue), Number(got.digit_counter), got.coarse],
+                [row.price_units, row.digit, row.z, row.parity, row.residue, row.digit_counter, row.coarse], `${index} tick ${row.tick_no}`);
+            assert.equal(await hexOf(`engine_private.v3_tick_hash('test','DEMO',$1,$2,$3,$4,$5,$6,$7,3,$8,decode($9,'hex'),decode($10,'hex'),decode($11,'hex'))`,
+                [index, row.tick_no, row.scheduled_ms, row.generated_ms, row.epoch_start_ms, row.prev_units, row.price_units, row.digit, configHash, row.commitment, row.prev_tick_hash]), row.tick_hash);
+        }
+    }
+    const r = v.rejection, re = v.config.indices.find((entry) => entry.index === r.index);
+    const rejectionSeed = v.epochs.find((epoch) => epoch.epoch_start_ms === r.epoch_start_ms).seed;
+    const rejected = await one(priceSql, [rejectionSeed, r.index, r.epoch_start_ms, r.tick_no, r.prev_units, re.anchor_units, re.sigma_e12, re.kappa_e12, re.min_units, re.max_units]);
+    assert.deepEqual([rejected.price_units, Number(rejected.residue)], [r.price_units, r.residue]);
+    for (const [sql, code] of [
+        [`select engine_private.v3_label('SPI 10')`, 'engine_v3_label_invalid'],
+        [`select engine_private.v3_uint(18446744073709551616, 8)`, 'engine_v3_integer_out_of_range'],
+        [`select engine_private.v3_uint(-1, 8)`, 'engine_v3_integer_out_of_range'],
+        [`select engine_private.v3_seed_hash('\\x00'::bytea)`, 'engine_v3_seed_invalid'],
+        [`select engine_private.v3_derive_key(decode(repeat('00',32),'hex'),'price','test','DEMO','SPI10',0)`, 'engine_v3_purpose_invalid'],
+        [`select * from engine_private.v3_price(decode(repeat('01',32),'hex'),decode(repeat('02',32),'hex'),1,10000000,10000000,251832452,534835,9999999,10000001)`, 'engine_v3_price_out_of_band'],
+    ]) {
+        await assert.rejects(db.query(sql), (error) => error.message.includes(code), sql);
+    }
+    const exposed = await one(`select count(*)::integer n from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+        where n.nspname='engine_private' and p.proname like 'v3\\_%'
+        and (has_function_privilege('authenticated', p.oid, 'execute') or has_function_privilege('anon', p.oid, 'execute'))`);
+    assert.equal(exposed.n, 0, 'v3 functions must not be executable by API roles');
+}
+
 try {
     await postgres.initialise();
     await postgres.start();
@@ -84,6 +146,13 @@ try {
     const generated = await client.query(`select count(*)::integer ticks, min(s.last_x) <> ln(1000::numeric) evolved from public.index_state s join public.index_ticks t on t.index_code=s.index_code and s.execution_mode=t.execution_mode group by s.last_x`);
     assert.ok(generated.rows.some((row) => row.ticks > 0 && row.evolved));
     console.log('PostgreSQL pgcrypto digit, walk, and price invariant vectors: PASS');
+    // Version 3 SQL reference functions, applied on top of existing v2 history.
+    const historyBefore = await client.query(`select md5(string_agg(t::text, '|' order by tick_no)) digest from public.index_ticks t`);
+    await client.query(await readFile(new URL('../supabase/migrations/20260924100000_engine_v3_reference_functions.sql', import.meta.url), 'utf8'));
+    const historyAfter = await client.query(`select md5(string_agg(t::text, '|' order by tick_no)) digest from public.index_ticks t`);
+    assert.equal(historyAfter.rows[0].digest, historyBefore.rows[0].digest, 'v3 migration must not touch v1/v2 ticks');
+    await verifyV3Vectors(client);
+    console.log('PostgreSQL pgcrypto engine v3 vectors (keys, commitments, prices, tick hashes): PASS');
 } catch (error) {
     if (error instanceof Error) console.error(`Engine PostgreSQL harness failed: ${error.stack}`);
     else console.error(`Engine PostgreSQL harness failed with a non-Error value: ${inspect(error)}`);
