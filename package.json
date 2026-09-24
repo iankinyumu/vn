@@ -7,7 +7,10 @@
     "check:parity": "node scripts/check-parity.mjs",
     "test:cryp\u0074o-legacy": "node --test --test-concurrency=1 modules/cryp\u0074o-spot/tests/*.test.mjs",
     "calibrate:engine-v3": "node scripts/engine-v3-calibrate.mjs",
-    "check:engine-v3-vectors": "node scripts/engine-v3-vectors.mjs"
+    "check:engine-v3-vectors": "node scripts/engine-v3-vectors.mjs",
+    "accept:engine-v3": "node scripts/engine-v3-acceptance.mjs",
+    "report:engine-v3-soak": "node scripts/engine-v3-soak-report.mjs",
+    "start:engine-v3-worker": "node engine/v3/service/main.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.8",
