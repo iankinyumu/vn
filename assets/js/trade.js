@@ -1,5 +1,5 @@
 (function () {
-    const messages = Object.freeze({ account_not_available: 'This account is not available.', real_disabled: 'Real accounts are not available yet.', module_disabled: 'Digit contracts are not available.', trading_restricted: 'Trading is restricted for this account.', restricted_limit_exceeded: 'This trade exceeds an active restriction or account limit.', access_restricted: 'Access to this account is restricted.', feed_stale: 'The price feed is stale. Wait for it to reconnect.', exposure_limit: 'This trade exceeds the current exposure limit.', limits_not_configured: 'Trading limits are not configured for this account.', idempotency_conflict: 'This purchase request conflicts with an earlier request.', insufficient_funds: 'Your practice balance is insufficient.', invalid_contract_parameters: 'Choose valid contract details.', profit_too_low: 'This stake does not meet the minimum payout requirement.', invalid_stake: 'Enter a valid stake.', stake_below_minimum: 'The stake is below the minimum.', stake_above_maximum: 'The stake exceeds the maximum.', invalid_tick_count: 'Choose between one and ten ticks.', rate_limit_exceeded: 'Too many purchase attempts. Please wait a moment.', rate_limited: 'Too many purchase attempts. Please wait a moment.', contract_type_disabled: 'This contract type is unavailable.', index_not_available: 'This index is unavailable.', max_open_contracts: 'You have reached the open-contract limit.' });
+    const messages = Object.freeze({ account_not_available: 'This account is not available.', real_disabled: 'Real accounts are not available yet.', module_disabled: 'Digit contracts are not available.', trading_restricted: 'Trading is restricted for this account.', restricted_limit_exceeded: 'This trade exceeds an active restriction or account limit.', access_restricted: 'Access to this account is restricted.', feed_stale: 'The price feed is stale. Wait for it to reconnect.', exposure_limit: 'This trade exceeds the current exposure limit.', limits_not_configured: 'Trading limits are not configured for this account.', idempotency_conflict: 'This purchase request conflicts with an earlier request.', insufficient_funds: 'Your practice balance is insufficient.', invalid_contract_parameters: 'Choose valid contract details.', profit_too_low: 'This stake does not meet the minimum payout requirement.', invalid_stake: 'Enter a valid stake.', stake_below_minimum: 'The stake is below the minimum.', stake_above_maximum: 'The stake exceeds the maximum.', invalid_tick_count: 'Choose between one and ten ticks.', rate_limit_exceeded: 'Too many purchase attempts. Please wait a moment.', rate_limited: 'Too many purchase attempts. Please wait a moment.', contract_type_disabled: 'This contract type is unavailable.', index_not_available: 'This index is unavailable.', max_open_contracts: 'You have reached the open-contract limit.', engine_unwitnessed: 'Trading on this index is paused until today\'s outcome commitment has been independently timestamped.', engine_checkpoint_stale: 'Trading on this index is paused until the latest price history checkpoint is independently timestamped.', engine_worker_unhealthy: 'Trading on this index is paused while the price engine reconnects.', engine_generation_cutover: 'This contract would end after the index moves to its new price series. Choose fewer ticks or wait for the switch.', engine_v3_environment_unset: 'This index is not open for trading yet.' });
     const codeOf = (error) => String(error?.message || error?.code || '').match(/[a-z_]+/)?.[0];
     const uuid = () => window.crypto.randomUUID();
     // get_recent_ticks and get_ticks_since return at most PAGE_SIZE rows per call.
@@ -15,12 +15,16 @@
     const dollars = (value) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(value));
     function report(error) { const status = document.querySelector('[data-trade-status]'); const code = codeOf(error); if (messages[code]) status.textContent = messages[code]; else { const reference = uuid().slice(0, 8); status.textContent = `Something went wrong. Reference: ${reference}.`; console.error(reference, error); } }
     function contractNet(contract) { return contract.state === 'WON' ? Number(contract.payout) - Number(contract.stake) : contract.state === 'LOST' ? -Number(contract.stake) : 0; }
+    // Generation of a contract's exit tick: version 3 when its index has moved to v3 and the exit is after the last v2 tick.
+    let v3Status = new Map();
+    const generationOf = (contract) => { const row = v3Status.get(contract.index_code); return row?.engine_generation === 3 && Number(contract.settle_tick_no) > Number(row.v2_final_tick_no ?? -1) ? 3 : 2; };
     function contractRow(contract, latestTick, activeIndex) {
         const row = document.createElement('tr');
         row.className = `contract-row contract-row-${contract.state.toLowerCase()}`;
         const cell = (value, className = '') => { const td = document.createElement('td'); td.textContent = value; if (className) td.className = className; row.append(td); return td; };
         const name = cell(`${contract.index_code} · ${TYPE_LABELS[contract.contract_type] || contract.contract_type}${contract.barrier == null ? '' : ` ${contract.barrier}`}`);
         if (contract.created_at) { const detail = document.createElement('small'); detail.textContent = new Date(contract.created_at).toLocaleString(); name.append(detail); }
+        const ticks = document.createElement('small'); ticks.className = 'contract-ticks'; ticks.textContent = `v${generationOf(contract)} · ticks #${contract.entry_tick_no} → #${contract.settle_tick_no}`; name.append(ticks);
         if (contract.state === 'OPEN') {
             cell(dollars(contract.stake));
             cell(contract.index_code === activeIndex ? `${Math.max(0, Number(contract.settle_tick_no) - latestTick)} ticks left` : `Settles at tick #${contract.settle_tick_no}`);
@@ -163,7 +167,24 @@
         const intentValue = () => [index.value, type.value, barrier.hidden ? '' : barrier.value, form.stake.value, form.ticks.value].join(':');
         const updateBarrier = () => { const none = !type.value || ['EVEN', 'ODD'].includes(type.value); barrier.closest('label').hidden = none; barrier.hidden = none; barrier.required = !none; };
         // Buy needs a live (or polling) feed, a configured index and an enabled contract type.
-        const updateBuy = () => { submit.disabled = !['live', 'polling'].includes(feedState) || !index.value || !type.value; };
+        const gateNote = Object.assign(document.createElement('p'), { className: 'trade-gate-note' });
+        gateNote.dataset.v3Gate = ''; gateNote.setAttribute('role', 'status'); gateNote.hidden = true;
+        submit.after(gateNote);
+        const gateReason = () => v3Status.get(index.value)?.engine_generation === 3 ? v3Status.get(index.value).purchase_block : null;
+        const updateBuy = () => {
+            const reason = gateReason();
+            gateNote.hidden = !reason;
+            gateNote.textContent = reason ? (messages[reason] || 'Trading on this index is paused.') : '';
+            submit.disabled = Boolean(reason) || !['live', 'polling'].includes(feedState) || !index.value || !type.value;
+        };
+        // The server re-checks the gate on every purchase; this only explains a closed gate before the customer tries.
+        async function refreshGate() {
+            const { data, error } = await client.rpc('get_engine_v3_status', {});
+            if (!error && Array.isArray(data)) v3Status = new Map(data.map((row) => [row.index_code, row]));
+            updateBuy();
+        }
+        refreshGate().catch(() => {});
+        setInterval(() => refreshGate().catch(() => {}), 10000);
         // The digit row is fixed at 0-9 and only the latest tick's digit is highlighted. Its description is not a live
         // region, so assistive technology reads the current digit on demand instead of announcing every tick.
         let shownDigit = null;
@@ -304,7 +325,7 @@
             }, window.smartProfitTradeOptions?.configRetryMs ?? CONFIG_RETRY_MS);
         }
         const changed = () => { updateBarrier(); updateBuy(); const next = intentValue(); if (next !== intent) { intent = next; idempotencyKey = uuid(); } clearTimeout(quoteTimer); quoteTimer = setTimeout(quote, 200); }; form.addEventListener('input', changed); form.addEventListener('change', changed); index.addEventListener('change', () => subscribe().catch(report));
-        form.addEventListener('submit', async (event) => { event.preventDefault(); if (submit.disabled) return; try { if (!idempotencyKey) { intent = intentValue(); idempotencyKey = uuid(); } const args = fields(); const bought = await client.rpc('engine_buy_contract', { ...args, p_idempotency_key: idempotencyKey }); if (args.p_account_id !== account().accountId) return; if (bought.error) throw bought.error; if (bought.data?.id) purchasedIds.add(bought.data.id); status.textContent = 'Contract purchased. Tracking the result below.'; await loadContracts(); } catch (error) { report(error); } });
+        form.addEventListener('submit', async (event) => { event.preventDefault(); if (submit.disabled) return; try { if (!idempotencyKey) { intent = intentValue(); idempotencyKey = uuid(); } const args = fields(); status.textContent = 'Submitting…'; submit.disabled = true; const bought = await client.rpc('engine_buy_contract', { ...args, p_idempotency_key: idempotencyKey }).finally(() => updateBuy()); if (args.p_account_id !== account().accountId) return; if (bought.error) { if (['engine_unwitnessed', 'engine_checkpoint_stale', 'engine_worker_unhealthy'].includes(codeOf(bought.error))) refreshGate().catch(() => {}); throw bought.error; } if (bought.data?.id) purchasedIds.add(bought.data.id); status.textContent = `Contract purchased: entry tick #${bought.data.entry_tick_no}, exit tick #${bought.data.settle_tick_no}. Tracking the result below.`; await loadContracts(); } catch (error) { report(error); } });
         document.addEventListener('smartprofit:clear-trade-state', () => { form.reset(); teardown(); contracts = []; contractsLoaded = false; purchasedIds.clear(); notifiedIds.clear(); toastHost.replaceChildren(); renderContracts(); if (balance) balance.textContent = '—'; clearTimeout(quoteTimer); idempotencyKey = ''; }); document.addEventListener('smartprofit:account-changed', () => subscribe().catch(report));
         // A resized chart is redrawn at its new size from the current buffer.
         if (window.ResizeObserver) new window.ResizeObserver(scheduleChart).observe(canvas); else window.addEventListener('resize', scheduleChart);

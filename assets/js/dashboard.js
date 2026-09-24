@@ -97,7 +97,33 @@
             find('[data-index-rows]')?.replaceChildren(noteRow(7, 'Index data could not be loaded. It will retry automatically.'));
         }
 
-        const refresh = () => Promise.all([refreshChart().catch(chartFailed), refreshIndexTable().catch(tableFailed)]);
+        // Observed volatility of version 3 indices, labelled with its window and sample size.
+        // Measured history only: it is never presented as a constant or a forecast.
+        async function refreshVolatility() {
+            const rows = ((await rpc('get_engine_v3_status', {})) || []).filter((row) => row.engine_generation === 3 && row.volatility_1d);
+            let panel = find('[data-v3-volatility]');
+            if (!rows.length) { if (panel) panel.hidden = true; return; }
+            if (!panel) {
+                panel = Object.assign(document.createElement('section'), { className: 'v3-volatility' });
+                panel.dataset.v3Volatility = '';
+                panel.setAttribute('aria-labelledby', 'v3-volatility-heading');
+                panel.append(Object.assign(document.createElement('h2'), { id: 'v3-volatility-heading', textContent: 'Observed volatility' }),
+                    Object.assign(document.createElement('ul'), { className: 'v3-volatility-list' }),
+                    Object.assign(document.createElement('p'), { className: 'text-secondary', textContent: 'Measured from published ticks over the stated window. It describes past movement, not future prices or digits.' }));
+                (find('[data-index-rows]')?.closest('section, .card, .dashboard-card') || find('main'))?.after(panel);
+            }
+            panel.hidden = false;
+            const percent = (x) => `${(Number(x) * 100).toFixed(2)}%`;
+            panel.querySelector('ul').replaceChildren(...rows.map((row) => {
+                const v = row.volatility_1d, item = document.createElement('li');
+                const hours = (Number(v.window_ticks) * 2 / 3600).toFixed(1);
+                item.textContent = v.observed_annual == null
+                    ? `${row.index_code}: not enough ticks yet (target ${percent(v.target_annual)} a year).`
+                    : `${row.index_code}: ${percent(v.observed_annual)} a year, observed over the last ${Number(v.window_ticks).toLocaleString('en-US')} ticks (about ${hours} h); target ${percent(v.target_annual)}${v.status === 'insufficient_data' ? '. A full day of ticks is needed before the alert band applies.' : v.status === 'alert' ? '. Outside the expected band: under review.' : '.'}`;
+                return item;
+            }));
+        }
+        const refresh = () => Promise.all([refreshChart().catch(chartFailed), refreshIndexTable().catch(tableFailed), refreshVolatility().catch(() => {})]);
         renderIndexFacts();
         timer = setInterval(() => { if (!document.hidden) refresh(); }, MARKET_REFRESH_MS);
         return { refresh, stop: () => clearInterval(timer) };

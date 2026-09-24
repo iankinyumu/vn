@@ -81,9 +81,12 @@
                 </div>
                 <button class="btn btn-premium-primary fairness-submit" type="submit">Verify range</button>
             </form>
+            <p class="fairness-range-note" data-fairness-v3-note hidden></p>
             <div class="fairness-results">
                 <p data-fairness-v3-result role="status" aria-live="polite"></p>
                 <ul data-fairness-v3-lines aria-label="Version 3 verification results"></ul>
+                <p class="fairness-eyebrow" id="fairness-v3-details-heading">What was checked</p>
+                <ul data-fairness-v3-details aria-labelledby="fairness-v3-details-heading"></ul>
                 <button class="btn btn-outline-light btn-sm" type="button" data-fairness-v3-download hidden>Download proof package</button>
             </div>
         </section>

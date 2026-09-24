@@ -1,0 +1,64 @@
+{
+  "browser": "Microsoft Edge 153.0.4234.48",
+  "generated_at": "2026-09-24T23:45:23.678Z",
+  "commit": "7fabe1dec35d8524d805384f5f187eafa5faa997",
+  "served": "dist/ over http://127.0.0.1",
+  "backend": "tests/browser/fake-supabase.js",
+  "checks": [
+    {
+      "name": "fairness verified + download + CLI parity",
+      "ui": "fully_verified",
+      "cli": "fully_verified",
+      "errors": 0
+    },
+    {
+      "name": "fairness tampered/published trust",
+      "ui": "invalid",
+      "cli": "invalid"
+    },
+    {
+      "name": "fairness state: no data",
+      "ok": true
+    },
+    {
+      "name": "fairness state: network",
+      "ok": true
+    },
+    {
+      "name": "fairness state: unsupported",
+      "ok": true
+    },
+    {
+      "name": "fairness state: stale feed",
+      "ok": true
+    },
+    {
+      "name": "fairness state: missing history",
+      "ok": true
+    },
+    {
+      "name": "fairness states: too large, bad range, offline, download failure",
+      "ok": true
+    },
+    {
+      "name": "fairness keyboard + mobile",
+      "tabOrder": [
+        "fairness-v3-from",
+        "fairness-v3-to",
+        "Verify range"
+      ]
+    },
+    {
+      "name": "trade gate + contract ticks",
+      "closedReason": "engine_unwitnessed",
+      "rows": [
+        "v3 · ticks #1001 → #1003",
+        "v2 · ticks #880 → #882"
+      ]
+    },
+    {
+      "name": "dashboard volatility labels",
+      "text": "Observed volatilitySPI50: 49.87% a year, observed over the last 1,800 ticks (about 1.0 h); target 50.00%. A full day of ticks is needed before the alert band applies.Measured from published ticks over the stated window. It describes past movement, not future prices or digits."
+    }
+  ]
+}
