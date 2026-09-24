@@ -154,6 +154,7 @@ test('an untampered package verifies and is reported unwitnessed', async () => {
     const result = await v.verifyPackage(samplePackage());
     assert.equal(result.status, 'verified', JSON.stringify(result.issues));
     assert.equal(result.witness, 'unwitnessed');
+    assert.equal(result.signatures, 'unsigned');
     assert.deepEqual(result.anchored, { SPI10: true, SPI50: true });
     assert.equal(result.ticks.length, 80);
     assert.ok(result.contracts.every((c) => c.status === 'verified'));
@@ -209,6 +210,7 @@ test('malformed packages fail closed', async () => {
 
 test('the verifier does not import the generator', () => {
     const source = readFileSync(new URL('../verifier/v3/verify.mjs', import.meta.url), 'utf8');
-    assert.doesNotMatch(source, /^\s*import\b|\bimport\s*\(|\brequire\s*\(/m);
+    for (const [, from] of source.matchAll(/^\s*import\b[^;]*from\s+['"]([^'"]+)['"]/gm)) assert.match(from, /^\.\/[a-z0-9-]+\.mjs$/, `verifier imports ${from}`);
+    assert.doesNotMatch(source, /\bimport\s*\(|\brequire\s*\(/);
     assert.doesNotMatch(source, /['"]node:crypto['"]/);
 });

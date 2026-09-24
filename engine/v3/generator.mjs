@@ -243,3 +243,15 @@ export function proofPackage({ ledger, ticks, revealed = new Set(), contracts = 
         contracts,
     };
 }
+
+// ---- Part B records (ADR 0002 §4) ----
+export const SIGNATURE_KINDS = Object.freeze(['epoch-commitment', 'checkpoint']);
+
+export function signedMessage(kind, keyId, subject) {
+    oneOf(kind, SIGNATURE_KINDS, 'engine_v3_signature_kind_invalid');
+    return Buffer.concat([header('signed'), str(kind), str(keyId), h32(subject)]);
+}
+
+export function checkpointHash({ env, mode, index, tickNo, tickHash: hash, createdMs }) {
+    return sha256(header('checkpoint'), str(env), str(mode), str(index), u64(tickNo), h32(hash), u64(createdMs));
+}

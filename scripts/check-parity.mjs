@@ -4,7 +4,9 @@ import path from 'node:path';
 const migrationDir = path.resolve('supabase/migrations');
 const files = (await fs.readdir(migrationDir)).filter((file) => file.endsWith('.sql')).sort();
 const engineFiles = files.filter((file) => /_engine_.*\.sql$/i.test(file));
-const allow = new Set(['public.engine_buy_contract', 'public.engine_quote_contract', 'public.engine_tick_exposure', 'public.enroll_practice_account', 'public.reset_practice_balance', 'public.enable_real_accounts']);
+const allow = new Set(['public.engine_buy_contract', 'public.engine_quote_contract', 'public.engine_tick_exposure', 'public.enroll_practice_account', 'public.reset_practice_balance', 'public.enable_real_accounts',
+    // Declared: v3 cutover is Practice-only until the REAL readiness gate (ADR 0002 §9).
+    'public.engine_v3_schedule_cutover']);
 const createFunction = /create\s+or\s+replace\s+function\s+([\w.]+)\s*\([^)]*\)[\s\S]*?language\s+plpgsql[\s\S]*?as\s+\$\$([\s\S]*?)\$\$/gi;
 let failed = false;
 
