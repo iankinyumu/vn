@@ -90,7 +90,8 @@ export async function createTestDatabase() {
         '20260920510000_engine_account_stats.sql',
         '20260920520000_engine_contract_realtime.sql',
         '20260920530000_engine_admin_operations.sql',
-        '20260920540000_engine_pgcrypto_schema_bridge.sql'
+        '20260920540000_engine_pgcrypto_schema_bridge.sql',
+        '20260920550000_engine_operations_audit_fixes.sql'
     ];
 
     for (const name of migrations) {

@@ -176,7 +176,7 @@
                     card('Active restrictions', data.active_restrictions, 'fa-user-slash text-danger', 'Unexpired'),
                     card('Contracts today', `${(today.DEMO ?? 0) + (today.REAL ?? 0)}`, 'fa-exchange-alt text-success', `Practice ${today.DEMO ?? 0} · Real ${today.REAL ?? 0}`),
                     card('Active staff', data.active_staff, 'fa-user-shield text-primary', 'Operations'),
-                    card('Engine', String(data.engine_health || 'unavailable').toUpperCase(), `fa-bolt ${data.engine_health === 'healthy' ? 'text-success' : 'text-warning'}`, 'Details in the Engine tab'),
+                    card('Engine', String(data.engine_health || 'unavailable').toUpperCase(), `fa-bolt ${{ healthy: 'text-success', watch: 'text-warning', alert: 'text-danger', degraded: 'text-danger' }[data.engine_health] || 'text-secondary'}`, 'Details in the Engine tab'),
                 );
                 status.textContent = `Live as of ${new Date(data.timestamp).toLocaleTimeString()}`;
             } catch (error) {

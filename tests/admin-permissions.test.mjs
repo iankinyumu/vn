@@ -294,8 +294,8 @@ test('manual void is Owner-only, needs a reason and fresh verification, refunds 
         assert.equal(await outcome("select public.void_contract($1,'Settlement stuck behind the tick')", [contract]), 'ok');
         await db.exec('reset role');
         assert.equal((await db.query('select state from public.engine_contracts where id=$1', [contract])).rows[0].state, 'VOID');
-        const audit = await db.query("select actor_id from public.admin_audit_events where action='contracts.void' and target_id=$1", [contract]);
-        assert.deepEqual(audit.rows.map((row) => row.actor_id), [identities.owner.id]);
+        const audit = await db.query("select actor_id, before_state->>'execution_mode' as mode_before, after_state->>'execution_mode' as mode_after from public.admin_audit_events where action='contracts.void' and target_id=$1", [contract]);
+        assert.deepEqual(audit.rows.map((row) => ({ ...row })), [{ actor_id: identities.owner.id, mode_before: 'DEMO', mode_after: 'DEMO' }]);
         await as('customer');
         assert.equal(Number((await db.query('select public.get_account_summary($1) summary', [account])).rows[0].summary.available), 10000);
     } finally {
@@ -347,6 +347,35 @@ test('restrictions are applied, superseded and lifted only with the capability t
         const audit = await db.query("select action, before_state->>'severity' as lifted from public.admin_audit_events where target_id=$1 and action like 'customer.%'", [target]);
         assert.equal(audit.rows.filter((row) => row.action === 'customer.restrict').length, 5);
         assert.deepEqual(audit.rows.filter((row) => row.action === 'customer.lift_restriction').map((row) => row.lifted).sort(), ['BLOCKED', 'NOTICE', 'NOTICE']);
+    } finally {
+        await db.exec('reset role');
+        await db.close();
+    }
+});
+
+test('digit quality counts digits that never appear, and the overview reports the worst index status', async () => {
+    const { db, as } = await opsDatabase();
+    try {
+        await db.query('update public.index_state set updated_at=now()');
+        await as('administrator');
+        assert.equal((await db.query('select public.get_platform_overview() overview')).rows[0].overview.engine_health, 'healthy');
+        await db.exec('reset role');
+        // 50 ticks using only digits 0-4: chi-square is 50 over all ten digits (alert), but 25 if absent digits are skipped.
+        const epoch = await db.query("insert into public.engine_epochs(id,execution_mode,starts_at,ends_at,seed_commitment,chain_hash) values(gen_random_uuid(),'DEMO',date_trunc('day',now()),date_trunc('day',now())+interval '1 day','proof','chain') returning id");
+        for (let tick = 1; tick <= 50; tick++) {
+            const digit = tick % 5;
+            await db.query("insert into public.index_ticks(index_code,execution_mode,tick_no,epoch_id,scheduled_at,generated_at,price,digit) values('SPI10','DEMO',$1,$2,now(),now(),$3,$4)", [tick, epoch.rows[0].id, (1000 + digit / 1000).toFixed(3), digit]);
+        }
+        await db.query("update public.index_state set last_tick_no=50,updated_at=now() where index_code='SPI10' and execution_mode='DEMO'");
+        await as('administrator');
+        const spi10 = (await db.query('select public.get_admin_engine_health() health')).rows[0].health.find((row) => row.index_code === 'SPI10' && row.execution_mode === 'DEMO');
+        assert.equal(Number(spi10.chi_square), 50);
+        assert.equal(spi10.status, 'alert');
+        assert.equal((await db.query('select public.get_platform_overview() overview')).rows[0].overview.engine_health, 'alert');
+        await db.exec('reset role');
+        await db.query("update public.index_state set updated_at=now()-interval '1 minute' where index_code='SPI25' and execution_mode='DEMO'");
+        await as('administrator');
+        assert.equal((await db.query('select public.get_platform_overview() overview')).rows[0].overview.engine_health, 'degraded');
     } finally {
         await db.exec('reset role');
         await db.close();
