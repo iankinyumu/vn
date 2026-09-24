@@ -59,6 +59,35 @@
             </div>
         </section>
 
+        <section class="fairness-panel" aria-labelledby="fairness-v3-heading" data-fairness-v3 hidden>
+            <div class="fairness-panel-heading">
+                <div>
+                    <p class="fairness-eyebrow">Version 3 proof</p>
+                    <h2 id="fairness-v3-heading">Check signed, timestamped history</h2>
+                </div>
+                <span class="fairness-range-note">Up to 5,000 ticks</span>
+            </div>
+            <form>
+                <div class="fairness-fields">
+                    <label for="fairness-v3-index">Index
+                        <select id="fairness-v3-index" name="index" class="form-select"></select>
+                    </label>
+                    <label for="fairness-v3-from">First tick
+                        <input id="fairness-v3-from" name="from" type="number" min="1" class="form-control" required>
+                    </label>
+                    <label for="fairness-v3-to">Last tick
+                        <input id="fairness-v3-to" name="to" type="number" min="1" class="form-control" required>
+                    </label>
+                </div>
+                <button class="btn btn-premium-primary fairness-submit" type="submit">Verify range</button>
+            </form>
+            <div class="fairness-results">
+                <p data-fairness-v3-result role="status" aria-live="polite"></p>
+                <ul data-fairness-v3-lines aria-label="Version 3 verification results"></ul>
+                <button class="btn btn-outline-light btn-sm" type="button" data-fairness-v3-download hidden>Download proof package</button>
+            </div>
+        </section>
+
         <p class="fairness-help">A revealed seed can reproduce past digits. It cannot predict the next digit or prove how the seed was chosen. <a href="guide-fairness.html">How verification works</a></p>
     </main>
 
@@ -71,6 +100,7 @@
     <script src="../assets/js/account-switcher.js"></script>
     <script src="../assets/js/restriction-banner.js"></script>
     <script src="../assets/js/fairness.js"></script>
+    <script type="module" src="../assets/js/fairness-v3.js"></script>
 </body>
 
 </html>

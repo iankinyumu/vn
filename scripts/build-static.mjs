@@ -11,6 +11,8 @@ rmSync(output, { recursive: true, force: true });
 mkdirSync(output);
 cpSync(resolve(root, 'pages'), output, { recursive: true });
 cpSync(resolve(root, 'assets'), resolve(output, 'assets'), { recursive: true });
+// The fairness page imports the same standalone verifier the CLI uses; test fixtures stay out.
+cpSync(resolve(root, 'verifier/v3'), resolve(output, 'verifier/v3'), { recursive: true, filter: (source) => !/[\\/]fixtures([\\/]|$)/.test(source) });
 
 if (!existsSync(resolve(output, 'index.html')) || !existsSync(resolve(output, 'assets/js/supabase-config.js'))) {
     throw new Error('The static site is missing its home page or browser configuration.');

@@ -66,6 +66,16 @@
                 <li><strong>What comes next.</strong> Verification looks backwards. Revealed seeds and past digits say nothing about the next digit.</li>
             </ul>
 
+            <h2>Version 3 proofs</h2>
+            <p>No index uses version 3 yet. When one does, the fairness page shows a second check for it, and this is what that check adds:</p>
+            <ul>
+                <li><strong>Keys outside the database.</strong> Seeds are created and held by a separate engine service. The database stores only encrypted copies it cannot open.</li>
+                <li><strong>Signed and timestamped commitments.</strong> Each day's commitment, which covers the seed and every model setting, is signed by SmartProfit. It is also timestamped by two independent timestamp authorities, DigiCert and Sectigo, before that day's ticks begin.</li>
+                <li><strong>A chained, checkpointed history.</strong> Every tick names the one before it. Signed checkpoints let a check start partway through history instead of from the first tick.</li>
+                <li><strong>A package you can check yourself.</strong> Download the proof package and run the open verifier (<code>node verifier/v3/cli.mjs package.json</code>), with no need to trust this page.</li>
+            </ul>
+            <p>Results are shown separately: verified, not yet revealable, missing history, invalid signature or commitment, invalid witness, price mismatch, digit mismatch, broken continuity, and unwitnessed. Someone who controls both the engine service and its key permissions could still see the current day's outcomes ahead of time. The timestamps show when a commitment existed, not how its seed was chosen.</p>
+
             <p class="guide-note">Practice accounts use virtual USD credits. They have no cash value and cannot be withdrawn.</p>
 
             <nav class="guide-nav" aria-label="Guide navigation">

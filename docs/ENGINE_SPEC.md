@@ -17,6 +17,14 @@ Contracts settle from their scheduled exit tick. EVEN, ODD, OVER, UNDER, MATCH, 
 
 The hosted migration requires `pg_cron` 1.5 or later. It schedules the engine every second, epoch reveal every minute, and retention daily. Tick inserts send a private Broadcast payload through `realtime.send` on `ticks:demo:<index>`. The project must retain Realtime Broadcast authorization; the migration grants authenticated users receive access to the Practice topics only.
 
-## Version 3 (proposed, not active)
+## Version 3 (built; not yet active on any index)
 
-`docs/adr/0001-synthetic-engine-v3.md` specifies a candidate version 3: HKDF-separated keys, length-framed canonical encodings, a committed model configuration, a tick hash chain, and SPI-N defined as a target annualised volatility of N %. It is **not** used for any tick or contract. Every live index still generates version 2 ticks, and version 1 and 2 verification is unchanged. The Node reference generator (`engine/v3/generator.mjs`), the WebCrypto verifier (`verifier/v3/verify.mjs`) and the SQL functions in `engine_private` (migration `20260924100000`) all reproduce `engine/v3/vectors.json`. Seed custody, witnessed commitments and cutover are later phases. Until they are complete, nothing in this section changes what the fairness page proves.
+`docs/adr/0001-synthetic-engine-v3.md` specifies version 3: HKDF-separated keys, length-framed canonical encodings, a committed model configuration, a tick hash chain, and SPI-N defined as a target annualised volatility of N %. `docs/adr/0002-engine-v3-custody-witness-operations.md` covers the operational design:
+
+- An external worker holds seeds under KMS envelope custody. PostgreSQL stores only ciphertext.
+- Each epoch commitment is signed with Ed25519 and timestamped by DigiCert and Sectigo (RFC 3161) before its ticks.
+- Signed checkpoints are published every 150 ticks.
+- Purchases fail closed when freshness, heartbeat, witness or checkpoint gates fail.
+- Cutover is Practice-only and happens at a UTC day boundary, after v2 stops at its final tick.
+
+**Status.** No index has `engine_generation = 3`, so every index still generates version 2 ticks, and version 1 and 2 verification is unchanged. Version 3 ticks are written only through `engine_v3_publish_tick`, and are stored with `generation_version = 3` and their tick hash chain. Version 3 verification uses `verifier/v3` (browser and `node verifier/v3/cli.mjs`). It reports `verified`, `not_yet_revealable`, `missing_history`, `invalid_config`, `invalid_commitment`, `invalid_signature`, `invalid_witness`, `broken_continuity`, `price_mismatch`, `digit_mismatch` and `contract_mismatch` as distinct states, plus witness and signature coverage. Operations are in `docs/runbooks/engine-v3.md`. Acceptance evidence is in `docs/ENGINE_V3_ACCEPTANCE.md`.
