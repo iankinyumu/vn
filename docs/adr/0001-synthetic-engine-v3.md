@@ -233,7 +233,10 @@ Multi-year stationarity: at least one run of 15 768 000 ticks (one year) per ind
 
 **What it does not prove without Phase 2 controls:** when the commitment was first published, that nobody previewed outcomes, or that no epoch was selected or suppressed. The verifier reports `unwitnessed` until a witness receipt and signing key can be checked.
 
-## 9. Phase 2 decisions left open (they do not change §4–§6 bytes)
+## 9. Phase 2 decisions (they do not change §4–§6 bytes)
+
+**Decided in ADR 0002** (`docs/adr/0002-engine-v3-custody-witness-operations.md`): an external worker with KMS envelope custody, Ed25519 signing, and RFC 3161 witnessing by two TSAs (DigiCert and Sectigo). No beacon in v3.0. The options considered are kept below for the record.
+
 
 - **Custody provider:** KMS/HSM and the service runtime. `crypto.randomBytes(32)` is acceptable in a Node service backed by the platform CSPRNG; the deployed runtime must be confirmed.
 - **Signing:** Ed25519 over the `commitment` and checkpoint hashes, with a published key set and rotation record. Signature bytes are carried beside the record and are not hashed into it.
