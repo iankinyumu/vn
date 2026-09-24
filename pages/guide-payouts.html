@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta name="description"
+        content="The SmartProfit house margin, the exact payout formula with worked examples, cent rounding, and which values are configurable.">
+    <title>The house margin and payouts — SmartProfit Guides</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="../assets/css/glassmorphism.css" rel="stylesheet">
+    <link href="../assets/css/style.css" rel="stylesheet">
+    <link href="../assets/css/public-shell.css" rel="stylesheet">
+    <link href="../assets/css/guides.css" rel="stylesheet">
+</head>
+
+<body class="premium-theme public-shell" data-shell-surface="public" data-shell-active="blog">
+    <div data-shell-header></div>
+
+    <main class="guides-wrapper">
+        <article class="guide-article" aria-labelledby="guideTitle">
+            <header class="guides-header">
+                <div class="guides-kicker"><a href="blog.html">Guides</a> · Payouts</div>
+                <h1 id="guideTitle">The house margin and the payout formula</h1>
+                <p>Every payout comes from one formula and one published number, the house margin. This guide shows the formula, works through examples and explains the rounding.</p>
+            </header>
+
+            <h2>The formula</h2>
+            <code class="guide-formula">payout = floor( stake × (1 − margin) × 10 ÷ winning digits ), to the cent<br>profit = payout − stake</code>
+            <p>The winning digits are the digits that win for the contract type: 5 for Even or Odd, 1 for Match, 9 for Differ, and so on (see the <a href="guide-settlement.html">settlement guide</a>). The payout includes the stake. If the contract loses, nothing is paid and the stake is lost.</p>
+            <p>The calculation is done on the server in exact decimal arithmetic, never in floating point, and the quote on the trade page shows the result before you buy: payout, profit, win probability and the policy version used.</p>
+
+            <h2>The margin: published and configurable</h2>
+            <p><strong>Policy version 1, the version the platform ships with, sets a house margin of 3.5% for every contract type.</strong> The margin is configurable: staff can publish a new policy version with a margin between 0.5% and 15%, and a version may give a contract type its own margin within the same bounds. Version 1 has no per-type margins.</p>
+            <p>A new version applies to new purchases only. Every contract records the policy version, payout and multiplier it was bought with, and a later policy never changes a contract you already hold. The quote always uses the version in force at that moment.</p>
+
+            <h2>What the margin means</h2>
+            <p>Without a margin, a fair payout would return exactly the stake on average: stake × 10 ÷ winning digits. The margin takes a fixed share of that. At 3.5%, an Even contract pays 1.93 times the stake and wins half the time, so across many contracts it returns 96.5% of the amount staked on average, and every contract type returns the same 96.5% share. Over time, the expected result of buying contracts is a loss of about 3.5% of the total staked. Individual results vary, and past results do not change the odds of the next one.</p>
+
+            <h2>Worked examples at a 3.5% margin</h2>
+            <div class="guide-table-wrap">
+                <table class="guide-table">
+                    <thead><tr><th scope="col">Stake</th><th scope="col">Contract</th><th scope="col" class="num">Winning digits</th><th scope="col" class="num">Payout</th><th scope="col" class="num">Profit if it wins</th></tr></thead>
+                    <tbody>
+                        <tr><td class="num">100.00</td><td>Even or Odd</td><td class="num">5</td><td class="num">193.00</td><td class="num">93.00</td></tr>
+                        <tr><td class="num">37.00</td><td>Even or Odd</td><td class="num">5</td><td class="num">71.41</td><td class="num">34.41</td></tr>
+                        <tr><td class="num">100.00</td><td>Under 3</td><td class="num">3</td><td class="num">321.66</td><td class="num">221.66</td></tr>
+                        <tr><td class="num">100.00</td><td>Match</td><td class="num">1</td><td class="num">965.00</td><td class="num">865.00</td></tr>
+                        <tr><td class="num">10.00</td><td>Differ</td><td class="num">9</td><td class="num">10.72</td><td class="num">0.72</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p>At launch only Even and Odd are enabled; the other rows show how the same formula prices the remaining types.</p>
+
+            <h2>Rounding always goes down</h2>
+            <p>The payout is floored to the cent, never rounded up. On most stakes this changes nothing, but on some small stakes the effective margin is slightly above the published one. For example, a 1.01 Even stake has an exact value of 1.9493 and pays 1.94. The difference always favours the house, never the customer.</p>
+
+            <h2>Offers the engine refuses</h2>
+            <p>The engine will not sell a contract whose profit would be less than 1% of the stake (the minimum profit ratio in policy version 1). Before a policy version is published, the server checks that every enabled contract type, at every allowed barrier, clears this minimum at the smallest allowed stake.</p>
+
+            <h2>Practice stakes and limits</h2>
+            <p>Practice accounts are denominated in virtual USD. Under policy version 1, a stake is between 1.00 and 1,000.00, an account may hold at most 20 open contracts and buy at most 30 per minute, and a single settle tick carries a capped total liability. The server checks each limit on every purchase.</p>
+
+            <p class="guide-note">Practice credits are virtual. They have no cash value and cannot be withdrawn, and a practice result says nothing about any future funded result.</p>
+
+            <nav class="guide-nav" aria-label="Guide navigation">
+                <a href="guide-settlement.html"><i class="fas fa-arrow-left me-2" aria-hidden="true"></i>Previous: how contracts settle</a>
+                <a href="guide-fairness.html">Next: verifying fairness<i class="fas fa-arrow-right ms-2" aria-hidden="true"></i></a>
+            </nav>
+        </article>
+    </main>
+
+    <div data-shell-footer></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/shell.js"></script>
+</body>
+
+</html>

@@ -5,7 +5,7 @@ SmartProfit is a Practice-only digit-contract platform. Customers trade Even/Odd
 ## Architecture
 
 - **Frontend** — a static multi-page site. Pages live in `pages/`, vanilla JavaScript in `assets/js/` loaded with plain `<script>` tags (no framework, no bundler), styles in `assets/css/`. The browser talks to Supabase through the publishable key in `assets/js/supabase-config.js`.
-  - Customer pages: `dashboard.html` (Practice balance, lifetime wins/losses/net result, latest contracts, Practice reset), `trade.html` (live index feed, digit statistics, quotes and purchases), `fairness.html` (in-browser commit-reveal verifier), `profile.html`, `support.html`, plus the public marketing pages.
+  - Customer pages: `dashboard.html` (Practice balance, lifetime wins/losses/net result, latest contracts, Practice reset), `trade.html` (live index feed, digit statistics, quotes and purchases), `fairness.html` (in-browser commit-reveal verifier), `profile.html`, `support.html`, plus the public pages: `index.html`, `about.html`, `faq.html` (answers in `assets/js/faq.js`), `contact.html`, `404.html`, and the Guides (`blog.html` lists `guide-settlement.html`, `guide-payouts.html` and `guide-fairness.html`). Header, navigation and footer for every customer page come from `assets/js/shell.js`.
   - Staff console: `admin.html` with its own isolated staff sign-in (`staff-login.html`, `assets/js/staff-auth.js`). Tabs are gated by server-issued capabilities; the database enforces every capability again.
 - **Database** — Supabase Postgres. All engine logic is SQL in `supabase/migrations/`: deterministic tick generation from per-epoch seeds (`gen_random_bytes`, HMAC-SHA256), commit-reveal epochs, quoting, linearizable buying, settlement, exposure caps, per-mode limits, versioned policy, graded customer restrictions, an immutable double-entry ledger and an audit trail. Customer and staff access goes only through `security definer` RPCs with `set search_path = ''`.
 - **Scheduling** — `pg_cron` (1.5 or newer, seconds syntax) runs `engine_advance` every second, `engine_reveal_due_epochs` every minute and `engine_purge_ticks` daily.
@@ -30,7 +30,7 @@ Apply migrations in timestamp order to a reviewed Supabase project, never by edi
 supabase db push
 ```
 
-Then confirm the three cron jobs exist and that authenticated users can receive only `ticks:demo:*` broadcasts. `supabase/README.md` has the full checklist. Deployment credentials never belong in the repository or in `.env.local`; `.env.example` lists the only variables the product uses.
+`node supabase/migration-status.cjs` (read-only, connection string from `TRADING_DB_URL`, never printed) reports which engine migrations a database has applied; `--apply <version>...` applies exactly the named local migrations in order. Then confirm the three cron jobs exist and that authenticated users can receive only `ticks:demo:*` broadcasts. `supabase/README.md` has the full checklist. Deployment credentials never belong in the repository or in `.env.local`; `.env.example` lists the only variables the product uses.
 
 ## Documentation
 

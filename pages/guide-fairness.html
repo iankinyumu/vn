@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta name="description"
+        content="How SmartProfit commits to each day's seed, how to recompute published digits with the fairness verifier, and what the proof cannot establish.">
+    <title>How to verify fairness — SmartProfit Guides</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="../assets/css/glassmorphism.css" rel="stylesheet">
+    <link href="../assets/css/style.css" rel="stylesheet">
+    <link href="../assets/css/public-shell.css" rel="stylesheet">
+    <link href="../assets/css/guides.css" rel="stylesheet">
+</head>
+
+<body class="premium-theme public-shell" data-shell-surface="public" data-shell-active="blog">
+    <div data-shell-header></div>
+
+    <main class="guides-wrapper">
+        <article class="guide-article" aria-labelledby="guideTitle">
+            <header class="guides-header">
+                <div class="guides-kicker"><a href="blog.html">Guides</a> · Fairness</div>
+                <h1 id="guideTitle">How to verify fairness, and what the proof cannot show</h1>
+                <p>Every digit comes from a secret seed that is committed to before it is used and revealed after. This guide explains that commit–reveal scheme, how to check published digits yourself, and where the proof stops.</p>
+            </header>
+
+            <h2>Seeds, epochs and commitments</h2>
+            <ul>
+                <li>An <strong>epoch</strong> is one UTC day. Each account type has its own epochs and seeds, so Practice digits are never shared with any other account type.</li>
+                <li>Each epoch has a random 32-byte <strong>seed</strong>. Before the epoch is used, the platform publishes its <strong>commitment</strong>, the SHA-256 hash of the seed. Each day's commitment is created during the previous day; only the very first epoch of an account type is committed on the day it starts.</li>
+                <li>Each commitment is <strong>chained</strong> to the previous epoch's. The chain hash is the hex SHA-256 of one piece of text: the previous chain hash (empty for the first epoch), the epoch id, the account type and the commitment, written one after another with no separators. Replacing an old commitment would break every link after it.</li>
+                <li>After the epoch ends, and once no open contract still depends on it (at the earliest 10 minutes after it ends), the seed is <strong>revealed</strong>.</li>
+            </ul>
+
+            <h2>How a digit is derived from the seed</h2>
+            <p>For tick number <var>n</var> of an index, the engine computes HMAC-SHA-256 blocks keyed with the seed:</p>
+            <code class="guide-formula">block = HMAC-SHA-256(key = seed, message = "digit|DEMO|&lt;index&gt;|&lt;n&gt;|&lt;k&gt;")   for k = 0, 1, 2, …<br>take the first byte b below 250; digit = b mod 10</code>
+            <p>Bytes of 250 or more are skipped so that every digit is exactly equally likely. <code>DEMO</code> is the Practice account type. Because the digit depends only on the seed, the index and the tick number, it is independent of every other tick and of the price path.</p>
+
+            <h2>Running the verifier</h2>
+            <ol>
+                <li>Sign in and open the <a href="fairness.html">Fairness</a> page. It uses the account type you have selected.</li>
+                <li>Choose an index and a range of tick numbers, up to 5,000 at a time. The form starts on the latest 20 ticks.</li>
+                <li>Select <em>Verify range</em>. Your browser fetches the published ticks and the epoch proofs, checks that each revealed seed hashes to its commitment, then recomputes every digit locally with the browser's built-in SHA-256 and HMAC functions.</li>
+            </ol>
+            <p>The result reports how many digits were verified, how many did not match, and how many are not yet verifiable because their epoch has not been revealed. Each epoch is listed with whether its commitment matched. To check a contract you held, take the settle tick number from your contract history and include it in the range.</p>
+            <p>The verifier does not recompute the chain hash. If you want to check the chain as well, apply the formula above to consecutive epochs.</p>
+
+            <h2>What the proof establishes</h2>
+            <ul>
+                <li>The seed behind a revealed epoch was fixed before the epoch began, and it was not swapped afterwards.</li>
+                <li>Every published digit in that epoch follows from that seed by the published rule. Nobody chose individual digits after seeing purchases.</li>
+            </ul>
+
+            <h2>What the proof cannot establish</h2>
+            <ul>
+                <li><strong>That the seed was chosen in good faith.</strong> The proof shows the seed did not change after commitment; it cannot show how the seed was picked before commitment.</li>
+                <li><strong>That future digits are secret from the operator.</strong> Practice seeds are stored in the platform's database until they are revealed, so anyone with direct database access could compute upcoming Practice digits. Moving seeds into isolated custody is a required step before any funded account type can open.</li>
+                <li><strong>Anything about the current day.</strong> Ticks from an epoch that has not been revealed cannot be checked until after it ends.</li>
+                <li><strong>That payouts and balances were posted correctly.</strong> The verifier checks digits, not accounting. Compare each settled contract's result with its settle digit and your balance history.</li>
+                <li><strong>Anything about the displayed price path</strong>, beyond its final digit. The price movement is cosmetic and is not part of the proof.</li>
+                <li><strong>What comes next.</strong> Verification looks backwards. Revealed seeds and past digits say nothing about the next digit.</li>
+            </ul>
+
+            <p class="guide-note">Practice accounts use virtual USD credits. They have no cash value and cannot be withdrawn.</p>
+
+            <nav class="guide-nav" aria-label="Guide navigation">
+                <a href="guide-payouts.html"><i class="fas fa-arrow-left me-2" aria-hidden="true"></i>Previous: the house margin and payouts</a>
+                <a href="blog.html">All guides<i class="fas fa-arrow-right ms-2" aria-hidden="true"></i></a>
+            </nav>
+        </article>
+    </main>
+
+    <div data-shell-footer></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/shell.js"></script>
+</body>
+
+</html>
