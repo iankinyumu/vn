@@ -1,34 +1,38 @@
 # Engine v3 proof verifier
 
-A standalone checker for `smartprofit-proof/v3` packages (ADR 0001, `docs/adr/0001-synthetic-engine-v3.md`). It uses only the Web Crypto API and has no dependencies. It works in Node 19+ and modern browsers. It shares no code with the generator in `engine/v3`.
+A standalone checker for `smartprofit-proof/v3` packages (ADR 0001 and ADR 0002). It uses only the Web Crypto API and has no dependencies. It works in Node 19+ and modern browsers, and shares no code with the generator in `engine/v3`. The fairness page runs this same module with the same trust documents, so both give the same verdict for the same package.
 
 ```
-node verifier/v3/cli.mjs proof.json          # summary; exit code 0 only if verified
-node verifier/v3/cli.mjs proof.json --json   # full per-tick and per-contract result
+node verifier/v3/cli.mjs proof.json            # summary
+node verifier/v3/cli.mjs proof.json --json     # full result
+node verifier/v3/cli.mjs proof.json --trust-dir DIR --allow-test-trust   # test/staging packages only; output is labelled TEST TRUST BUNDLE
 ```
 
-Version 3 is a **proposal**. No live tick uses it yet, so there is no production package to check today.
+By default the CLI loads the **published** trust documents beside it:
 
-## What it checks
+- `trusted-keys.json`: SmartProfit's Ed25519 signing keys. Append-only. An empty manifest means "unpinned".
+- `tsa-roots.json`: the pinned DigiCert and Sectigo RFC 3161 roots, and which providers are required.
 
-- The configuration's `sigma_e12` values follow from each index's annual volatility, and `config_hash` covers them.
-- Each epoch commitment matches its fields. Epochs chain day by day from a zero predecessor. A revealed seed matches its committed `seed_hash`.
-- Every tick is anchored to its index's genesis state and follows the one before it (`tick_no`, `prev_units`, `prev_tick_hash`). Its hash matches its record, and its schedule and epoch agree with the configuration.
-- Every price is recomputed from the revealed seed, and its digit is the final price digit.
-- Each contract's result follows from its exit tick's digit.
-
-## Result states
-
-| State | Meaning |
+| Exit code | Verdict |
 | --- | --- |
-| `verified` | Every check above passed. |
-| `not_yet_revealable` | The epoch's seed is not revealed yet. Nothing is wrong so far, but the price cannot be recomputed. |
-| `missing_history` | The package lacks the genesis tick, an earlier epoch or an exit tick, so the starting state is not anchored. |
-| `invalid_config` | The configuration, schedule or package format is wrong. |
-| `invalid_commitment` | A commitment, seed hash or revealed seed does not match. |
-| `broken_continuity` | A tick is missing, reordered, or does not chain to its predecessor, or a record hash is wrong. |
-| `price_mismatch` | A published price differs from the recomputed one. |
-| `digit_mismatch` | A published digit is not the final digit of its price. |
-| `contract_mismatch` | A contract result does not follow from its exit tick. |
+| 0 | **fully verified** |
+| 2 | **partial**: nothing contradicts the record, but evidence is incomplete |
+| 1 | **invalid**: something is wrong |
+| 64 | usage error |
 
-`witness` is always `unwitnessed` in v3.0. A matching seed reveal shows that the published history follows from the committed seed. It does **not** show when the commitment was made, that nobody previewed outcomes, or that no epoch was chosen or suppressed. Those need the independent witness and seed-custody controls planned for Phase 2.
+## Verdict components
+
+| Component | Values | What it means |
+| --- | --- | --- |
+| price/continuity | `verified`, `unanchored`, `invalid` | Every tick is recomputed under its own epoch's configuration from the revealed seed. Sequence, previous price, the hash chain and the commitment chain are checked. The start must be genesis or a signed, witnessed checkpoint. |
+| signatures | `valid`, `unpinned`, `unsigned`, `invalid` | Ed25519 signatures on commitments and checkpoints, checked against the pinned key manifest. |
+| witness | `witnessed`, `late`, `missing`, `unwitnessed`, `invalid` | Each epoch holding ticks needs a valid receipt from every required TSA. The receipt must chain to a pinned root, and its `genTime` must fall strictly before the epoch's **witness deadline**: its first scheduled tradable tick, derived from the committed configuration. |
+| checkpoints | `witnessed`, `none`, `unwitnessed`, `invalid` | Checkpoints in the range and the anchor checkpoint are signed and carry verified receipts. |
+| reveal | `revealed`, `not_yet_revealable` | Every epoch holding ticks has a revealed seed that matches its commitment. |
+| contracts | `verified`, `none`, `unverifiable`, `invalid` | Each settled contract's result and exit digit follow from its fixed exit tick. Refunded contracts are listed as refunded. |
+
+**Fully verified** means every applicable component passed: the start is anchored, keys are pinned, receipts are on time, and every due seed is revealed and reproduced. A matching price with missing independent evidence is **partial**, never verified.
+
+## What it does not establish
+
+A valid proof shows that the published history follows from committed seeds and configurations, and that the commitments existed before the deadlines the timestamps attest. It does not show that nobody with control of both the engine worker and its key permissions previewed the current day. It does not show how a seed was chosen before commitment, and it does not check certificate revocation.

@@ -7,7 +7,9 @@ import { after, before, test } from 'node:test';
 import * as g from '../engine/v3/generator.mjs';
 import { LocalCustody } from '../engine/v3/service/custody.mjs';
 import { Ed25519Signer } from '../engine/v3/service/signer.mjs';
+import { WitnessAttestor } from '../engine/v3/service/attestor.mjs';
 import { EngineWorker } from '../engine/v3/service/worker.mjs';
+import { rootBundleId } from '../verifier/v3/tsa.mjs';
 import { verifyPackage } from '../verifier/v3/verify.mjs';
 import { asUser, createRealDatabase } from './helpers/pg-real.mjs';
 import { TEST_TSA_ROOT, TestWitness, issueTestToken } from './helpers/test-tsa.mjs';
@@ -27,11 +29,17 @@ class SpyCustody extends LocalCustody {
     }
 }
 
-let T, db, wdb, custody, signer, witnesses, worker, params, t0, genesis, account;
+let T, db, wdb, adb, attestor, custody, signer, witnesses, worker, params, t0, genesis, account;
 const rpc = async (client, sql, args = []) => (await client.query(sql, args)).rows;
 const errorOf = async (promise) => { try { await promise; return null; } catch (error) { return error.message; } };
 const liveTicks = async (index) => rpc(db, `select tick_no::int,digit,price,v3_tick_hash,v3_prev_tick_hash,generation_version from public.index_ticks where index_code=$1 and generation_version=3 order by tick_no`, [index]);
-const makeWorker = (overrides = {}) => new EngineWorker({ db: wdb, mode: 'DEMO', params, custody, signer, witnesses, checkpointEvery: 5, ...overrides });
+// Every worker cycle is followed by an attestation pass run by the separate attestor role.
+const makeWorker = (overrides = {}) => {
+    const instance = new EngineWorker({ db: wdb, mode: 'DEMO', params, custody, signer, witnesses, checkpointEvery: 5, ...overrides });
+    const cycle = instance.cycle.bind(instance);
+    instance.cycle = async () => { const report = await cycle(); report.attested = await attestor.cycle(); return report; };
+    return instance;
+};
 async function cycleUntil(predicate, { timeoutMs = 20000, instance = worker } = {}) {
     const deadline = Date.now() + timeoutMs;
     for (;;) {
@@ -47,10 +55,15 @@ const buy = (index, key, ticks = 2) => customer(() => db.query(`select public.en
 before(async () => {
     T = await createRealDatabase();
     db = T.db;
+    const testRoots = { digicert: [new Uint8Array(TEST_TSA_ROOT)], sectigo: [new Uint8Array(TEST_TSA_ROOT)] };
+    const bundleId = await rootBundleId(testRoots);
     await asUser(db, 'ian', () => db.query(`select public.engine_v3_configure('test',$1::jsonb,'integration test environment')`,
-        [JSON.stringify({ min_commit_lead_ms: -DAY, reveal_delay_ms: 0, max_checkpoint_gap_ticks: 20 })]));
+        [JSON.stringify({ min_commit_lead_ms: -DAY, reveal_delay_ms: 0, max_checkpoint_gap_ticks: 20, tsa_root_bundle_id: bundleId })]));
     await db.exec(`create role engine_worker_login login password 'worker-test' in role engine_tick_writer`);
+    await db.exec(`create role engine_attestor_login login password 'attestor-test' in role engine_witness_attestor`);
     wdb = await T.connect('engine_worker_login', 'worker-test');
+    adb = await T.connect('engine_attestor_login', 'attestor-test');
+    attestor = new WitnessAttestor({ db: adb, roots: testRoots });
     t0 = Number((await rpc(db, `select floor(extract(epoch from t0)*1000)::bigint t0 from public.engine_indices where code='SPI10'`))[0].t0);
     genesis = Math.floor((Date.now() - t0) / 2000) + 1;
     const tomorrow = Math.floor(Date.now() / DAY) * DAY + DAY;
@@ -71,7 +84,7 @@ before(async () => {
     await db.query(`update public.index_state set last_tick_no=$1,last_price=10000,updated_at=now() where index_code in ('SPI50','SPI75')`, [genesis]);
     account = (await customer(() => db.query('select public.enroll_practice_account() id'))).rows[0].id;
 });
-after(async () => { await wdb?.end().catch(() => {}); await T?.close(); });
+after(async () => { await wdb?.end().catch(() => {}); await adb?.end().catch(() => {}); await T?.close(); });
 
 test('API roles and the writer role cannot read seeds or call each other\'s surfaces', async () => {
     for (const sql of [`select * from public.engine_v3_epochs`, `select * from engine_private.v3_wrapped_seeds`,
@@ -86,7 +99,7 @@ test('API roles and the writer role cannot read seeds or call each other\'s surf
 test('the worker commits, signs and witnesses epochs before their ticks and keeps no plaintext in the database', async () => {
     const report = await worker.cycle();
     assert.equal(report.committed, 3, JSON.stringify(report));
-    const epochs = await rpc(db, `select e.epoch_start_ms::text, e.committed_at, (select count(*)::int from public.engine_v3_witness_receipts r where r.subject_hash=e.commitment) receipts,
+    const epochs = await rpc(db, `select e.epoch_start_ms::text, e.committed_at, (select count(*)::int from public.engine_v3_witness_submissions s join public.engine_v3_witness_attestations a on a.submission_id=s.id where s.subject_hash=e.commitment and a.verdict='valid' and a.before_deadline) receipts,
         octet_length(w.ciphertext) wrapped from public.engine_v3_epochs e join engine_private.v3_wrapped_seeds w using(execution_mode,epoch_start_ms) order by 1`);
     assert.equal(epochs.length, 3);
     assert.ok(epochs.every((e) => e.receipts === 2 && e.wrapped === 60));
@@ -256,13 +269,14 @@ test('the exported proof package verifies offline: signatures, witnesses, anchor
     const reveal = (pkg) => { for (const e of pkg.epochs) if (custody.seeds.has(e.epoch_start_ms)) e.revealed_seed = custody.seeds.get(e.epoch_start_ms).toString('hex'); return pkg; };
 
     const pending = await verifyPackage(await exportPackage(genesis + 1), options);
-    assert.equal(pending.status, 'not_yet_revealable', JSON.stringify(pending.issues.slice(0, 3)));
-    assert.equal(pending.witness, 'witnessed');
-    assert.equal(pending.signatures, 'valid');
+    assert.equal(pending.verdict, 'partial', JSON.stringify(pending.issues.slice(0, 3)));
+    assert.equal(pending.components.reveal, 'not_yet_revealable');
+    assert.equal(pending.components.witness, 'witnessed');
+    assert.equal(pending.components.signatures, 'valid');
 
     const full = reveal(await exportPackage(genesis + 1));
     const verified = await verifyPackage(full, options);
-    assert.equal(verified.status, 'verified', JSON.stringify(verified.issues.slice(0, 3)));
+    assert.equal(verified.verdict, 'fully_verified', JSON.stringify(verified.issues.slice(0, 3)));
     assert.equal(verified.anchored.SPI50, true);
     assert.ok(verified.contracts.length >= 1 && verified.contracts.every((c) => ['verified', 'void_refunded'].includes(c.status)), JSON.stringify(verified.contracts));
 
@@ -270,7 +284,7 @@ test('the exported proof package verifies offline: signatures, witnesses, anchor
     const anchoredPkg = reveal(await exportPackage(last - 2));
     assert.equal(Object.keys(anchoredPkg.anchors).length, 1, 'anchor checkpoint exported');
     const anchored = await verifyPackage(anchoredPkg, options);
-    assert.equal(anchored.status, 'verified', JSON.stringify(anchored.issues.slice(0, 3)));
+    assert.equal(anchored.verdict, 'fully_verified', JSON.stringify(anchored.issues.slice(0, 3)));
     assert.equal(anchored.anchored.SPI50, true);
 
     // Tampering is caught with a specific state.

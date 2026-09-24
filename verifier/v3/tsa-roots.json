@@ -1,5 +1,10 @@
 {
   "note": "Pinned RFC 3161 roots (ADR 0002 D5). DigiCert and Sectigo SHA-256 fingerprints were cross-checked against the Microsoft root program list on 2026-09-24. Rotate only with a reviewed change.",
+  "label": "published",
+  "required": [
+    "digicert",
+    "sectigo"
+  ],
   "providers": {
     "digicert": {
       "name": "DigiCert Trusted Root G4",

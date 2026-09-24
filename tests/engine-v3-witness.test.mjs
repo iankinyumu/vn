@@ -104,7 +104,8 @@ test('a production database refuses weakened thresholds, non-KMS custody and REA
         for (const weak of [{ min_commit_lead_ms: 0 }, { max_tick_lag_ms: 60000 }, { reveal_delay_ms: 0 }, { required_witnesses: ['digicert'] }, { max_clock_drift_ms: 5000 }]) {
             await assert.rejects(configure(weak), /engine_v3_threshold_below_policy/, JSON.stringify(weak));
         }
-        await configure({});
+        await assert.rejects(configure({}), /engine_v3_threshold_below_policy/, 'production requires a pinned root bundle id');
+        await configure({ tsa_root_bundle_id: '0847caae8082d3bdac4d469b8c74f8ed23a6b11a81fa283ba28a5d3188acf247' }); // DigiCert + Sectigo
         await db.exec(`create role prod_worker login password 'p' in role engine_tick_writer`);
         await db.exec(`set role prod_worker`);
         await assert.rejects(db.query(`select public.engine_v3_heartbeat('w1',$1,'local:aes-256-gcm','node')`, [Date.now()]), /engine_v3_custody_not_allowed/);
@@ -149,4 +150,10 @@ test('production preflight refuses local custody, unavailable KMS, unpinned keys
         const failures = await preflight({ ...good, ...override });
         assert.ok(failures.length > 0, `${name} must fail preflight`);
     }
+});
+
+test('the production root bundle id is the canonical id of the pinned DigiCert and Sectigo roots', async () => {
+    const { rootBundleId } = await import('../verifier/v3/tsa.mjs');
+    assert.deepEqual(roots.digicert && roots.sectigo && JSON.parse(readFileSync(new URL('../verifier/v3/tsa-roots.json', import.meta.url), 'utf8')).required, ['digicert', 'sectigo']);
+    assert.equal(await rootBundleId({ digicert: pinned('digicert'), sectigo: pinned('sectigo') }), '0847caae8082d3bdac4d469b8c74f8ed23a6b11a81fa283ba28a5d3188acf247');
 });

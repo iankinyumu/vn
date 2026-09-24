@@ -246,3 +246,23 @@ export function decodeBase64(text) {
     const binary = globalThis.atob(text);
     return Uint8Array.from(binary, (ch) => ch.charCodeAt(0));
 }
+
+/**
+ * Canonical id of a pinned root bundle ({provider: [DER, ...]}): SHA-256 over
+ * providers in byte order, each as u16 name length, name, u16 certificate
+ * count, then u32 length and DER bytes per certificate. Independent of JSON
+ * formatting and line endings.
+ */
+export async function rootBundleId(bundle) {
+    const parts = [];
+    const u16 = (n) => Uint8Array.of(n >> 8, n & 255);
+    const u32 = (n) => Uint8Array.of(n >>> 24, (n >>> 16) & 255, (n >>> 8) & 255, n & 255);
+    for (const name of Object.keys(bundle).sort()) {
+        const bytes = Uint8Array.from(name, (ch) => ch.charCodeAt(0));
+        parts.push(u16(bytes.length), bytes, u16(bundle[name].length));
+        for (const der of bundle[name]) parts.push(u32(der.length), der);
+    }
+    const total = parts.reduce((n, p) => n + p.length, 0), out = new Uint8Array(total);
+    let at = 0; for (const p of parts) { out.set(p, at); at += p.length; }
+    return toHex(await digest('SHA-256', out));
+}

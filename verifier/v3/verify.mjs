@@ -135,21 +135,57 @@ function parseEntry(raw) {
 const encodeEntry = (e) => join(label(e.index), U32(e.annualVolBp), U32(e.interval), U8(e.decimals), U64(e.anchor), U64(e.sigma), U64(e.kappa),
     U64(e.min), U64(e.max), U64(e.t0), U64(e.genesisTick), U64(e.genesisUnits));
 
+// Witness deadline (production fix brief, decision 2): the first scheduled
+// tradable tick of the epoch over every index in its committed configuration,
+// max(genesis + 1, first tick at or after the epoch start).
+export function witnessDeadline(entries, epochStart) {
+    let best = null;
+    for (const e of entries) {
+        const offset = epochStart - e.t0;
+        const firstAtOrAfter = e.t0 + (offset <= 0n ? -((-offset) / e.interval) : (offset + e.interval - 1n) / e.interval) * e.interval;
+        const firstAfterGenesis = e.t0 + (e.genesisTick + 1n) * e.interval;
+        const candidate = firstAtOrAfter > firstAfterGenesis ? firstAtOrAfter : firstAfterGenesis;
+        if (best === null || candidate < best) best = candidate;
+    }
+    return best;
+}
+
+const PRICE_STATES = ['invalid_config', 'invalid_commitment', 'broken_continuity', 'price_mismatch', 'digit_mismatch'];
+
 /**
- * Verifies a `smartprofit-proof/v3` package without trusting any live API.
- * Returns { status, states, witness, issues, ticks, contracts, anchored }.
+ * Normalised verdict shared by browser and CLI (brief decision 4).
+ * fully_verified: every applicable check passed, the start is anchored, keys
+ * are pinned, receipts validate before their deadlines, every due seed is
+ * revealed and reproduced. partial: nothing is wrong but evidence is missing.
+ * invalid: something is wrong.
+ */
+export function summarize(result) {
+    const states = new Set(result.states);
+    const c = result.components;
+    const invalid = [...states].some((s) => PRICE_STATES.includes(s) || s === 'invalid_signature' || s === 'invalid_witness' || s === 'contract_mismatch')
+        || Object.values(c).includes('invalid');
+    const complete = c.price_continuity === 'verified' && c.signatures === 'valid' && c.witness === 'witnessed'
+        && ['witnessed', 'none'].includes(c.checkpoints) && c.reveal === 'revealed' && ['verified', 'none'].includes(c.contracts);
+    return invalid ? 'invalid' : complete ? 'fully_verified' : 'partial';
+}
+
+/**
+ * Verifies a `smartprofit-proof/v3` package (package_version 1 or 2) without
+ * trusting any live API. Options: trustedKeys ({key_id: hex}, from the
+ * published manifest), tsaRoots ({provider: [DER]}), requiredWitnesses.
+ * Returns { verdict, components, status, states, anchored, issues, ticks, contracts, witness, signatures }.
  */
 export async function verifyPackage(pkg, options = {}) {
-    const trustedKeys = options.trustedKeys || null;           // { key_id: hex public key } published out of band
-    const tsaRoots = options.tsaRoots || {};                    // { provider: [DER Uint8Array] }
+    const trustedKeys = options.trustedKeys || null;
+    const tsaRoots = options.tsaRoots || {};
     const requiredWitnesses = options.requiredWitnesses || ['digicert', 'sectigo'];
-    let signatures = 'valid', witness = 'witnessed';
-    const ORDER = ['valid', 'witnessed', 'unsigned', 'unpinned', 'unwitnessed', 'invalid'];
-    const worse = (current, next) => (ORDER.indexOf(next) > ORDER.indexOf(current) ? next : current);
     const issues = [];
     const note = (state, detail) => issues.push({ state, detail });
     const tickStatus = new Map();
     const mark = (key, state) => { const list = tickStatus.get(key) || []; if (!list.includes(state)) list.push(state); tickStatus.set(key, list); };
+    const components = { price_continuity: 'verified', signatures: 'valid', witness: 'witnessed', checkpoints: 'none', reveal: 'revealed', contracts: 'none' };
+    const RANK = { verified: 0, valid: 0, witnessed: 0, revealed: 0, none: 0, unsigned: 1, unpinned: 1, unanchored: 1, not_yet_revealable: 1, late: 1, missing: 1, no_roots: 1, unwitnessed: 1, unverifiable: 1, invalid: 2 };
+    const degrade = (name, value) => { if (RANK[value] > RANK[components[name]] || (components[name] === 'none' && value !== 'none')) components[name] = value; };
     const anchored = {};
     const contracts = [];
     try {
@@ -157,39 +193,67 @@ export async function verifyPackage(pkg, options = {}) {
         if (!ENVS.includes(pkg.env) || !MODES.includes(pkg.mode)) reject('invalid env or mode');
         const { env, mode } = pkg;
 
-        // Configuration: recompute every derived constant and the hash.
-        const entries = (pkg.config?.indices || []).map(parseEntry);
-        if (!entries.length || new Set(entries.map((e) => e.index)).size !== entries.length) reject('invalid configuration index set');
-        for (const e of entries) if (perTickSigma(e.annualVolBp, e.interval) !== e.sigma) note('invalid_config', `${e.index} sigma_e12 does not match its annual volatility`);
-        const sorted = [...entries].sort((a, b) => (a.index < b.index ? -1 : a.index > b.index ? 1 : 0));
-        const configHash = await sha256(kind('model-config'), label(env), label(mode), U32(sorted.length), ...sorted.map(encodeEntry));
-        const byIndex = new Map(entries.map((e) => [e.index, e]));
+        // Configurations, keyed by their recomputed hash (package v2), or the single v1 configuration.
+        const configs = new Map();
+        const rawConfigs = pkg.package_version === 2 ? Object.entries(pkg.configs || {}) : [[null, pkg.config]];
+        for (const [claimed, raw] of rawConfigs) {
+            const entries = (raw?.indices || []).map(parseEntry);
+            if (!entries.length || new Set(entries.map((e) => e.index)).size !== entries.length) reject('invalid configuration index set');
+            for (const e of entries) if (perTickSigma(e.annualVolBp, e.interval) !== e.sigma) note('invalid_config', `${e.index} sigma_e12 does not match its annual volatility`);
+            const sorted = [...entries].sort((a, b) => (a.index < b.index ? -1 : a.index > b.index ? 1 : 0));
+            const hash = toHex(await sha256(kind('model-config'), label(env), label(mode), U32(sorted.length), ...sorted.map(encodeEntry)));
+            if (claimed !== null && claimed !== hash) note('invalid_config', `configuration ${claimed.slice(0, 12)}… does not hash to its key`);
+            configs.set(hash, { hash, entries, byIndex: new Map(entries.map((e) => [e.index, e])) });
+        }
+
         const keys = new Map((pkg.signing_keys || []).map((k) => [k.key_id, k]));
         const checkSignature = async (kindName, keyId, subject, signatureHex, what) => {
-            if (!signatureHex) { signatures = worse(signatures, 'unsigned'); return true; }
+            if (!signatureHex) { degrade('signatures', 'unsigned'); return true; }
             const entry = keys.get(keyId);
-            if (!entry || entry.algorithm !== 'Ed25519') { note('invalid_signature', `${what} names unknown signing key ${keyId}`); signatures = 'invalid'; return false; }
-            if (trustedKeys && trustedKeys[keyId] !== entry.public_key) { note('invalid_signature', `${what} signing key ${keyId} is not in the trusted key list`); signatures = 'invalid'; return false; }
-            if (!trustedKeys) signatures = worse(signatures, 'unpinned');
+            if (!entry || entry.algorithm !== 'Ed25519') { note('invalid_signature', `${what} names unknown signing key ${keyId}`); degrade('signatures', 'invalid'); return false; }
+            if (trustedKeys && trustedKeys[keyId] !== entry.public_key) { note('invalid_signature', `${what} signing key ${keyId} is not in the trusted key manifest`); degrade('signatures', 'invalid'); return false; }
+            if (!trustedKeys) degrade('signatures', 'unpinned');
             const key = await subtle.importKey('raw', fromHex(entry.public_key, 32), { name: 'Ed25519' }, false, ['verify']);
             const ok = await subtle.verify('Ed25519', key, fromHex(signatureHex, 64), join(kind('signed'), label(kindName), label(keyId), subject));
-            if (!ok) { note('invalid_signature', `${what} signature does not verify`); signatures = 'invalid'; }
+            if (!ok) { note('invalid_signature', `${what} signature does not verify`); degrade('signatures', 'invalid'); }
             return ok;
+        };
+        // Receipts for one subject: 'witnessed', 'late', 'missing', 'no_roots' or 'invalid' per the strictest provider.
+        const checkReceipts = async (subject, receipts, deadline, what) => {
+            let worst = 'witnessed';
+            const worsen = (v) => { if (RANK[v] > RANK[worst]) worst = v; };
+            for (const provider of requiredWitnesses) {
+                const mine = (receipts || []).filter((r) => r.provider === provider);
+                if (!tsaRoots[provider]?.length) { worsen('no_roots'); continue; }
+                if (!mine.length) { worsen('missing'); continue; }
+                let best = null;
+                for (const r of mine) {
+                    const checked = await verifyTimestampToken(decodeBase64(r.token), { subject, roots: tsaRoots[provider] });
+                    if (!checked.ok) { if (best === null) best = 'invalid'; note('invalid_witness', `${what}: ${provider} receipt ${checked.error}`); continue; }
+                    const onTime = deadline === null || BigInt(checked.genTimeMs) < deadline;
+                    if (onTime) best = 'witnessed'; else if (best !== 'witnessed') best = 'late';
+                }
+                // A later valid receipt for the same provider supersedes an invalid one; an invalid one alone is invalid.
+                if (best === 'late') note('witness_late', `${what}: ${provider} timestamp is not before the deadline`);
+                worsen(best);
+            }
+            return worst;
         };
         const checkpointHash = (index, c) => sha256(kind('checkpoint'), label(env), label(mode), label(index), U64(integer(c.tick_no)), fromHex(c.tick_hash, 32), U64(integer(c.created_ms)));
         const tickRecordHash = (index, raw) => sha256(kind('tick'), label(env), label(mode), label(index), U64(integer(raw.tick_no)), U64(integer(raw.scheduled_ms)), U64(integer(raw.generated_ms)),
             U64(integer(raw.epoch_start_ms)), U64(integer(raw.prev_units)), U64(integer(raw.price_units)), U8(integer(raw.decimals)), U8(integer(raw.digit)),
             fromHex(raw.config_hash, 32), fromHex(raw.commitment, 32), fromHex(raw.prev_tick_hash, 32));
 
-        // Epoch commitments form one contiguous chain per (env, mode).
+        // Epoch commitments: one contiguous chain per (env, mode), each bound to its configuration hash.
         const epochs = new Map();
         let previous = null;
         for (const raw of [...(pkg.epochs || [])].sort((a, b) => (integer(a.epoch_start_ms) < integer(b.epoch_start_ms) ? -1 : 1))) {
             const start = integer(raw.epoch_start_ms);
-            const record = { start, commitment: fromHex(raw.commitment, 32), seed: raw.revealed_seed ? fromHex(raw.revealed_seed, 32) : null, valid: true, reason: 'invalid_commitment', receipts: raw.witness || [], earliestTick: null };
+            const configHash = fromHex(raw.config_hash, 32);
+            const record = { start, commitment: fromHex(raw.commitment, 32), configHex: raw.config_hash, seed: raw.revealed_seed ? fromHex(raw.revealed_seed, 32) : null,
+                valid: true, reason: 'invalid_commitment', receipts: raw.witness || [], hasTicks: false, exportedDeadline: raw.witness_deadline_ms ?? null };
             const seedHash = fromHex(raw.seed_hash, 32), prev = fromHex(raw.prev_commitment, 32);
             if (start % DAY !== 0n || integer(raw.epoch_end_ms) !== start + DAY) { note('invalid_commitment', `epoch ${start} is not one UTC day`); record.valid = false; }
-            if (!equal(fromHex(raw.config_hash, 32), configHash)) { note('invalid_config', `epoch ${start} commits to a different configuration`); record.valid = false; }
             const recomputed = await sha256(kind('epoch-commitment'), label(env), label(mode), U64(start), U64(start + DAY), seedHash, configHash, prev);
             if (!equal(recomputed, record.commitment)) { note('invalid_commitment', `epoch ${start} commitment does not match its fields`); record.valid = false; }
             if (record.seed && !equal(await sha256(kind('seed-hash'), record.seed), seedHash)) { note('invalid_commitment', `epoch ${start} revealed seed does not match its seed hash`); record.valid = false; }
@@ -200,30 +264,32 @@ export async function verifyPackage(pkg, options = {}) {
             previous = record;
         }
 
-        // Anchors: a signed checkpoint pins the record of the tick before the range.
+        // Anchors: a signed AND witnessed checkpoint pins the record of the tick before the range.
         const anchorPrior = new Map();
         for (const [index, anchor] of Object.entries(pkg.anchors || {})) {
             const tick = anchor.tick, cp = anchor.checkpoint;
             if (!cp.signature) { note('missing_history', `${index} anchor checkpoint is unsigned`); continue; }
-            const recordOk = equal(await tickRecordHash(index, tick), fromHex(tick.tick_hash, 32)) && cp.tick_no === tick.tick_no && cp.tick_hash === tick.tick_hash;
-            const hashOk = equal(await checkpointHash(index, cp), fromHex(cp.checkpoint_hash, 32));
-            const sigOk = await checkSignature('checkpoint', cp.signing_key_id, fromHex(cp.checkpoint_hash, 32), cp.signature, `${index} anchor checkpoint`);
-            if (recordOk && hashOk && sigOk) anchorPrior.set(index, { tickNo: integer(tick.tick_no), units: integer(tick.price_units), hash: fromHex(tick.tick_hash, 32) });
-            else note('broken_continuity', `${index} anchor tick or checkpoint does not match`);
+            const recordOk = equal(await tickRecordHash(index, tick), fromHex(tick.tick_hash, 32)) && cp.tick_no === tick.tick_no && cp.tick_hash === tick.tick_hash && tick.index === index;
+            const cpHash = await checkpointHash(index, cp);
+            const hashOk = equal(cpHash, fromHex(cp.checkpoint_hash, 32));
+            const sigOk = await checkSignature('checkpoint', cp.signing_key_id, cpHash, cp.signature, `${index} anchor checkpoint`);
+            const receipts = await checkReceipts(cpHash, cp.witness, null, `${index} anchor checkpoint`);
+            degrade('checkpoints', receipts === 'witnessed' ? 'witnessed' : receipts === 'invalid' ? 'invalid' : 'unwitnessed');
+            if (!recordOk || !hashOk) { note('broken_continuity', `${index} anchor tick or checkpoint does not match`); continue; }
+            if (sigOk && receipts === 'witnessed') anchorPrior.set(index, { tickNo: integer(tick.tick_no), units: integer(tick.price_units), hash: fromHex(tick.tick_hash, 32) });
+            else note('missing_history', `${index} anchor checkpoint is not independently witnessed and signed, so it cannot anchor the range`);
         }
 
-        // Ticks, per index, in order from an anchored genesis or checkpoint.
+        // Ticks, per index, each checked under its own epoch's configuration.
         const keyCache = new Map();
         const groups = new Map();
         for (const raw of pkg.ticks || []) {
-            if (!byIndex.has(raw.index)) reject('tick for an index outside the configuration');
+            if (!INDEX_CODES.includes(raw.index)) reject('tick for an unknown index');
             if (!groups.has(raw.index)) groups.set(raw.index, []);
             groups.get(raw.index).push(raw);
         }
         for (const [index, list] of groups) {
-            const e = byIndex.get(index);
             list.sort((a, b) => (integer(a.tick_no) < integer(b.tick_no) ? -1 : 1));
-            const genesis = await sha256(kind('genesis'), label(env), label(mode), label(index), U64(e.genesisTick), U64(e.genesisUnits), configHash);
             let prior = anchorPrior.get(index) || null;
             anchored[index] = prior !== null;
             for (const raw of list) {
@@ -234,7 +300,14 @@ export async function verifyPackage(pkg, options = {}) {
                     commitment: fromHex(raw.commitment, 32), prevHash: fromHex(raw.prev_tick_hash, 32), hash: fromHex(raw.tick_hash, 32),
                 };
                 tickStatus.set(key, []);
+                const epoch = epochs.get(t.epochStart);
+                const cfg = epoch ? configs.get(epoch.configHex) : null;
+                const e = cfg?.byIndex.get(index);
+                if (epoch) epoch.hasTicks = true;
+                if (!epoch) { mark(key, 'missing_history'); note('missing_history', `${index} tick ${tickNo} epoch is not in this package`); prior = { tickNo, units: t.units, hash: t.hash }; continue; }
+                if (!e) { mark(key, 'invalid_config'); note('invalid_config', `${index} tick ${tickNo}: its epoch's configuration is missing from the package`); prior = { tickNo, units: t.units, hash: t.hash }; continue; }
                 if (prior === null) {
+                    const genesis = await sha256(kind('genesis'), label(env), label(mode), label(index), U64(e.genesisTick), U64(e.genesisUnits), fromHex(cfg.hash, 32));
                     anchored[index] = tickNo === e.genesisTick + 1n && t.prevUnits === e.genesisUnits && equal(t.prevHash, genesis);
                     if (!anchored[index]) { mark(key, 'missing_history'); note('missing_history', `${index} history before tick ${tickNo} is not in this package, so its starting price is unanchored`); }
                 } else {
@@ -244,14 +317,12 @@ export async function verifyPackage(pkg, options = {}) {
                 const hash = await sha256(kind('tick'), label(env), label(mode), label(index), U64(tickNo), U64(t.scheduled), U64(t.generated), U64(t.epochStart),
                     U64(t.prevUnits), U64(t.units), U8(t.decimals), U8(t.digit), t.config, t.commitment, t.prevHash);
                 if (!equal(hash, t.hash)) { mark(key, 'broken_continuity'); note('broken_continuity', `${index} tick ${tickNo} hash does not match its record`); }
-                if (t.scheduled !== e.t0 + tickNo * e.interval || t.epochStart !== t.scheduled / DAY * DAY || t.decimals !== e.decimals || !equal(t.config, configHash)) {
+                if (t.scheduled !== e.t0 + tickNo * e.interval || t.epochStart !== t.scheduled / DAY * DAY || t.decimals !== e.decimals || toHex(t.config) !== cfg.hash) {
                     mark(key, 'invalid_config'); note('invalid_config', `${index} tick ${tickNo} schedule, epoch, precision or configuration is wrong`);
                 }
                 if (t.units % 10n !== t.digit) { mark(key, 'digit_mismatch'); note('digit_mismatch', `${index} tick ${tickNo} digit is not the final price digit`); }
-                const epoch = epochs.get(t.epochStart);
-                if (epoch && (epoch.earliestTick === null || t.scheduled < epoch.earliestTick)) epoch.earliestTick = t.scheduled;
-                if (!epoch) { mark(key, 'missing_history'); note('missing_history', `${index} tick ${tickNo} epoch is not in this package`); }
-                else if (!equal(epoch.commitment, t.commitment)) { mark(key, 'invalid_commitment'); note('invalid_commitment', `${index} tick ${tickNo} names a different epoch commitment`); }
+                if (t.scheduled < witnessDeadline(cfg.entries, t.epochStart)) { mark(key, 'invalid_config'); note('invalid_config', `${index} tick ${tickNo} is scheduled before its epoch's first tradable tick`); }
+                if (!equal(epoch.commitment, t.commitment)) { mark(key, 'invalid_commitment'); note('invalid_commitment', `${index} tick ${tickNo} names a different epoch commitment`); }
                 else if (!epoch.valid) mark(key, epoch.reason);
                 else if (!epoch.seed) mark(key, 'not_yet_revealable');
                 else {
@@ -261,30 +332,32 @@ export async function verifyPackage(pkg, options = {}) {
                     if (expected < e.min || expected > e.max) { mark(key, 'price_mismatch'); note('price_mismatch', `${index} tick ${tickNo} should have halted the index (outside band)`); }
                     else if (expected !== t.units) { mark(key, 'price_mismatch'); note('price_mismatch', `${index} tick ${tickNo} price ${t.units} differs from the recomputed ${expected}`); }
                 }
-                prior = { tickNo, units: t.units, hash: t.hash, digit: t.digit };
+                prior = { tickNo, units: t.units, hash: t.hash };
             }
         }
 
-        // Checkpoints inside the range must match the ticks they name.
+        // Witness: each epoch holding ticks needs a valid receipt from every
+        // required TSA with genTime before the epoch's canonical deadline.
+        for (const epoch of epochs.values()) {
+            if (!epoch.hasTicks) continue;
+            const cfg = configs.get(epoch.configHex);
+            if (!cfg) continue;
+            const deadline = witnessDeadline(cfg.entries, epoch.start);
+            if (epoch.exportedDeadline !== null && integer(epoch.exportedDeadline) !== deadline) note('invalid_config', `epoch ${epoch.start} exports a witness deadline that differs from its configuration`);
+            const status = await checkReceipts(epoch.commitment, epoch.receipts, deadline, `epoch ${epoch.start}`);
+            degrade('witness', status === 'witnessed' ? 'witnessed' : status);
+        }
+
+        // Checkpoints inside the range: match their ticks, signature, independent receipts.
         const hashes = new Map((pkg.ticks || []).map((raw) => [`${raw.index}:${integer(raw.tick_no)}`, raw.tick_hash]));
         for (const cp of pkg.checkpoints || []) {
             const at = `${cp.index}:${integer(cp.tick_no)}`;
             if (hashes.has(at) && hashes.get(at) !== cp.tick_hash) { mark(at, 'broken_continuity'); note('broken_continuity', `checkpoint at ${at} names a different tick hash`); }
-            if (!equal(await checkpointHash(cp.index, cp), fromHex(cp.checkpoint_hash, 32))) note('broken_continuity', `checkpoint at ${at} hash does not match its fields`);
-            await checkSignature('checkpoint', cp.signing_key_id, fromHex(cp.checkpoint_hash, 32), cp.signature, `checkpoint at ${at}`);
-        }
-
-        // Witness: every epoch holding ticks needs a valid receipt from each
-        // required TSA whose genTime precedes the epoch's earliest included tick.
-        for (const epoch of epochs.values()) {
-            if (epoch.earliestTick === null) continue;
-            for (const provider of requiredWitnesses) {
-                const receipt = epoch.receipts.find((r) => r.provider === provider);
-                if (!receipt || !tsaRoots[provider]) { witness = worse(witness, 'unwitnessed'); continue; }
-                const checked = await verifyTimestampToken(decodeBase64(receipt.token), { subject: epoch.commitment, roots: tsaRoots[provider] });
-                if (!checked.ok) { witness = 'invalid'; note('invalid_witness', `epoch ${epoch.start} ${provider} receipt: ${checked.error}`); }
-                else if (BigInt(checked.genTimeMs) >= epoch.earliestTick) { witness = 'invalid'; note('invalid_witness', `epoch ${epoch.start} ${provider} timestamp is not before its first tick`); }
-            }
+            const cpHash = await checkpointHash(cp.index, cp);
+            if (!equal(cpHash, fromHex(cp.checkpoint_hash, 32))) note('broken_continuity', `checkpoint at ${at} hash does not match its fields`);
+            await checkSignature('checkpoint', cp.signing_key_id, cpHash, cp.signature, `checkpoint at ${at}`);
+            const status = await checkReceipts(cpHash, cp.witness, null, `checkpoint at ${at}`);
+            degrade('checkpoints', status === 'witnessed' ? 'witnessed' : status === 'invalid' ? 'invalid' : 'unwitnessed');
         }
 
         // Contracts settle on their fixed exit tick's final digit.
@@ -296,6 +369,7 @@ export async function verifyPackage(pkg, options = {}) {
             let state = 'verified';
             if (integer(c.settle_tick_no) <= integer(c.entry_tick_no)) state = 'contract_mismatch';
             else if (!tickDigits.has(exit)) state = 'missing_history';
+            else if (c.exit_digit !== undefined && c.exit_digit !== null && Number(c.exit_digit) !== tickDigits.get(exit)) state = 'contract_mismatch';
             else {
                 const wins = contractWins(c.contract_type, c.barrier, tickDigits.get(exit));
                 if (wins === null || (c.result === 'WON') !== wins || !['WON', 'LOST'].includes(c.result)) state = 'contract_mismatch';
@@ -303,6 +377,7 @@ export async function verifyPackage(pkg, options = {}) {
             }
             if (state !== 'verified') note(state, `contract ${c.id} ${state === 'contract_mismatch' ? 'result does not follow from its exit tick' : `exit tick is ${state}`}`);
             contracts.push({ id: c.id, status: state });
+            degrade('contracts', state === 'verified' ? 'verified' : state === 'contract_mismatch' ? 'invalid' : 'unverifiable');
         }
     } catch (error) {
         if (!(error instanceof VerificationInputError)) throw error;
@@ -315,7 +390,15 @@ export async function verifyPackage(pkg, options = {}) {
         return { index, tick_no: tickNo, status, states: list.length ? list : ['verified'] };
     });
     const present = new Set([...issues.map((issue) => issue.state), ...ticks.flatMap((tick) => tick.states), ...contracts.map((c) => c.status)]);
-    present.delete('verified'); present.delete('void_refunded');
+    for (const neutral of ['verified', 'void_refunded', 'witness_late']) present.delete(neutral);
     const states = STATES.filter((state) => present.has(state));
-    return { status: states[0] || 'verified', states: states.length ? states : ['verified'], witness, signatures, anchored, issues, ticks, contracts };
+    if (!ticks.length) degrade('price_continuity', 'unverifiable');
+    if (states.some((s) => PRICE_STATES.includes(s))) components.price_continuity = 'invalid';
+    else if (states.includes('missing_history') || Object.values(anchored).some((a) => !a)) degrade('price_continuity', 'unanchored');
+    if (states.includes('not_yet_revealable')) degrade('reveal', 'not_yet_revealable');
+    if (components.witness === 'late' || components.witness === 'missing' || components.witness === 'no_roots') components.witness = components.witness === 'no_roots' ? 'unwitnessed' : components.witness;
+    const result = { status: states[0] || 'verified', states: states.length ? states : ['verified'], components, anchored, issues, ticks, contracts,
+        witness: components.witness === 'witnessed' ? 'witnessed' : components.witness === 'invalid' ? 'invalid' : 'unwitnessed', signatures: components.signatures };
+    result.verdict = summarize(result);
+    return result;
 }

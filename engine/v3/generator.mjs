@@ -173,8 +173,12 @@ export function tickHash(t) {
 // ---- series (used by the calibration harness and proof export) ----
 // One ledger per (env, mode): `seedForEpoch(epochStartMs)` supplies each epoch's
 // 32-byte seed, and commitments chain in contiguous epoch order from zero.
-export function createEpochLedger({ config, seedForEpoch }) {
+// `configForEpoch(epochStartMs)` rotates configurations between epochs (each
+// epoch commits to its own); it defaults to `config` for every epoch.
+export function createEpochLedger({ config, seedForEpoch, configForEpoch = () => config }) {
     const cfgHash = configHash(config);
+    const hashes = new Map([[config, cfgHash]]);
+    const hashOf = (cfg) => { if (!hashes.has(cfg)) hashes.set(cfg, configHash(cfg)); return hashes.get(cfg); };
     const epochs = new Map();
     let lastCommitment = null, lastEpoch = null;
     function epoch(start) {
@@ -182,8 +186,10 @@ export function createEpochLedger({ config, seedForEpoch }) {
         if (record) return record;
         if (lastEpoch !== null && start !== lastEpoch + DAY_MS) fail('engine_v3_epoch_gap');
         const seed = seedBytes(seedForEpoch(start));
-        record = { epoch_start_ms: start, epoch_end_ms: start + DAY_MS, seed, seed_hash: seedHash(seed), config_hash: cfgHash, prev_commitment: lastCommitment ?? Buffer.alloc(32), keys: new Map() };
-        record.commitment = epochCommitment({ env: config.env, mode: config.mode, epochStartMs: start, seedHash: record.seed_hash, configHash: cfgHash, prevCommitment: record.prev_commitment });
+        const epochConfig = configForEpoch(start);
+        if (epochConfig.env !== config.env || epochConfig.mode !== config.mode) fail('engine_v3_config_scope_mismatch');
+        record = { epoch_start_ms: start, epoch_end_ms: start + DAY_MS, seed, seed_hash: seedHash(seed), config: epochConfig, config_hash: hashOf(epochConfig), prev_commitment: lastCommitment ?? Buffer.alloc(32), keys: new Map() };
+        record.commitment = epochCommitment({ env: config.env, mode: config.mode, epochStartMs: start, seedHash: record.seed_hash, configHash: record.config_hash, prevCommitment: record.prev_commitment });
         epochs.set(start, record);
         lastCommitment = record.commitment; lastEpoch = start;
         return record;
@@ -198,7 +204,7 @@ export function createEpochLedger({ config, seedForEpoch }) {
         }
         return pair;
     }
-    return { config, configHash: cfgHash, epochs, epoch, keys };
+    return { config, configHash: cfgHash, epochs, epoch, keys, hashOf };
 }
 
 export function createSeries({ ledger, index, generatedMs = (scheduled) => scheduled }) {
@@ -212,11 +218,12 @@ export function createSeries({ ledger, index, generatedMs = (scheduled) => sched
             tickNo += 1n;
             const scheduled = scheduledMs(entry, tickNo);
             const record = ledger.epoch(epochStartMs(scheduled));
-            const drawn = generateTick({ keys: ledger.keys(record, index), entry, tickNo, prevUnits });
+            const epochEntry = record.config.indices.find((item) => item.index === index) || fail('engine_v3_index_invalid');
+            const drawn = generateTick({ keys: ledger.keys(record, index), entry: epochEntry, tickNo, prevUnits });
             const tick = {
                 env: config.env, mode: config.mode, index, tick_no: tickNo, scheduled_ms: scheduled, generated_ms: BigInt(generatedMs(scheduled)),
-                epoch_start_ms: record.epoch_start_ms, prev_units: prevUnits, price_units: drawn.units, decimals: entry.decimals, digit: drawn.digit,
-                config_hash: cfgHash, commitment: record.commitment, prev_tick_hash: prevHash,
+                epoch_start_ms: record.epoch_start_ms, prev_units: prevUnits, price_units: drawn.units, decimals: epochEntry.decimals, digit: drawn.digit,
+                config_hash: record.config_hash, commitment: record.commitment, prev_tick_hash: prevHash,
             };
             tick.tick_hash = tickHash(tick);
             prevUnits = drawn.units; prevHash = tick.tick_hash;
@@ -254,4 +261,18 @@ export function signedMessage(kind, keyId, subject) {
 
 export function checkpointHash({ env, mode, index, tickNo, tickHash: hash, createdMs }) {
     return sha256(header('checkpoint'), str(env), str(mode), str(index), u64(tickNo), h32(hash), u64(createdMs));
+}
+
+// First scheduled tradable tick of an epoch over every index in its configuration:
+// max(genesis + 1, first tick at or after the epoch start). The witness deadline.
+export function witnessDeadline(config, epochStart) {
+    let best = null;
+    for (const e of config.indices) {
+        const t0 = BigInt(e.t0_ms), step = BigInt(e.tick_interval_ms), start = BigInt(epochStart);
+        const first = t0 + (start <= t0 ? -((t0 - start) / step) : (start - t0 + step - 1n) / step) * step;
+        const afterGenesis = t0 + (BigInt(e.genesis_tick_no) + 1n) * step;
+        const candidate = first > afterGenesis ? first : afterGenesis;
+        if (best === null || candidate < best) best = candidate;
+    }
+    return best;
 }

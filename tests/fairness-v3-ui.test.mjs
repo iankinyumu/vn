@@ -33,7 +33,7 @@ test('the fairness page carries a hidden v3 section and loads the shared verifie
     const script = readFileSync('assets/js/fairness-v3.js', 'utf8');
     assert.match(script, /from '\.\.\/\.\.\/verifier\/v3\/verify\.mjs'/);
     assert.match(script, /engine_generation === 3/);
-    assert.match(script, /keys\.keys : null/, 'an empty key list must mean unpinned, not trusted');
+    assert.match(script, /trustFromDocuments\(keys, roots\)/, 'browser and CLI share one trust policy');
 });
 
 test('the static build ships the verifier beside the pages, without test fixtures', () => {

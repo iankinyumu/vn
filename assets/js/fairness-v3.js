@@ -2,7 +2,7 @@
 // verifier as `node verifier/v3/cli.mjs`, and offers the package as a
 // download so it can be checked without this page.
 import { verifyPackage } from '../../verifier/v3/verify.mjs';
-import { decodeBase64 } from '../../verifier/v3/tsa.mjs';
+import { trustFromDocuments } from '../../verifier/v3/trust.mjs';
 import { describeV3 } from './fairness-v3-view.mjs';
 
 const section = document.querySelector('[data-fairness-v3]');
@@ -13,9 +13,8 @@ async function trustInputs() {
         fetch(new URL('../../verifier/v3/trusted-keys.json', import.meta.url)).then((r) => r.json()),
         fetch(new URL('../../verifier/v3/tsa-roots.json', import.meta.url)).then((r) => r.json()),
     ]);
-    const tsaRoots = Object.fromEntries(Object.entries(roots.providers).map(([name, entry]) => [name, entry.certificates.map(decodeBase64)]));
-    // No published key yet means "unpinned", never "trusted by default".
-    return { trustedKeys: Object.keys(keys.keys || {}).length ? keys.keys : null, tsaRoots };
+    // Same documents and the same policy as `node verifier/v3/cli.mjs`.
+    return trustFromDocuments(keys, roots);
 }
 
 async function start() {
