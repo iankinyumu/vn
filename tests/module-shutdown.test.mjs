@@ -19,6 +19,10 @@ test('legacy order commands are shut down by the module guard', async () => {
 test('active source has no legacy feed references', () => {
     const terms = ['bina' + 'nce', 'bit' + 'coin', '\\bb' + 'tc\\b', '\\beth\\b', 'usd' + 't', 'cryp' + 'to', 'market_' + 'symbol', 'market-' + 'registry', 'market-' + 'ticker', 'fcsa' + 'pi', 'upst' + 'ash'];
     const matcher = new RegExp(terms.join('|'), 'i');
+    // The Web Crypto API is the one legitimate use of a banned word, and only through these exact references.
+    const allowed = /\bwindow\.crypto\b|\bcrypto\.(?:subtle|randomUUID)\b/g;
+    // Adjacent string literals are joined before matching, so a term cannot be hidden by splitting it across a '+'.
+    const joinLiterals = (source) => source.replace(/(['"`])\s*\+\s*\1/g, '');
     const roots = ['pages', 'assets', 'supabase/functions', 'README.md', 'package.json', '.env.example'];
     const matches = [];
     const visit = (target) => {
@@ -33,7 +37,8 @@ test('active source has no legacy feed references', () => {
         }
         const contents = fs.readFileSync(target);
         if (contents.includes(0)) return;
-        if (matcher.test(contents.toString('utf8'))) matches.push(target);
+        const found = joinLiterals(contents.toString('utf8')).replace(allowed, '').match(matcher);
+        if (found) matches.push(`${target} (${found[0]})`);
     };
     roots.forEach(visit);
     assert.deepEqual(matches, [], `legacy feed references found in: ${matches.join(', ')}`);
@@ -44,4 +49,12 @@ test('the repository root contains no duplicate frontend pages', () => {
         .filter((entry) => entry.isFile() && entry.name.endsWith('.html'))
         .map((entry) => entry.name);
     assert.deepEqual(rootPages, [], `root-level frontend duplicates: ${rootPages.join(', ')}`);
+});
+
+test('retired page snapshots are not kept in the working tree', () => {
+    assert.equal(fs.existsSync('.restore'), false, '.restore must stay removed; the old pages remain in git history');
+    const referencing = ['pages', 'assets', 'scripts', 'supabase', 'package.json', 'README.md']
+        .flatMap((root) => (fs.statSync(root).isDirectory() ? fs.readdirSync(root, { recursive: true }).map((file) => `${root}/${file}`) : [root]))
+        .filter((file) => fs.statSync(file).isFile() && fs.readFileSync(file, 'utf8').includes('.restore'));
+    assert.deepEqual(referencing, []);
 });

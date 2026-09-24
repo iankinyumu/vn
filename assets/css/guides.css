@@ -1,0 +1,25 @@
+/* Guides: the listing on blog.html and each guide article. Colours come from public-shell.css. */
+.guides-wrapper { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 32px 16px 56px; }
+.guides-kicker { color: var(--flat-accent); font: 500 12px/1 'DM Mono', monospace; letter-spacing: .06em; text-transform: uppercase; }
+.guides-header { border-bottom: 1px solid var(--flat-line); padding-bottom: 24px; margin-bottom: 28px; }
+.guides-header h1 { font-size: clamp(2rem, 5vw, 2.8rem); font-weight: 800; letter-spacing: -.04em; margin: 14px 0 10px; }
+.guides-header p { font-size: 16px; line-height: 1.7; max-width: 640px; margin: 0; }
+.guide-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.guide-card { display: block; padding: 22px 24px; background: var(--flat-panel); border: 1px solid var(--flat-line); border-radius: 6px; text-decoration: none; }
+.guide-card:hover, .guide-card:focus-visible { border-color: var(--flat-accent); }
+.guide-card h2 { font-size: 1.15rem; font-weight: 700; margin: 8px 0 6px; }
+.guide-card p { margin: 0; font-size: 14px; line-height: 1.6; }
+.guide-article h2 { font-size: 1.25rem; font-weight: 700; margin: 34px 0 10px; }
+.guide-article p, .guide-article li { font-size: 15px; line-height: 1.75; color: var(--flat-muted); }
+.guide-article ul, .guide-article ol { padding-left: 1.3rem; }
+.guide-article code, .guide-formula { font-family: 'DM Mono', monospace; color: var(--flat-ink); }
+.guide-formula { display: block; padding: 14px 16px; margin: 14px 0; background: #0b111a; border: 1px solid var(--flat-line); border-radius: 4px; overflow-x: auto; font-size: 14px; }
+.guide-table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+.guide-table th, .guide-table td { border-bottom: 1px solid var(--flat-line); padding: 9px 8px; text-align: left; color: var(--flat-muted); }
+.guide-table th { color: var(--flat-ink); font-weight: 600; }
+.guide-table td.num, .guide-table th.num { text-align: right; font-family: 'DM Mono', monospace; }
+.guide-table-wrap { overflow-x: auto; }
+.guide-note { border-left: 2px solid var(--flat-accent); padding: 4px 0 4px 14px; margin: 18px 0; }
+.guide-nav { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; border-top: 1px solid var(--flat-line); margin-top: 40px; padding-top: 20px; }
+.guide-nav a { color: var(--flat-ink); text-decoration: none; font-weight: 600; font-size: 14px; }
+.guide-nav a:hover, .guide-nav a:focus-visible { color: var(--flat-accent); }

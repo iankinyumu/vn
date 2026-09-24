@@ -1,1 +1,269 @@
-<!doctype html><html lang="en" data-bs-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dashboard — SmartProfit</title><link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet"><link href="../assets/css/glassmorphism.css" rel="stylesheet"><link href="../assets/css/style.css" rel="stylesheet"><link href="../assets/css/app-shell.css" rel="stylesheet"><link href="../assets/css/mode-tokens.css" rel="stylesheet"></head><body class="premium-theme app-shell"><script src="../assets/js/auth.js"></script><script>requireAuth()</script><header class="premium-header"><nav class="navbar"><div class="container"><a class="navbar-brand premium-logo" href="dashboard.html">SmartProfit</a><div class="navbar-nav ms-auto"><a class="nav-link active" href="dashboard.html">Dashboard</a><a class="nav-link" href="trade.html">Trade</a><a class="nav-link" href="fairness.html">Fairness</a><a class="nav-link" href="profile.html">Profile</a><select class="account-switcher ms-2" data-account-switcher aria-label="Account"></select></div></div></nav></header><div class="practice-ribbon" data-practice-ribbon>PRACTICE · virtual funds</div><div class="restriction-banner" data-restriction-banner aria-live="polite" hidden></div><main class="container py-4"><h1>Account dashboard</h1><p data-dashboard-status role="status" aria-live="polite"></p><div class="row g-3"><div class="col-md-3"><section class="premium-glass-card p-3"><h2 class="h6">Practice balance</h2><p class="h3" data-practice-balance>—</p></section></div><div class="col-md-3"><section class="premium-glass-card p-3"><h2 class="h6">Wins</h2><p class="h3" data-wins>—</p></section></div><div class="col-md-3"><section class="premium-glass-card p-3"><h2 class="h6">Losses</h2><p class="h3" data-losses>—</p></section></div><div class="col-md-3"><section class="premium-glass-card p-3"><h2 class="h6">Net result</h2><p class="h3" data-net-result>—</p></section></div></div><section class="premium-glass-card p-3 mt-4"><div class="d-flex justify-content-between"><h2 class="h4">Recent contracts</h2><button data-reset class="btn btn-outline-light btn-sm" hidden>Reset practice balance</button></div><div class="table-responsive"><table class="table table-dark"><thead><tr><th>Index</th><th>Type</th><th>State</th><th>Stake</th><th>Payout</th></tr></thead><tbody data-contract-rows></tbody></table></div></section></main><script src="../assets/js/account-context.js"></script><script src="../assets/js/account-keys.js"></script><script src="../assets/js/account-switcher.js"></script><script src="../assets/js/restriction-banner.js"></script><script src="../assets/js/dashboard.js"></script></body></html>
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Your SmartProfit Practice dashboard: balance, lifetime results, open contracts and live digit indices.">
+    <title>Dashboard — SmartProfit</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="../assets/css/glassmorphism.css" rel="stylesheet">
+    <link href="../assets/css/style.css" rel="stylesheet">
+    <link href="../assets/css/app-shell.css" rel="stylesheet">
+    <link href="../assets/css/mode-tokens.css" rel="stylesheet">
+    <style>
+        .digit-row .digit-even strong { color: #34d399; }
+        .digit-row .digit-odd strong { color: #c084fc; }
+        .learn-card .news-body { padding: 1.25rem; }
+    </style>
+</head>
+
+<body class="premium-theme app-shell" data-shell-surface="app" data-shell-active="dashboard">
+    <script src="../assets/js/auth.js"></script>
+    <script>requireAuth()</script>
+
+    <div class="animated-bg">
+        <div class="particle particle-1"></div>
+        <div class="particle particle-2"></div>
+        <div class="particle particle-3"></div>
+        <div class="particle particle-4"></div>
+        <div class="particle particle-5"></div>
+        <div class="particle particle-6"></div>
+    </div>
+
+    <div data-shell-header></div>
+
+    <main class="dashboard-main">
+        <div class="container-fluid px-4 py-4">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="premium-glass-card welcome-section">
+                        <div class="row align-items-center">
+                            <div class="col-lg-8">
+                                <h1 class="welcome-title">Practice <span class="text-gradient-animated">Dashboard</span></h1>
+                                <p class="welcome-subtitle">Follow the SmartProfit digit indices, review your results and pick up where you left off. Practice funds are virtual.</p>
+                            </div>
+                            <div class="col-lg-4 text-end d-none d-lg-block">
+                                <div class="live-indicator"><span class="pulse-dot"></span><span class="live-text" data-market-state>Live indices</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <p data-dashboard-status role="status" aria-live="polite" class="text-secondary"></p>
+
+            <div class="row g-3 mb-2">
+                <div class="col-12">
+                    <p class="text-secondary mb-2" style="font-size:0.85rem;letter-spacing:.04em;text-transform:uppercase;">Your Practice account</p>
+                </div>
+                <div class="col-6 col-xl-3">
+                    <div class="premium-glass-card balance-card">
+                        <div class="balance-label">Practice balance</div>
+                        <div class="balance-value" data-practice-balance>—</div>
+                        <div class="balance-sub">Virtual funds, ledger-backed</div>
+                    </div>
+                </div>
+                <div class="col-6 col-xl-3">
+                    <div class="premium-glass-card balance-card">
+                        <div class="balance-label">Net result · all time</div>
+                        <div class="balance-value" data-net-result>—</div>
+                        <div class="balance-sub">Winnings minus lost stakes</div>
+                    </div>
+                </div>
+                <div class="col-6 col-xl-3">
+                    <div class="premium-glass-card balance-card">
+                        <div class="balance-label">Wins · all time</div>
+                        <div class="balance-value" data-wins>—</div>
+                        <div class="balance-sub">Losses · all time: <span data-losses>—</span></div>
+                    </div>
+                </div>
+                <div class="col-6 col-xl-3">
+                    <div class="premium-glass-card balance-card">
+                        <div class="balance-label">Win rate</div>
+                        <div class="balance-value" data-win-rate>—</div>
+                        <div class="balance-sub" data-voids>—</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-12">
+                    <div class="premium-glass-card">
+                        <div class="card-header-clean d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="fas fa-hourglass-half me-2"></i>Open Contracts</h5>
+                            <a href="trade.html" class="btn btn-timeframe">Trade <i class="fas fa-arrow-right ms-1"></i></a>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="transaction-table mb-0">
+                                <thead>
+                                    <tr><th>Index</th><th>Contract</th><th>Stake</th><th>Payout</th><th>Entry → settle tick</th></tr>
+                                </thead>
+                                <tbody data-open-contracts>
+                                    <tr><td colspan="5" class="text-secondary">Loading open contracts…</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-2">
+                <div class="col-12">
+                    <p class="text-secondary mb-2" style="font-size:0.85rem;letter-spacing:.04em;text-transform:uppercase;">Index overview</p>
+                </div>
+            </div>
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-xl-3">
+                    <div class="premium-glass-card stat-card">
+                        <div class="stat-icon-wrapper bg-gradient-purple"><i class="fas fa-wave-square"></i></div>
+                        <div class="stat-info">
+                            <h3 class="stat-value" data-index-count>—</h3>
+                            <p class="stat-label">Indices open for trading</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-xl-3">
+                    <div class="premium-glass-card stat-card">
+                        <div class="stat-icon-wrapper bg-gradient-blue"><i class="fas fa-stopwatch"></i></div>
+                        <div class="stat-info">
+                            <h3 class="stat-value" data-tick-interval>—</h3>
+                            <p class="stat-label">Tick interval</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-xl-3">
+                    <div class="premium-glass-card stat-card">
+                        <div class="stat-icon-wrapper bg-gradient-orange"><i class="fas fa-dice"></i></div>
+                        <div class="stat-info">
+                            <h3 class="stat-value" data-contract-types>—</h3>
+                            <p class="stat-label">Contract types available</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-xl-3">
+                    <div class="premium-glass-card stat-card">
+                        <div class="stat-icon-wrapper bg-gradient-green"><i class="fas fa-flag-checkered"></i></div>
+                        <div class="stat-info">
+                            <h3 class="stat-value" data-settled-count>—</h3>
+                            <p class="stat-label">Your settled contracts</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-xl-8">
+                    <div class="premium-glass-card chart-card">
+                        <div class="card-header-clean d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <h5 class="mb-0"><i class="fas fa-chart-area me-2"></i><span data-chart-title>Index price</span></h5>
+                            <div class="btn-group btn-group-sm" role="group" aria-label="Chart index" data-chart-indices></div>
+                        </div>
+                        <p class="small text-secondary mb-0 px-3" data-chart-status role="status" aria-live="polite"></p>
+                        <div class="chart-wrapper" style="height:350px"><canvas class="w-100 h-100" data-index-chart aria-label="Recent index prices"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-xl-4">
+                    <div class="premium-glass-card">
+                        <div class="card-header-clean">
+                            <h5 class="mb-0"><i class="fas fa-list-ol me-2"></i>Latest ticks</h5>
+                        </div>
+                        <div class="ob-mini-header"><span>Tick</span><span>Price · last digit</span></div>
+                        <div data-latest-ticks>
+                            <div class="ob-mini-row"><span class="text-secondary">Loading…</span><span></span></div>
+                        </div>
+                        <p class="small text-secondary mt-3 mb-0">Each digit is drawn independently. Past digits do not predict the next one.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="premium-glass-card">
+                        <div class="card-header-clean d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <h5 class="mb-0"><i class="fas fa-table me-2"></i>Indices</h5>
+                            <div class="ws-status-badge" title="Index data refreshes every few seconds">
+                                <span class="ws-dot"></span> <span data-index-updated>LOADING…</span>
+                            </div>
+                        </div>
+                        <div class="table-responsive premium-table">
+                            <table class="table table-hover align-middle">
+                                <thead>
+                                    <tr><th>#</th><th>Index</th><th>Last price</th><th>Last digit</th><th>Tick</th><th>Status</th><th>Action</th></tr>
+                                </thead>
+                                <tbody data-index-rows>
+                                    <tr><td colspan="7" class="text-center py-4 text-secondary">Loading indices…</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-12">
+                    <div class="premium-glass-card">
+                        <div class="card-header-clean d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <h5 class="mb-0"><i class="fas fa-clock-rotate-left me-2"></i>Latest 20 contracts</h5>
+                            <button data-reset class="btn btn-timeframe" hidden>Reset practice balance</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="transaction-table mb-0">
+                                <thead><tr><th>Index</th><th>Type</th><th>State</th><th>Stake</th><th>Payout</th></tr></thead>
+                                <tbody data-contract-rows></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-12">
+                    <h5 class="section-title"><i class="fas fa-graduation-cap me-2"></i>Learn how it works</h5>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="premium-glass-card news-card learn-card">
+                        <div class="news-body"><span class="badge bg-purple">Contracts</span>
+                            <h6>How digit contracts settle</h6>
+                            <p>A contract settles on the last digit of the index's exit tick. Even pays when that digit is 0, 2, 4, 6 or 8.</p>
+                            <div class="news-meta"><span></span><a href="faq.html">Read the FAQ <i class="fas fa-arrow-right"></i></a></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="premium-glass-card news-card learn-card">
+                        <div class="news-body"><span class="badge bg-blue">Payouts</span>
+                            <h6>How payouts are priced</h6>
+                            <p>Every quote shows the payout, the profit and the win probability before you buy. The house margin is built into the payout.</p>
+                            <div class="news-meta"><span></span><a href="faq.html">See the margin <i class="fas fa-arrow-right"></i></a></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="premium-glass-card news-card learn-card">
+                        <div class="news-body"><span class="badge bg-green">Fairness</span>
+                            <h6>Verify past digits yourself</h6>
+                            <p>Each day's seed is committed in advance and revealed afterwards, so you can recompute every digit in your browser.</p>
+                            <div class="news-meta"><span></span><a href="fairness.html">Open the verifier <i class="fas fa-arrow-right"></i></a></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div data-shell-footer></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/js/shell.js"></script>
+    <script src="../assets/js/account-context.js"></script>
+    <script src="../assets/js/account-keys.js"></script>
+    <script src="../assets/js/account-switcher.js"></script>
+    <script src="../assets/js/restriction-banner.js"></script>
+    <script src="../assets/js/charts.js"></script>
+    <script src="../assets/js/dashboard.js"></script>
+</body>
+
+</html>

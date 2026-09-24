@@ -1,1 +1,85 @@
-<!doctype html><html lang="en" data-bs-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Trade indices — SmartProfit</title><link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet"><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet"><link href="../assets/css/glassmorphism.css" rel="stylesheet"><link href="../assets/css/style.css" rel="stylesheet"><link href="../assets/css/app-shell.css" rel="stylesheet"><link href="../assets/css/mode-tokens.css" rel="stylesheet"><style>.price strong{color:var(--mode-accent);font-size:1.35em}.digits{display:flex;gap:.4rem;flex-wrap:wrap}.digits span{padding:.35rem .55rem;border-radius:.35rem}.digits .even{background:#176b74}.digits .odd{background:#723b72}.bars{height:100px;display:flex;align-items:end;gap:.3rem}.bars span{background:var(--mode-accent);flex:1}.index-chart{height:220px;width:100%}</style></head><body class="premium-theme app-shell"><script src="../assets/js/auth.js"></script><script>requireAuth()</script><header class="premium-header"><nav class="navbar navbar-expand"><div class="container"><a class="navbar-brand premium-logo" href="dashboard.html">SmartProfit</a><div class="navbar-nav ms-auto"><a class="nav-link" href="dashboard.html">Dashboard</a><a class="nav-link active" href="trade.html">Trade</a><a class="nav-link" href="fairness.html">Fairness</a><a class="nav-link" href="profile.html">Profile</a><select class="account-switcher ms-2" data-account-switcher aria-label="Account"></select></div></div></nav></header><div class="practice-ribbon" data-practice-ribbon>PRACTICE · virtual funds</div><div class="restriction-banner" data-restriction-banner aria-live="polite" hidden></div><main class="container py-4"><div class="d-flex justify-content-between"><h1>Digit contracts</h1><span data-feed-state aria-live="polite">Reconnecting</span></div><div class="row g-3"><section class="col-lg-8"><div class="premium-glass-card p-3"><label class="form-label">Index <select form="trade-form" name="index" class="form-select d-inline w-auto"></select></label><div class="price display-4" data-live-price aria-label="Live price">—</div><canvas class="index-chart" data-index-chart></canvas><h2 class="h5">Last 20 digits</h2><div class="digits" data-digits></div><h2 class="h5 mt-4">Digit frequency: last 100</h2><div class="bars" data-frequency="100"></div><h2 class="h5 mt-4">Digit frequency: last 1,000</h2><div class="bars" data-frequency="1000"></div><p class="small text-secondary mt-3">Each digit is drawn independently. Past digits do not predict the next one.</p></div></section><aside class="col-lg-4"><div class="premium-glass-card p-3"><h2 class="h4">Contract</h2><form id="trade-form" data-trade-form><label class="form-label d-block">Type <select name="type" class="form-select"></select></label><label class="form-label d-block">Barrier <select name="barrier" class="form-select"><option value="">Select digit</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option></select></label><label class="form-label d-block">Stake <input name="stake" type="number" min="1" step=".01" class="form-control" required></label><label class="form-label d-block">Ticks <input name="ticks" type="number" min="1" max="10" value="1" class="form-control" required></label><p data-quote class="small">Choose contract details to see a live quote.</p><button class="btn btn-premium-primary w-100" type="submit">Buy · Practice</button></form><p data-trade-status role="status" aria-live="polite" class="mt-3 mb-0"></p></div></aside></div><section class="premium-glass-card p-3 mt-3"><h2 class="h4">Open contracts</h2><div class="table-responsive"><table class="table table-dark"><thead><tr><th>Index</th><th>Type</th><th>State</th><th>Ticks remaining</th><th>Payout</th></tr></thead><tbody data-open-contracts></tbody></table></div><h2 class="h4">Settled history</h2><div class="table-responsive"><table class="table table-dark"><thead><tr><th>Index</th><th>Type</th><th>State</th><th>Ticks remaining</th><th>Payout</th></tr></thead><tbody data-settled-contracts></tbody></table></div></section></main><script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script><script src="../assets/js/account-context.js"></script><script src="../assets/js/account-keys.js"></script><script src="../assets/js/account-switcher.js"></script><script src="../assets/js/restriction-banner.js"></script><script src="../assets/js/charts.js"></script><script src="../assets/js/trade.js"></script></body></html>
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Trade SmartProfit's self-generated digit indices with practice funds.">
+    <title>Trade indices — SmartProfit</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="../assets/css/glassmorphism.css" rel="stylesheet">
+    <link href="../assets/css/style.css" rel="stylesheet">
+    <link href="../assets/css/app-shell.css" rel="stylesheet">
+    <link href="../assets/css/mode-tokens.css" rel="stylesheet">
+    <link href="../assets/css/trade.css" rel="stylesheet">
+</head>
+<body class="premium-theme app-shell trade-page">
+    <script src="../assets/js/auth.js"></script>
+    <script>requireAuth()</script>
+    <header class="premium-header">
+        <nav class="navbar navbar-expand">
+            <div class="container-fluid trade-header-inner">
+                <a class="navbar-brand premium-logo" href="dashboard.html">SmartProfit</a>
+                <div class="navbar-nav ms-auto">
+                    <a class="nav-link" href="dashboard.html">Dashboard</a>
+                    <a class="nav-link active" href="trade.html" aria-current="page">Trade</a>
+                    <a class="nav-link" href="fairness.html">Fairness</a>
+                    <a class="nav-link" href="profile.html">Profile</a>
+                    <select class="account-switcher ms-2" data-account-switcher aria-label="Account"></select>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="restriction-banner" data-restriction-banner aria-live="polite" hidden></div>
+    <main class="trade-main">
+        <div class="trade-heading">
+            <div class="trade-balance" aria-live="polite" aria-atomic="true"><span>Virtual funds balance</span><strong data-trade-balance>—</strong></div>
+            <span class="feed-state" data-feed-state aria-live="polite">Loading</span>
+        </div>
+        <section class="market-panel" aria-label="Live index chart">
+            <div class="market-toolbar">
+                <label class="index-picker" for="trade-index"><span>Index</span><select id="trade-index" form="trade-form" name="index" class="form-select"></select></label>
+                <div class="market-price"><span>Latest tick</span><strong data-live-price aria-label="Live price">—</strong><small class="price-direction" data-price-direction data-direction="flat">Waiting for ticks</small></div>
+                <div class="market-meta"><span class="market-active" data-active-trade hidden></span></div>
+            </div>
+            <div class="chart-frame"><canvas class="index-chart" data-index-chart aria-label="Recent index prices with a price axis" role="img"></canvas></div>
+        </section>
+        <section class="digits-panel" aria-labelledby="digits-heading">
+            <div class="panel-title"><div><p class="trade-eyebrow">Live results</p><h2 id="digits-heading">Latest digit</h2></div></div>
+            <div class="digits" role="group" aria-labelledby="digits-heading" aria-describedby="current-digit" data-digits><span data-digit="0" class="even">0</span><span data-digit="1" class="odd">1</span><span data-digit="2" class="even">2</span><span data-digit="3" class="odd">3</span><span data-digit="4" class="even">4</span><span data-digit="5" class="odd">5</span><span data-digit="6" class="even">6</span><span data-digit="7" class="odd">7</span><span data-digit="8" class="even">8</span><span data-digit="9" class="odd">9</span></div>
+            <p id="current-digit" class="visually-hidden" data-current-digit>No digit yet</p>
+        </section>
+        <section class="order-panel" aria-labelledby="order-heading">
+            <div class="panel-title"><div><p class="trade-eyebrow">Order ticket</p><h2 id="order-heading">Set up your contract</h2></div></div>
+            <form id="trade-form" data-trade-form>
+                <div class="order-fields">
+                    <label class="trade-field">Contract type<select name="type" class="form-select"></select></label>
+                    <label class="trade-field">Barrier<select name="barrier" class="form-select"><option value="">Select digit</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option></select></label>
+                    <label class="trade-field">Stake <span class="field-unit">USD</span><input name="stake" type="number" min="1" step=".01" class="form-control" placeholder="1.00" required></label>
+                    <label class="trade-field">Duration <span class="field-unit">ticks</span><input name="ticks" type="number" min="1" max="10" value="1" class="form-control" required></label>
+                </div>
+                <div class="order-action"><p data-quote>Choose contract details to see a live quote.</p><button class="btn btn-premium-primary" type="submit" disabled>Buy contract <span>· Practice</span></button></div>
+            </form>
+            <p data-trade-status role="status" aria-live="polite" class="trade-status"></p>
+        </section>
+        <section class="frequency-section" aria-label="Digit frequency">
+            <div class="frequency-panel"><div class="panel-title"><h2>Last 100 ticks</h2><span>Digit frequency</span></div><div class="bars" data-frequency="100"></div></div>
+            <div class="frequency-panel"><div class="panel-title"><h2>Last 1,000 ticks</h2><span>Digit frequency</span></div><div class="bars" data-frequency="1000"></div></div>
+            <p>Each digit is drawn independently. Past digits do not predict the next one.</p>
+        </section>
+        <section class="contract-history" aria-label="Your contracts">
+            <div class="history-panel"><h2>Open contracts</h2><div class="table-responsive"><table class="table table-dark"><thead><tr><th>Contract</th><th>Stake</th><th>Progress</th><th>Potential payout</th></tr></thead><tbody data-open-contracts></tbody></table></div></div>
+            <div class="history-panel"><h2>Settled history</h2><div class="table-responsive"><table class="table table-dark"><thead><tr><th>Contract</th><th>Result</th><th>Net P/L</th><th>Final digit</th></tr></thead><tbody data-settled-contracts></tbody></table></div></div>
+        </section>
+    </main>
+    <div class="trade-toast-stack" data-trade-toasts aria-label="Trade notifications" aria-live="polite"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/js/account-context.js"></script>
+    <script src="../assets/js/account-keys.js"></script>
+    <script src="../assets/js/account-switcher.js"></script>
+    <script src="../assets/js/restriction-banner.js"></script>
+    <script src="../assets/js/charts.js"></script>
+    <script src="../assets/js/trade.js"></script>
+</body>
+</html>

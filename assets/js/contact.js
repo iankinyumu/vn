@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const form = el('contactForm'), fields = el('contactFields'), submit = el('contactSubmit');
     const refresh = el('refreshRequests'), history = el('requestHistory');
     let client, user, pending = false, requestId = null, authVersion = 0;
-    const topics = { general: 'General inquiry', account: 'Account help', deposit: 'Deposit help', withdrawal: 'Withdrawal help', trading: 'Trading support', security: 'Security concern', bug: 'Bug report', partnership: 'Business inquiry', other: 'Other' };
+    const topics = { general: 'General inquiry', account: 'Account help', deposit: 'Deposit help', withdrawal: 'Withdrawal help', trading: 'Digit contracts', security: 'Security concern', bug: 'Bug report', partnership: 'Business inquiry', other: 'Other' };
     const states = { open: 'Received', in_progress: 'In progress', waiting_for_customer: 'Waiting for you', resolved: 'Resolved', closed: 'Closed' };
     function status(message, kind = 'danger') {
         const box = el('contactStatus');
@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         fields.disabled = true;
         submit.textContent = 'Saving request...';
         try {
-            requestId ||= globalThis['cryp'+'to'].randomUUID();
+            requestId ||= window.crypto.randomUUID();
             const { data, error } = await client.rpc('submit_support_ticket', {
                 p_id: requestId, p_first_name: el('firstName').value,
                 p_last_name: el('lastName').value, p_email: el('email').value,
@@ -97,8 +97,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             el('contactStatus').hidden = true;
             el('email').value = user?.email || '';
         }
-        el('contactLogin').hidden = !!user;
-        el('contactLogout').hidden = !user;
+        // The shared shell header owns sign-in and sign-out; these remain for pages that still carry their own buttons.
+        if (el('contactLogin')) el('contactLogin').hidden = !!user;
+        if (el('contactLogout')) el('contactLogout').hidden = !user;
         el('guestAccountHelp').hidden = !!user;
         el('signedInAccountHelp').hidden = !user;
         el('accountAccessStatus').textContent = user ? `Signed in as ${user.email}. You can send and track requests.` : 'You are not signed in.';

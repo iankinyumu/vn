@@ -30,15 +30,16 @@ export function claimsFor(name, aal = 'aal2') {
 export async function createTestDatabase() {
     const db = new PGlite();
     await db.exec(authSchema);
-    await db.exec(`create function gen_random_bytes(p_length integer) returns bytea language sql as $$
-        select substring(decode(replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', ''), 'hex') from 1 for p_length)
-    $$;`);
-    await db.exec(`create function public.gen_random_uuid() returns uuid language sql as $$
-        select gen_random_uuid()
-    $$;`);
-    await db.exec(`create function public.digest(p_data text, p_algorithm text) returns bytea language sql as $$
-        select decode(md5(p_data), 'hex')
-    $$;`);
+    // Mirror Supabase: pgcrypto lives in the `extensions` schema and gen_random_uuid()
+    // is the pg_catalog built-in, so nothing named public.gen_random_uuid / digest /
+    // gen_random_bytes exists unless a migration creates it. PGlite has no pgcrypto,
+    // so these stand-ins provide the same signatures (digest is not SHA-256 here).
+    await db.exec(`create schema extensions;
+        create function extensions.gen_random_bytes(p_length integer) returns bytea language sql as $$
+            select substring(decode(replace(pg_catalog.gen_random_uuid()::text, '-', '') || replace(pg_catalog.gen_random_uuid()::text, '-', ''), 'hex') from 1 for p_length)
+        $$;
+        create function extensions.digest(p_data text, p_algorithm text) returns bytea language sql as $$ select decode(md5(p_data), 'hex') $$;
+        create function extensions.digest(p_data bytea, p_algorithm text) returns bytea language sql as $$ select decode(md5(p_data), 'hex') $$;`);
     await db.exec('create publication supabase_realtime;');
     for (const user of Object.values(identities)) {
         await db.query('insert into auth.users values($1,$2,now(),$3)', [user.id, user.email, JSON.stringify({ display_name: user.email.split('@')[0] })]);
@@ -85,7 +86,12 @@ export async function createTestDatabase() {
         '20260920470000_engine_admin_rpc_surface.sql',
         '20260920480000_engine_config_rpc.sql',
         '20260920490000_engine_rpc_grants.sql',
-        '20260920500000_engine_permissions_hardening.sql'
+        '20260920500000_engine_permissions_hardening.sql',
+        '20260920510000_engine_account_stats.sql',
+        '20260920520000_engine_contract_realtime.sql',
+        '20260920530000_engine_admin_operations.sql',
+        '20260920540000_engine_pgcrypto_schema_bridge.sql',
+        '20260920550000_engine_operations_audit_fixes.sql'
     ];
 
     for (const name of migrations) {

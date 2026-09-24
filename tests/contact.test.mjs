@@ -22,7 +22,7 @@ async function setup({ guest = false, rpc } = {}) {
     let init;
     vm.runInNewContext(fs.readFileSync('assets/js/contact.js', 'utf8'), {
         document: { getElementById: el, createElement: () => el(Symbol()), addEventListener: (_, fn) => { init = fn; } },
-        window: { getSupabaseClient: async () => client }, ['cryp' + 'to']: { randomUUID: () => `request-${++key}` }, Date, setTimeout
+        window: { getSupabaseClient: async () => client, crypto: { randomUUID: () => `request-${++key}` } }, Date, setTimeout
     });
     await init();
     delete el('contactForm').resets;

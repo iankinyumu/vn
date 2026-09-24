@@ -4,7 +4,7 @@ import test from 'node:test';
 import { JSDOM } from 'jsdom';
 
 function page() {
-    const dom = new JSDOM('<!doctype html><body><select data-account-switcher></select><div data-practice-ribbon></div></body>', { runScripts: 'outside-only', url: 'https://example.test/pages/dashboard.html' });
+    const dom = new JSDOM('<!doctype html><body><select data-account-switcher></select></body>', { runScripts: 'outside-only', url: 'https://example.test/pages/dashboard.html' });
     const accounts = [{ id: 'practice-id', execution_mode: 'DEMO', currency: 'USD', status: 'ACTIVE' }, { id: 'real-id', execution_mode: 'REAL', currency: 'USD', status: 'ACTIVE' }];
     dom.window.getSupabaseClient = async () => ({ rpc: async (name) => ({ data: name === 'get_engine_config' ? { real_enabled: false } : name === 'list_my_accounts' ? accounts : 'practice-id', error: null }) });
     dom.window.eval(fs.readFileSync('assets/js/account-context.js', 'utf8'));
@@ -46,5 +46,20 @@ test('an absent or inactive Practice account does not fall back to another accou
     dom.window.eval(fs.readFileSync('assets/js/account-switcher.js', 'utf8'));
     await assert.rejects(dom.window.initAccountSwitcher(), /Practice account is unavailable/);
     assert.throws(() => dom.window.smartProfitAccount.get(), /active account is required/i);
+    dom.window.close();
+});
+
+test('the account picker shows Practice on init even when Real is listed first', async () => {
+    const dom = new JSDOM('<!doctype html><body><select data-account-switcher></select></body>', { runScripts: 'outside-only', url: 'https://example.test/pages/dashboard.html' });
+    const accounts = [{ id: 'real-id', execution_mode: 'REAL', currency: 'USD', status: 'ACTIVE' }, { id: 'practice-id', execution_mode: 'DEMO', currency: 'USD', status: 'ACTIVE' }];
+    dom.window.getSupabaseClient = async () => ({ rpc: async (name) => ({ data: name === 'get_engine_config' ? { real_enabled: true } : name === 'list_my_accounts' ? accounts : 'practice-id', error: null }) });
+    dom.window.eval(fs.readFileSync('assets/js/account-context.js', 'utf8'));
+    dom.window.eval(fs.readFileSync('assets/js/account-keys.js', 'utf8'));
+    dom.window.eval(fs.readFileSync('assets/js/account-switcher.js', 'utf8'));
+    await dom.window.initAccountSwitcher();
+    const select = dom.window.document.querySelector('[data-account-switcher]');
+    assert.equal(select.value, 'practice-id');
+    assert.equal(select.selectedOptions[0].textContent, 'Practice');
+    assert.equal(dom.window.smartProfitAccount.get().accountId, 'practice-id');
     dom.window.close();
 });

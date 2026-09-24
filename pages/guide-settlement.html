@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta name="description"
+        content="Which tick decides a SmartProfit digit contract, which digits win for each contract type, and when a contract is voided and refunded.">
+    <title>How digit contracts settle — SmartProfit Guides</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="../assets/css/glassmorphism.css" rel="stylesheet">
+    <link href="../assets/css/style.css" rel="stylesheet">
+    <link href="../assets/css/public-shell.css" rel="stylesheet">
+    <link href="../assets/css/guides.css" rel="stylesheet">
+</head>
+
+<body class="premium-theme public-shell" data-shell-surface="public" data-shell-active="blog">
+    <div data-shell-header></div>
+
+    <main class="guides-wrapper">
+        <article class="guide-article" aria-labelledby="guideTitle">
+            <header class="guides-header">
+                <div class="guides-kicker"><a href="blog.html">Guides</a> · Contracts</div>
+                <h1 id="guideTitle">How digit contracts settle</h1>
+                <p>A digit contract is decided by one number: the final decimal digit of one future tick. This guide explains which tick that is and how the result is paid.</p>
+            </header>
+
+            <h2>Indices and ticks</h2>
+            <p>SmartProfit runs five indices of its own, SPI10, SPI25, SPI50, SPI75 and SPI100. Each publishes a tick every 2 seconds, and each tick has a number, a scheduled time, a price with three decimal places and a digit from 0 to 9. The digit is always the final decimal digit of the price, so a price of <code>1004.237</code> carries digit <code>7</code>.</p>
+            <p>The digit is drawn from a keyed stream over the tick number and is independent of every other tick. The price path around it is cosmetic: the index's number (10 to 100) only changes how much the displayed price moves, never which digit appears or how often.</p>
+
+            <h2>Which tick decides the contract</h2>
+            <p>When you buy, you choose an index, a contract type, a stake and a duration of 1 to 10 ticks. The server then fixes two tick numbers:</p>
+            <ul>
+                <li><strong>Entry tick</strong>: the first tick after every tick already published or already due, so you can never buy into a result that anyone has seen.</li>
+                <li><strong>Settle tick</strong>: entry tick + duration − 1. A 1-tick contract settles on its entry tick; a 5-tick contract settles on the fifth tick from entry.</li>
+            </ul>
+            <p>Only the settle tick's digit decides the result. The digits of the ticks in between are shown on the page but play no part.</p>
+
+            <h2>Which digits win</h2>
+            <div class="guide-table-wrap">
+                <table class="guide-table">
+                    <thead><tr><th scope="col">Type</th><th scope="col">Wins when the settle digit is</th><th scope="col" class="num">Winning digits</th></tr></thead>
+                    <tbody>
+                        <tr><td>Even</td><td>0, 2, 4, 6 or 8</td><td class="num">5</td></tr>
+                        <tr><td>Odd</td><td>1, 3, 5, 7 or 9</td><td class="num">5</td></tr>
+                        <tr><td>Over <var>b</var></td><td>greater than <var>b</var> (b from 0 to 8)</td><td class="num">9 − b</td></tr>
+                        <tr><td>Under <var>b</var></td><td>less than <var>b</var> (b from 1 to 9)</td><td class="num">b</td></tr>
+                        <tr><td>Match <var>d</var></td><td>exactly <var>d</var></td><td class="num">1</td></tr>
+                        <tr><td>Differ <var>d</var></td><td>anything except <var>d</var></td><td class="num">9</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p>Each digit is equally likely, so the chance of winning is the number of winning digits divided by 10. The published policy decides which types can be bought: at launch only Even and Odd are enabled. The trade page lists only the types enabled at that moment.</p>
+
+            <h2>How the result is paid</h2>
+            <ul>
+                <li><strong>Win</strong>: the payout shown in your quote is credited. The payout includes your stake.</li>
+                <li><strong>Loss</strong>: nothing is credited; the stake is lost.</li>
+            </ul>
+            <p>The stake is reserved from your balance when you buy, and the result is posted to the account's ledger once, when the settle tick is published. The payout itself is fixed at purchase and recorded on the contract; the <a href="guide-payouts.html">payout guide</a> explains how it is calculated.</p>
+
+            <h2>When a contract is voided</h2>
+            <p>A contract is voided and the full stake returned if its settle tick is generated more than 30 seconds after its scheduled time (the settlement delay in policy version 1). A delay in the engine should never cost you money. The platform owner can also void an open contract manually; every manual void needs a written reason, refunds the stake and is recorded in the audit trail.</p>
+
+            <h2>When you cannot buy</h2>
+            <p>The trade page marks the feed as stale and disables Buy if no tick arrives for three tick intervals. The server separately refuses a purchase if the index's last tick is more than 10 seconds old, if the index is paused, or if a stake, open-contract, rate or account limit would be exceeded. Pausing an index stops new purchases only; ticks continue, so open contracts still settle.</p>
+
+            <p class="guide-note">Practice accounts use virtual USD credits. They have no cash value and cannot be withdrawn.</p>
+
+            <nav class="guide-nav" aria-label="Guide navigation">
+                <a href="blog.html"><i class="fas fa-arrow-left me-2" aria-hidden="true"></i>All guides</a>
+                <a href="guide-payouts.html">Next: the house margin and payouts<i class="fas fa-arrow-right ms-2" aria-hidden="true"></i></a>
+            </nav>
+        </article>
+    </main>
+
+    <div data-shell-footer></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/shell.js"></script>
+</body>
+
+</html>

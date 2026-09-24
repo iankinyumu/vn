@@ -8,6 +8,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     let auditBusy = false;
     let cursor = null;
     const roles = { support_agent: 'Support agent', administrator: 'Administrator', owner: 'Owner' };
+    const auditLabels = {
+        'staff.bootstrap': 'Initial owner established', 'staff.role_change': 'Staff access changed',
+        'customer.restrict': 'Customer restriction applied', 'customer.lift_restriction': 'Customer restriction lifted',
+        'contracts.void': 'Contract voided', 'engine.index_status': 'Index trading status changed', 'engine.publish_policy': 'Engine policy published',
+        'platform.enable_real': 'Real accounts enabled', 'platform.disable_real': 'Real accounts disabled',
+    };
 
     function clear() {
         window.supportWorkspace?.clear();
@@ -82,7 +88,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (typeof window.getStaffSupabaseClient !== 'function') throw new Error('auth_unavailable');
                 client = await window.getStaffSupabaseClient();
                 if (epoch !== generation) return;
-                subscription = client.auth.onAuthStateChange((_event, next) => {
+                subscription = client.auth.onAuthStateChange((event, next) => {
+                    // A token refresh or a step-up TOTP check inside the open workspace keeps the
+                    // same staff identity, so loaded data stays and the server re-checks every call.
+                    if (context && !context.required_step && next?.user?.id && next.user.id === session?.user?.id && (event === 'TOKEN_REFRESHED' || event === 'MFA_CHALLENGE_VERIFIED')) { session = next; return; }
                     session = next;
                     clear(); // Immediately discard all old-identity data and pending responses.
                     el('adminSignOut').hidden = !next;
@@ -209,11 +218,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             for (const row of data) {
                 const item = document.createElement('li');
                 const title = document.createElement('strong');
-                title.textContent = `${row.action === 'staff.bootstrap' ? 'Initial owner established' : row.action === 'staff.role_change' ? 'Staff access changed' : 'Administrative action'} · ${new Date(row.created_at).toLocaleString()}`;
+                title.textContent = `${auditLabels[row.action] || `Administrative action (${row.action})`} · ${new Date(row.created_at).toLocaleString()}`;
                 const reason = document.createElement('p');
                 reason.textContent = row.reason;
                 const details = document.createElement('p');
-                details.textContent = `Actor: ${row.actor_type === 'operator' ? 'Server operator' : row.actor_id}. Staff account: ${row.target_id}. Event: ${row.id}.`;
+                details.textContent = `Actor: ${row.actor_type === 'operator' ? 'Server operator' : row.actor_id}. Target: ${row.target_type} ${row.target_id}. Event: ${row.id}.`;
                 item.append(title, reason, details);
                 el('auditEvents').append(item);
             }

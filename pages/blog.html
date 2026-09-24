@@ -1,1 +1,62 @@
-<!doctype html><html lang="en" data-bs-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Guides — SmartProfit</title><link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet"><link href="../assets/css/glassmorphism.css" rel="stylesheet"><link href="../assets/css/style.css" rel="stylesheet"><link href="../assets/css/public-shell.css" rel="stylesheet"></head><body class="premium-theme public-shell"><header class="premium-header"><nav class="navbar"><div class="container"><a class="navbar-brand premium-logo" href="index.html">SmartProfit</a><a class="nav-link" href="fairness.html">Fairness</a></div></nav></header><main class="container py-5"><section class="premium-glass-card p-5"><h1>Guides</h1><p>Learn how independent digit contracts and fairness verification work.</p></section></main></body></html>
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta name="description"
+        content="Short factual guides: how SmartProfit digit contracts settle, how the house margin sets payouts, and how to verify fairness.">
+    <title>Guides — SmartProfit</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="../assets/css/glassmorphism.css" rel="stylesheet">
+    <link href="../assets/css/style.css" rel="stylesheet">
+    <link href="../assets/css/public-shell.css" rel="stylesheet">
+    <link href="../assets/css/guides.css" rel="stylesheet">
+</head>
+
+<body class="premium-theme public-shell" data-shell-surface="public" data-shell-active="blog">
+    <div data-shell-header></div>
+
+    <main class="guides-wrapper">
+        <header class="guides-header">
+            <div class="guides-kicker">Guides</div>
+            <h1>How the product works</h1>
+            <p>Three short guides that explain the rules exactly as the engine applies them. They describe mechanics, not strategy: no guide can tell you what the next digit will be.</p>
+        </header>
+
+        <ul class="guide-list" aria-label="Guides">
+            <li>
+                <a class="guide-card" href="guide-settlement.html">
+                    <span class="guides-kicker">Contracts</span>
+                    <h2>How digit contracts settle</h2>
+                    <p>Which tick decides a contract, which digits win for each type, and when a contract is voided and refunded.</p>
+                </a>
+            </li>
+            <li>
+                <a class="guide-card" href="guide-payouts.html">
+                    <span class="guides-kicker">Payouts</span>
+                    <h2>The house margin and the payout formula</h2>
+                    <p>The exact formula, worked examples, how rounding works, and which values are configurable.</p>
+                </a>
+            </li>
+            <li>
+                <a class="guide-card" href="guide-fairness.html">
+                    <span class="guides-kicker">Fairness</span>
+                    <h2>How to verify fairness, and what the proof cannot show</h2>
+                    <p>How commit–reveal lets you recompute published digits, how to run the verifier, and the limits of that proof.</p>
+                </a>
+            </li>
+        </ul>
+    </main>
+
+    <div data-shell-footer></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/shell.js"></script>
+</body>
+
+</html>

@@ -41,7 +41,8 @@ try {
     client = postgres.getPgClient();
     await client.connect();
     await client.query(`
-        create extension pgcrypto;
+        -- Supabase installs pgcrypto in the extensions schema; nothing is created in public.
+        create schema extensions; create extension pgcrypto with schema extensions;
         create role anon; create role authenticated; create role service_role;
         create type public.execution_mode as enum ('DEMO','REAL'); create schema engine_private;
         create table public.engine_indices(code text, execution_mode public.execution_mode, tick_interval_ms integer, decimals smallint, base_price numeric, sigma_per_tick numeric, kappa numeric, status text, t0 timestamptz, primary key(code, execution_mode));
@@ -53,7 +54,7 @@ try {
         create table public.engine_policy_versions(version integer, tick_retention_days integer);
         create function public.engine_settle_tick(text, public.execution_mode, bigint) returns void language sql as 'select';
     `);
-    for (const name of ['20260920250000_engine_deterministic_ticks.sql', '20260920380000_engine_determinism_hardening.sql', '20260920460000_engine_epoch_uuid_fix.sql']) {
+    for (const name of ['20260920250000_engine_deterministic_ticks.sql', '20260920380000_engine_determinism_hardening.sql', '20260920460000_engine_epoch_uuid_fix.sql', '20260920540000_engine_pgcrypto_schema_bridge.sql']) {
         await client.query(await readFile(new URL(`../supabase/migrations/${name}`, import.meta.url), 'utf8'));
     }
     const seed = '000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f';

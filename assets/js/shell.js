@@ -9,7 +9,7 @@
     const PUBLIC_LINKS = Object.freeze([
         { href: 'index.html', label: 'Home', icon: 'fa-house', key: 'home' },
         { href: 'about.html', label: 'About', icon: 'fa-circle-info', key: 'about' },
-        { href: 'blog.html', label: 'Blog', icon: 'fa-newspaper', key: 'blog' },
+        { href: 'blog.html', label: 'Guides', icon: 'fa-book-open', key: 'blog' },
         { href: 'faq.html', label: 'FAQ', icon: 'fa-circle-question', key: 'faq' },
         { href: 'contact.html', label: 'Contact', icon: 'fa-headset', key: 'contact' },
         { href: 'fairness.html', label: 'Fairness', icon: 'fa-scale-balanced', key: 'fairness' }
@@ -24,12 +24,12 @@
 
     const FOOTER_COLUMNS = Object.freeze({
         public: [
-            { title: 'Explore', links: [{ href: 'about.html', label: 'About' }, { href: 'blog.html', label: 'Blog' }, { href: 'contact.html', label: 'Contact' }, { href: 'fairness.html', label: 'Fairness' }] },
+            { title: 'Explore', links: [{ href: 'about.html', label: 'About' }, { href: 'blog.html', label: 'Guides' }, { href: 'contact.html', label: 'Contact' }, { href: 'fairness.html', label: 'Fairness' }] },
             { title: 'Account', links: [{ href: 'faq.html', label: 'FAQ' }, { href: 'login.html', label: 'Sign in' }, { href: 'register.html', label: 'Create account' }] }
         ],
         app: [
             { title: 'Workspace', links: [{ href: 'dashboard.html', label: 'Dashboard' }, { href: 'trade.html', label: 'Trade' }, { href: 'profile.html', label: 'Profile' }] },
-            { title: 'Learn', links: [{ href: 'fairness.html', label: 'Fairness' }, { href: 'faq.html', label: 'FAQ' }, { href: 'contact.html', label: 'Contact' }] }
+            { title: 'Learn', links: [{ href: 'blog.html', label: 'Guides' }, { href: 'fairness.html', label: 'Fairness' }, { href: 'faq.html', label: 'FAQ' }, { href: 'contact.html', label: 'Contact' }] }
         ]
     });
 
@@ -154,14 +154,6 @@
         return footer;
     }
 
-    function buildRibbon() {
-        const ribbon = element('div', 'practice-ribbon');
-        ribbon.dataset.practiceRibbon = '';
-        ribbon.setAttribute('role', 'note');
-        ribbon.textContent = 'PRACTICE \u00B7 virtual funds';
-        return ribbon;
-    }
-
     function buildRestrictionBanner() {
         const banner = element('div', 'restriction-banner');
         banner.dataset.restrictionBanner = '';
@@ -184,7 +176,6 @@
         const footerMount = document.querySelector('[data-shell-footer]');
         if (headerMount) {
             headerMount.replaceChildren();
-            if (surface === 'app') headerMount.append(buildRibbon());
             const header = buildHeader(surface, active);
             headerMount.append(header);
             if (surface === 'app') headerMount.append(buildRestrictionBanner());

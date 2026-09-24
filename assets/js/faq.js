@@ -27,17 +27,17 @@
         {
             id: 'independence', category: 'general',
             question: 'Can past digits predict the next one?',
-            answer: 'No. Each digit is drawn independently from a keyed stream over the tick number, so no run of previous digits makes any outcome more or less likely. The price path is cosmetic and never decides a result.'
+            answer: 'No. Outcomes are independent: each digit is drawn from a keyed stream over the tick number, every digit from 0 to 9 is equally likely on every tick, and no run of previous digits makes any outcome more or less likely. The price path is cosmetic and never decides a result.'
         },
         {
             id: 'margin', category: 'payouts',
             question: 'How are payouts priced?',
-            answer: 'Payouts use the published policy: payout = floor(stake × (1 − margin) × 10 ÷ winning digits) to the cent, and profit is the payout minus the stake. The default house margin is 3.5%, and every quote shows the exact payout before you buy.'
+            answer: 'Payouts use the published policy: payout = floor(stake × (1 − margin) × 10 ÷ winning digits) to the cent, and profit is the payout minus the stake. Policy version 1, the version the platform ships with, sets a house margin of 3.5% for every contract type, so contracts return 96.5% of the amount staked on average. The margin is configurable: a later policy version may set it between 0.5% and 15%, including per contract type, and applies to new purchases only. Every quote shows the exact payout and the policy version before you buy.'
         },
         {
             id: 'rounding', category: 'payouts',
-            question: 'Why can a payout sit a cent above the margin?',
-            answer: 'Payouts are floored to the cent, so a small stake can round slightly in the house’s favour. The engine also refuses any contract whose profit would fall below 1% of the stake.'
+            question: 'Why can the effective margin be slightly above 3.5%?',
+            answer: 'Payouts are floored to the cent, never rounded up, so on some small stakes the effective margin is slightly above the published one. For example, a 1.01 Even stake is worth exactly 1.9493 and pays 1.94. The rounding always favours the house. The engine also refuses any contract whose profit would fall below 1% of the stake.'
         },
         {
             id: 'ticks', category: 'contracts',
@@ -62,7 +62,7 @@
         {
             id: 'funds', category: 'account',
             question: 'Are practice funds withdrawable?',
-            answer: 'No. Practice credits are virtual, have no cash value, cannot be withdrawn and are not a forecast of any funded result.'
+            answer: 'No. Practice funds are virtual USD credits. They have no cash value, cannot be withdrawn or transferred, and are not a forecast of any funded result. There is no deposit or withdrawal path anywhere in the product.'
         },
         {
             id: 'reset', category: 'account',
@@ -150,13 +150,22 @@
         });
         search?.addEventListener('input', draw);
 
-        const deepLink = window.location.hash.replace('#faq-', '');
-        if (deepLink) {
+        // A #faq-<id> link (from another page or the sidebar) shows every question, opens that answer and scrolls to it.
+        const openLinked = () => {
+            const id = window.location.hash.startsWith('#faq-') ? window.location.hash.slice(1) : '';
+            if (!id || !FAQS.some((faq) => `faq-${faq.id}` === id)) return;
             category = 'all';
             buttons.forEach((other) => other.classList.toggle('active', other.dataset.category === 'all'));
-        }
+            if (search) search.value = '';
+            draw();
+            const item = document.getElementById(id);
+            const question = item?.querySelector('.faq-question');
+            if (question?.getAttribute('aria-expanded') === 'false') question.click();
+            item?.scrollIntoView?.();
+        };
         draw();
-        if (deepLink) document.getElementById(`faq-${deepLink}`)?.scrollIntoView();
+        openLinked();
+        window.addEventListener('hashchange', openLinked);
     }
 
     window.SMARTPROFIT_FAQS = FAQS;
