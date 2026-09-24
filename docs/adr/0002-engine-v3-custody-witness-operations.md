@@ -93,3 +93,33 @@ These are operational facts code cannot create. `scripts/engine-v3-acceptance.mj
 4. Perform the live failure drills (KMS revoke, TSA block, worker kill) against staging and archive their logs.
 5. Obtain independent cryptographic and quantitative review of ADR 0001/0002, and a custody penetration test before any REAL decision.
 6. Monitor TSA certificate revocation (OCSP/CRL) operationally. The offline verifier pins roots but does not check revocation.
+
+## 10. Revisions from the production fix brief (2026-09-25)
+
+These supersede the matching parts of §1–§4 wherever they differ (`docs/CLAUDE_ENGINE_V3_PRODUCTION_FIX.md`).
+
+**Witness deadline (replaces "genTime < the contract's entry tick time").** For each epoch, the deadline is the first scheduled tradable tick over every index in the epoch's committed configuration: `max(genesis + 1, first tick at or after the epoch start)`.
+- The config hash and epoch start are both inside the commitment, so the deadline is commitment-bound and cannot change after publication.
+- SQL (`engine_private.v3_witness_deadline`), the generator (`witnessDeadline`) and the independent verifier compute it identically. It is exported with each epoch, and the verifier recomputes and compares it.
+- A receipt with `genTime` at or after the deadline is **late**. It never makes an epoch tradable or verified, however soon after it arrives.
+
+**Trust boundary for receipts (replaces "worker records receipts").**
+- The tick writer can only *submit* raw tokens (`engine_v3_witness_submissions`). Its claimed `genTime` is ignored.
+- A separate role, `engine_witness_attestor`, runs `engine/v3/service/attestor-main.mjs` under its own credentials and without KMS access. It verifies each token against the pinned roots and the canonical subject, takes `genTime` from the token, and records one immutable verdict per submission.
+- Each verdict is bound to the token hash, provider, subject, deadline and the canonical root-bundle ID (`tsa.mjs rootBundleId`). The database refuses verdicts made with any other bundle than the one staff configured.
+- Purchase gates read attestations only.
+- Resubmitting an identical token is idempotent. A different token is a new, audited submission, so an invalid first receipt can be replaced. Nothing uses `ON CONFLICT DO NOTHING`.
+
+**Checkpoints.** A checkpoint anchors a purchase only if every required TSA has an attested valid receipt with `genTime` before the purchase time, and its tick is within the configured gap. Genesis anchors a new series until the first checkpoint. Proofs verify checkpoint receipts themselves. An unwitnessed anchor leaves the range **unanchored**.
+
+**Configuration rotation.** Each epoch binds its own configuration. Proof package v2 carries every needed configuration keyed by hash and may span a change. The verifier checks each tick under its own epoch's configuration. A rotation must keep each live index's `genesis_*` values. A new genesis is a cutover (§5).
+
+**Verdict.** Browser and CLI share one verifier, one trust loader (`verifier/v3/trust.mjs`) and one result.
+- `components`: price/continuity, signatures, witness, checkpoints, reveal, contracts.
+- `verdict`: `fully_verified`, `partial` or `invalid`.
+- CLI exit codes: 0, 2 and 1 respectively (64 for a usage error).
+- Unpinned keys, missing roots, missing or late receipts, and unrevealed days are **partial**. Tampering, invalid tokens and unpublished keys are **invalid**.
+
+**Remaining privileged-infrastructure threat.** Separating the attestor stops the tick writer from minting "witnessed", but it does not stop an attacker who controls both the worker and the attestor, or the database owner. A database owner can insert an attestation row directly. The public proof does not depend on attestation rows, because it re-verifies raw tokens against pinned roots. The purchase gate does depend on them. Mitigations are operational: separate cloud accounts, database-owner credentials held outside the application team, and alerts on writes to `engine_v3_witness_attestations` by any role other than the attestor. No cryptographic protection is claimed against full worker compromise.
+
+**Release statuses.** `scripts/engine-v3-acceptance.mjs` reports `CODE_READY` (automated gates plus a recorded independent code review), `PRACTICE_READY` (plus every operational evidence file) and `REAL_READY` (never set by this project).

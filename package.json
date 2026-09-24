@@ -9,6 +9,8 @@
     "calibrate:engine-v3": "node scripts/engine-v3-calibrate.mjs",
     "check:engine-v3-vectors": "node scripts/engine-v3-vectors.mjs",
     "accept:engine-v3": "node scripts/engine-v3-acceptance.mjs",
+    "accept:engine-v3:practice": "node scripts/engine-v3-acceptance.mjs --practice",
+    "start:engine-v3-attestor": "node engine/v3/service/attestor-main.mjs",
     "report:engine-v3-soak": "node scripts/engine-v3-soak-report.mjs",
     "start:engine-v3-worker": "node engine/v3/service/main.mjs"
   },
