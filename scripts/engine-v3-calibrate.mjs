@@ -8,7 +8,7 @@
 // real stream, and reproducible by anyone.
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import * as g from '../engine/v3/generator.mjs';
 
@@ -123,7 +123,10 @@ const git = (...a) => { try { return execFileSync('git', a, { encoding: 'utf8' }
 const commit = git('rev-parse', 'HEAD');
 const dirty = git('status', '--porcelain', '--', 'engine/v3', 'scripts/engine-v3-calibrate.mjs') !== '';
 const command = `node scripts/engine-v3-calibrate.mjs --ticks ${TICKS} --seeds ${SEEDS} --first-seed ${FIRST_SEED} --indices ${INDICES.join(',')} --out ${OUT}`;
-const report = { spec: 'v3.0', generated_at: new Date().toISOString(), commit, engine_files_uncommitted: dirty, node: process.version, command, bands: BANDS, results };
+// Fingerprint of the generator that produced these numbers (line endings normalised),
+// so acceptance can refuse a report made by an older revision.
+const generatorSha256 = createHash('sha256').update(readFileSync(new URL('../engine/v3/generator.mjs', import.meta.url), 'utf8').split('\r\n').join('\n')).digest('hex');
+const report = { spec: 'v3.0', generated_at: new Date().toISOString(), commit, engine_files_uncommitted: dirty, generator_sha256: generatorSha256, node: process.version, command, bands: BANDS, results };
 const outPath = resolve(OUT);
 mkdirSync(dirname(`${outPath}.json`), { recursive: true });
 writeFileSync(`${outPath}.json`, `${JSON.stringify(report, null, 2)}\n`);
