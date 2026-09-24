@@ -31,28 +31,27 @@
             </div>
         </nav>
     </header>
-    <div class="practice-ribbon" data-practice-ribbon>Practice · virtual funds</div>
     <div class="restriction-banner" data-restriction-banner aria-live="polite" hidden></div>
     <main class="trade-main">
         <div class="trade-heading">
-            <div><p class="trade-eyebrow">SmartProfit / Indices</p><h1>Trade digit contracts</h1></div>
+            <div class="trade-balance" aria-live="polite" aria-atomic="true"><span>Virtual funds balance</span><strong data-trade-balance>—</strong></div>
             <span class="feed-state" data-feed-state aria-live="polite">Loading</span>
         </div>
-        <div class="contract-family" role="group" aria-label="Contract type" data-contract-family></div>
         <section class="market-panel" aria-label="Live index chart">
             <div class="market-toolbar">
                 <label class="index-picker" for="trade-index"><span>Index</span><select id="trade-index" form="trade-form" name="index" class="form-select"></select></label>
-                <div class="market-price"><span>Latest tick</span><strong data-live-price aria-label="Live price">—</strong></div>
-                <span class="market-mode">Self-generated index</span>
+                <div class="market-price"><span>Latest tick</span><strong data-live-price aria-label="Live price">—</strong><small class="price-direction" data-price-direction data-direction="flat">Waiting for ticks</small></div>
+                <div class="market-meta"><span class="market-active" data-active-trade hidden></span></div>
             </div>
-            <div class="chart-frame"><canvas class="index-chart" data-index-chart aria-label="Recent index prices" role="img"></canvas></div>
+            <div class="chart-frame"><canvas class="index-chart" data-index-chart aria-label="Recent index prices with a price axis" role="img"></canvas></div>
         </section>
         <section class="digits-panel" aria-labelledby="digits-heading">
-            <div class="panel-title"><div><p class="trade-eyebrow">Live results</p><h2 id="digits-heading">Last 20 digits</h2></div><span>Newest at right</span></div>
-            <div class="digits" data-digits aria-live="off"></div>
+            <div class="panel-title"><div><p class="trade-eyebrow">Live results</p><h2 id="digits-heading">Latest digit</h2></div></div>
+            <div class="digits" role="group" aria-labelledby="digits-heading" aria-describedby="current-digit" data-digits><span data-digit="0" class="even">0</span><span data-digit="1" class="odd">1</span><span data-digit="2" class="even">2</span><span data-digit="3" class="odd">3</span><span data-digit="4" class="even">4</span><span data-digit="5" class="odd">5</span><span data-digit="6" class="even">6</span><span data-digit="7" class="odd">7</span><span data-digit="8" class="even">8</span><span data-digit="9" class="odd">9</span></div>
+            <p id="current-digit" class="visually-hidden" data-current-digit>No digit yet</p>
         </section>
         <section class="order-panel" aria-labelledby="order-heading">
-            <div class="panel-title"><div><p class="trade-eyebrow">Order ticket</p><h2 id="order-heading">Set up your contract</h2></div><span class="trade-balance">Practice mode · virtual funds · <b data-trade-balance aria-live="polite">—</b></span></div>
+            <div class="panel-title"><div><p class="trade-eyebrow">Order ticket</p><h2 id="order-heading">Set up your contract</h2></div></div>
             <form id="trade-form" data-trade-form>
                 <div class="order-fields">
                     <label class="trade-field">Contract type<select name="type" class="form-select"></select></label>
@@ -70,10 +69,11 @@
             <p>Each digit is drawn independently. Past digits do not predict the next one.</p>
         </section>
         <section class="contract-history" aria-label="Your contracts">
-            <div class="history-panel"><h2>Open contracts</h2><div class="table-responsive"><table class="table table-dark"><thead><tr><th>Index</th><th>Type</th><th>State</th><th>Ticks remaining</th><th>Payout</th></tr></thead><tbody data-open-contracts></tbody></table></div></div>
-            <div class="history-panel"><h2>Settled history</h2><div class="table-responsive"><table class="table table-dark"><thead><tr><th>Index</th><th>Type</th><th>State</th><th>Ticks remaining</th><th>Payout</th></tr></thead><tbody data-settled-contracts></tbody></table></div></div>
+            <div class="history-panel"><h2>Open contracts</h2><div class="table-responsive"><table class="table table-dark"><thead><tr><th>Contract</th><th>Stake</th><th>Progress</th><th>Potential payout</th></tr></thead><tbody data-open-contracts></tbody></table></div></div>
+            <div class="history-panel"><h2>Settled history</h2><div class="table-responsive"><table class="table table-dark"><thead><tr><th>Contract</th><th>Result</th><th>Net P/L</th><th>Final digit</th></tr></thead><tbody data-settled-contracts></tbody></table></div></div>
         </section>
     </main>
+    <div class="trade-toast-stack" data-trade-toasts aria-label="Trade notifications" aria-live="polite"></div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <script src="../assets/js/account-context.js"></script>
     <script src="../assets/js/account-keys.js"></script>

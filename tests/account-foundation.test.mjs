@@ -4,7 +4,7 @@ import test from 'node:test';
 import { JSDOM } from 'jsdom';
 
 function page() {
-    const dom = new JSDOM('<!doctype html><body><select data-account-switcher></select><div data-practice-ribbon></div></body>', { runScripts: 'outside-only', url: 'https://example.test/pages/dashboard.html' });
+    const dom = new JSDOM('<!doctype html><body><select data-account-switcher></select></body>', { runScripts: 'outside-only', url: 'https://example.test/pages/dashboard.html' });
     const accounts = [{ id: 'practice-id', execution_mode: 'DEMO', currency: 'USD', status: 'ACTIVE' }, { id: 'real-id', execution_mode: 'REAL', currency: 'USD', status: 'ACTIVE' }];
     dom.window.getSupabaseClient = async () => ({ rpc: async (name) => ({ data: name === 'get_engine_config' ? { real_enabled: false } : name === 'list_my_accounts' ? accounts : 'practice-id', error: null }) });
     dom.window.eval(fs.readFileSync('assets/js/account-context.js', 'utf8'));
@@ -50,7 +50,7 @@ test('an absent or inactive Practice account does not fall back to another accou
 });
 
 test('the account picker shows Practice on init even when Real is listed first', async () => {
-    const dom = new JSDOM('<!doctype html><body><select data-account-switcher></select><div data-practice-ribbon></div></body>', { runScripts: 'outside-only', url: 'https://example.test/pages/dashboard.html' });
+    const dom = new JSDOM('<!doctype html><body><select data-account-switcher></select></body>', { runScripts: 'outside-only', url: 'https://example.test/pages/dashboard.html' });
     const accounts = [{ id: 'real-id', execution_mode: 'REAL', currency: 'USD', status: 'ACTIVE' }, { id: 'practice-id', execution_mode: 'DEMO', currency: 'USD', status: 'ACTIVE' }];
     dom.window.getSupabaseClient = async () => ({ rpc: async (name) => ({ data: name === 'get_engine_config' ? { real_enabled: true } : name === 'list_my_accounts' ? accounts : 'practice-id', error: null }) });
     dom.window.eval(fs.readFileSync('assets/js/account-context.js', 'utf8'));

@@ -73,10 +73,8 @@
             if (!Array.isArray(accounts)) throw new StartupError('list_my_accounts', new Error('The accounts response was not a list.'));
             const practice = accounts.find((account) => account.execution_mode === 'DEMO' && account.status === 'ACTIVE');
             if (!practice) throw new StartupError('practice_unavailable', new Error('Practice account is unavailable.'));
-            const label = document.querySelector('[data-practice-ribbon]');
             const choose = (account) => {
                 window.smartProfitAccount?.set(accountFields(account));
-                if (label) label.hidden = account.execution_mode !== 'DEMO';
                 document.dispatchEvent(new CustomEvent('smartprofit:account-changed', { detail: window.smartProfitAccount.get() }));
             };
             if (select) {

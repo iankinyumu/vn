@@ -32,6 +32,12 @@ supabase db push
 
 `node supabase/migration-status.cjs` (read-only, connection string from `TRADING_DB_URL`, never printed) reports which engine migrations a database has applied; `--apply <version>...` applies exactly the named local migrations in order. Then confirm the three cron jobs exist and that authenticated users can receive only `ticks:demo:*` broadcasts. `supabase/README.md` has the full checklist. Deployment credentials never belong in the repository or in `.env.local`; `.env.example` lists the only variables the product uses.
 
+## Deploying the website to Vercel
+
+Set the Vercel project's **Root Directory** to the repository root and **Framework Preset** to Other. The root `vercel.json` runs `npm run build` and serves only `dist/`. That build places `pages/index.html` at `/`, the other pages at `/trade.html`, `/dashboard.html`, etc., and shared assets at `/assets/`. Do not set the Root Directory to `pages`: those files depend on the sibling `assets/` directory.
+
+Run `npm run build` locally to inspect `dist/` before publishing. The build output is ignored by Git; Vercel creates it on each deployment. The database engine remains in Supabase and is not hosted by Vercel.
+
 ## Documentation
 
 - `docs/ENGINE_SPEC.md` — normative digit, price, epoch and settlement algorithms, known-answer vectors, and the limits of the fairness proof.

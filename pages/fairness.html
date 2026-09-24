@@ -1,1 +1,76 @@
-<!doctype html><html lang="en" data-bs-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Fairness — SmartProfit</title><link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet"><link href="../assets/css/glassmorphism.css" rel="stylesheet"><link href="../assets/css/style.css" rel="stylesheet"><link href="../assets/css/app-shell.css" rel="stylesheet"><link href="../assets/css/mode-tokens.css" rel="stylesheet"></head><body class="premium-theme app-shell"><script src="../assets/js/auth.js"></script><script>requireAuth()</script><header class="premium-header"><nav class="navbar"><div class="container"><a class="navbar-brand premium-logo" href="dashboard.html">SmartProfit</a><div class="navbar-nav ms-auto"><a class="nav-link" href="dashboard.html">Dashboard</a><a class="nav-link" href="trade.html">Trade</a><a class="nav-link active" href="fairness.html">Fairness</a><a class="nav-link" href="profile.html">Profile</a><select class="account-switcher ms-2" data-account-switcher aria-label="Account"></select></div></div></nav></header><div class="practice-ribbon" data-practice-ribbon>PRACTICE · virtual funds</div><main class="container py-4"><section class="premium-glass-card p-4"><h1>Verify fairness</h1><p>Check each epoch commitment and reproduce the published digits for a tick range. The range starts on the latest 20 ticks; ticks from an epoch that has not been revealed yet are reported as not yet verifiable.</p><form data-fairness-form class="row g-3"><label class="col-md-4">Index <select name="index" class="form-select"></select></label><label class="col-md-4">First tick <input name="from" type="number" min="1" class="form-control" required></label><label class="col-md-4">Last tick <input name="to" type="number" min="1" class="form-control" required></label><div><button class="btn btn-premium-primary">Verify range</button></div></form><p data-fairness-result role="status" aria-live="polite" class="mt-3"></p><ul data-fairness-epochs class="small mb-0"></ul></section></main><script src="../assets/js/account-context.js"></script><script src="../assets/js/account-keys.js"></script><script src="../assets/js/account-switcher.js"></script><script src="../assets/js/fairness.js"></script></body></html>
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Verify published SmartProfit digits against revealed epoch seeds and commitments.">
+    <title>Fairness — SmartProfit</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="../assets/css/glassmorphism.css" rel="stylesheet">
+    <link href="../assets/css/style.css" rel="stylesheet">
+    <link href="../assets/css/app-shell.css" rel="stylesheet">
+    <link href="../assets/css/mode-tokens.css" rel="stylesheet">
+    <link href="../assets/css/fairness.css" rel="stylesheet">
+</head>
+
+<body class="premium-theme app-shell" data-shell-surface="app" data-shell-active="fairness">
+    <script src="../assets/js/auth.js"></script>
+    <script>requireAuth()</script>
+
+    <div data-shell-header></div>
+
+    <main class="fairness-main">
+        <div class="fairness-intro">
+            <p class="fairness-eyebrow">Independent check</p>
+            <h1>Verify fairness</h1>
+            <p>Recompute published digits from revealed epoch seeds. The range starts with the latest 20 ticks; ticks from an unrevealed epoch are shown as not yet verifiable.</p>
+        </div>
+
+        <section class="fairness-panel" aria-labelledby="fairness-form-heading">
+            <div class="fairness-panel-heading">
+                <div>
+                    <p class="fairness-eyebrow">Digit proof</p>
+                    <h2 id="fairness-form-heading">Choose a tick range</h2>
+                </div>
+                <span class="fairness-range-note">Up to 5,000 ticks</span>
+            </div>
+
+            <form data-fairness-form>
+                <div class="fairness-fields">
+                    <label for="fairness-index">Index
+                        <select id="fairness-index" name="index" class="form-select"></select>
+                    </label>
+                    <label for="fairness-from">First tick
+                        <input id="fairness-from" name="from" type="number" min="1" class="form-control" required>
+                    </label>
+                    <label for="fairness-to">Last tick
+                        <input id="fairness-to" name="to" type="number" min="1" class="form-control" required>
+                    </label>
+                </div>
+                <button class="btn btn-premium-primary fairness-submit" type="submit">Verify range</button>
+            </form>
+
+            <div class="fairness-results">
+                <p data-fairness-result role="status" aria-live="polite"></p>
+                <ul data-fairness-epochs aria-label="Epoch verification results"></ul>
+            </div>
+        </section>
+
+        <p class="fairness-help">A revealed seed can reproduce past digits. It cannot predict the next digit or prove how the seed was chosen. <a href="guide-fairness.html">How verification works</a></p>
+    </main>
+
+    <div data-shell-footer></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/js/shell.js"></script>
+    <script src="../assets/js/account-context.js"></script>
+    <script src="../assets/js/account-keys.js"></script>
+    <script src="../assets/js/account-switcher.js"></script>
+    <script src="../assets/js/restriction-banner.js"></script>
+    <script src="../assets/js/fairness.js"></script>
+</body>
+
+</html>

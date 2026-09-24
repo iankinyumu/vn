@@ -46,7 +46,8 @@ async function openTradePage(server, query = '', { config = defaultConfig(), ref
     const dom = new JSDOM(html, { runScripts: 'outside-only', url: `https://example.test/pages/trade.html${query}` });
     Object.defineProperty(dom.window, 'crypto', { value: webcrypto });
     const drawn = [];
-    dom.window.drawIndexChart = (_canvas, ticks) => drawn.push(ticks.map((tick) => tick.tick_no));
+    const chartOptions = [];
+    dom.window.drawIndexChart = (_canvas, ticks, options) => { drawn.push(ticks.map((tick) => tick.tick_no)); chartOptions.push(options); };
     dom.window.refreshRestrictionBanner = async () => {};
     let active = account;
     dom.window.smartProfitAccount = { get: () => ({ ...active }) };
@@ -61,14 +62,14 @@ async function openTradePage(server, query = '', { config = defaultConfig(), ref
     assert.equal(document.readyState, 'loading', 'trade.js must be installed before jsdom fires DOMContentLoaded');
     dom.window.eval(fs.readFileSync('assets/js/trade.js', 'utf8'));
     return {
-        dom, drawn, document,
+        dom, drawn, chartOptions, document,
         held: () => drawn.at(-1) || [],
         buy: () => document.querySelector('[data-trade-form] [type="submit"]'),
         feedState: () => document.querySelector('[data-feed-state]').textContent,
         broadcast: (tick) => server.tickChannel().handlers.find((item) => item.type === 'broadcast').handler({ payload: tick }),
         status: () => document.querySelector('[data-trade-status]').textContent,
         balance: () => document.querySelector('[data-trade-balance]').textContent,
-        choice: (code) => document.querySelector(`[data-contract-type="${code}"]`),
+        highlighted: () => [...document.querySelectorAll('[data-digits] .current')].map((node) => node.textContent),
         switchAccount(next) { active = next; document.dispatchEvent(new dom.window.Event('smartprofit:clear-trade-state')); document.dispatchEvent(new dom.window.CustomEvent('smartprofit:account-changed')); },
     };
 }
@@ -186,25 +187,25 @@ async function goLive(server, page) {
 }
 const submitForm = (page) => page.document.querySelector('[data-trade-form]').dispatchEvent(new page.dom.window.Event('submit', { cancelable: true }));
 
-test('contract-type controls are real buttons for enabled types only, and drive the quote and the purchase', async () => {
+test('the order form Contract type selector is the only contract control, offers enabled types only, and drives the quote and the purchase', async () => {
     const server = fakeServer(20);
     const page = await openTradePage(server);
     try {
         await goLive(server, page);
+        assert.equal(page.document.querySelector('[data-contract-family], [data-contract-type], .family-choice'), null, 'a duplicate contract control is still rendered');
+        const controls = [...page.document.querySelectorAll('select, input, button')].filter((control) => /contract type/i.test(control.closest('label')?.textContent || control.getAttribute('aria-label') || ''));
+        assert.deepEqual(controls.map((control) => control.name), ['type'], 'exactly one contract type control is expected');
         const type = page.document.querySelector('select[name="type"]');
+        assert.ok(type.closest('[data-trade-form]'), 'the contract type selector belongs to the order form');
         assert.deepEqual([...type.options].map((option) => option.value), ['EVEN', 'ODD']);
-        for (const code of ['EVEN', 'ODD']) { assert.equal(page.choice(code).tagName, 'BUTTON'); assert.equal(page.choice(code).type, 'button'); assert.equal(page.choice(code).disabled, false); }
-        for (const code of ['MATCH', 'DIFFER', 'OVER', 'UNDER']) { assert.equal(page.choice(code).disabled, true, code); assert.match(page.choice(code).textContent, /Not offered/); }
         page.document.querySelector('input[name="stake"]').value = '10';
-        page.click = (element) => element.dispatchEvent(new page.dom.window.MouseEvent('click', { bubbles: true }));
-        page.click(page.choice('ODD'));
-        assert.equal(type.value, 'ODD');
-        assert.equal(page.choice('ODD').getAttribute('aria-pressed'), 'true');
-        assert.equal(page.choice('EVEN').getAttribute('aria-pressed'), 'false');
+        type.value = 'ODD';
+        type.dispatchEvent(new page.dom.window.Event('change', { bubbles: true }));
         await waitFor(() => server.calls.some((call) => call.name === 'engine_quote_contract' && call.args.p_type === 'ODD'), 'the quote did not use the selected type');
-        await waitFor(() => /^Odd: payout 19\.30/.test(page.document.querySelector('[data-quote]').textContent), 'the quote was not shown for the selected type');
-        page.click(page.choice('MATCH'));
-        assert.equal(type.value, 'ODD', 'a type the policy does not enable cannot be selected');
+        await waitFor(() => /^Odd: payout \$19\.30/.test(page.document.querySelector('[data-quote]').textContent), 'the quote was not shown for the selected type');
+        type.value = 'MATCH';
+        assert.notEqual(type.value, 'MATCH', 'a type the policy does not enable cannot be selected');
+        type.value = 'ODD';
         // The quote debounce outlasts this test feed's stale window, so deliver a fresh tick before buying.
         server.add(21);
         page.broadcast(server.ticks[20]);
@@ -212,7 +213,7 @@ test('contract-type controls are real buttons for enabled types only, and drive 
         submitForm(page);
         await waitFor(() => server.calls.some((call) => call.name === 'engine_buy_contract'), 'no purchase was sent');
         assert.equal(server.calls.find((call) => call.name === 'engine_buy_contract').args.p_type, 'ODD');
-        await waitFor(() => page.balance() === 'USD 9990.00', 'the purchase did not finish refreshing the account');
+        await waitFor(() => page.balance() === '$9,990.00', 'the purchase did not finish refreshing the account');
     } finally { page.dom.window.close(); }
 });
 
@@ -221,7 +222,10 @@ test('with no enabled contract types the page says so and Buy stays disabled eve
     const page = await openTradePage(server, '', { config: { ...defaultConfig(), enabled_contract_types: [] } });
     try {
         await goLive(server, page);
-        assert.equal(page.document.querySelector('[data-contract-family]').textContent, 'No contract types are enabled right now.');
+        const type = page.document.querySelector('select[name="type"]');
+        assert.equal(type.disabled, true);
+        assert.equal(type.value, '');
+        assert.deepEqual([...type.options].map((option) => option.textContent), ['None available']);
         assert.match(page.status(), /No contract types are enabled right now/);
         assert.equal(page.buy().disabled, true);
         submitForm(page);
@@ -261,20 +265,219 @@ test('an index with no published ticks says so, keeps Buy disabled, and goes liv
     } finally { page.dom.window.close(); }
 });
 
-test('the trade page shows the server Practice balance, refreshes it after a purchase and never carries it across accounts', async () => {
+test('the trade page shows one labeled virtual funds balance at the top, refreshes it after a purchase and a settlement, and never carries it across accounts', async () => {
     const server = fakeServer(20);
     const page = await openTradePage(server);
     try {
-        await waitFor(() => page.balance() === 'USD 10000.00', 'the Practice balance was not shown');
-        assert.match(page.document.querySelector('.order-panel').textContent, /Practice mode · virtual funds/);
+        assert.equal(page.document.querySelectorAll('[data-trade-balance]').length, 1);
+        const holder = page.document.querySelector('[data-trade-balance]').closest('.trade-balance');
+        assert.ok(holder.closest('.trade-heading'), 'the balance is not at the top of the page');
+        assert.match(holder.textContent, /^Virtual funds balance/);
+        assert.equal(holder.getAttribute('aria-live'), 'polite');
+        assert.equal(holder.getAttribute('aria-atomic'), 'true', 'a balance change is announced with its label');
+        await waitFor(() => page.balance() === '$10,000.00', 'the Practice balance was not shown');
         await goLive(server, page);
         page.document.querySelector('input[name="stake"]').value = '10';
         submitForm(page);
-        await waitFor(() => page.balance() === 'USD 9990.00', 'the balance was not refreshed after the purchase');
+        await waitFor(() => page.balance() === '$9,990.00', 'the balance was not refreshed after the purchase');
+        server.balances['practice-id'] += 19.3;
+        const contractChannel = () => server.channels.filter((channel) => channel.topic === 'contracts:practice-id').at(-1);
+        await waitFor(() => contractChannel(), 'the contract change channel was never opened');
+        contractChannel().handlers.find((item) => item.type === 'postgres_changes').handler({ eventType: 'UPDATE' });
+        await waitFor(() => page.balance() === '$10,009.30', 'the balance was not refreshed after a settlement');
         page.switchAccount({ accountId: 'second-id', mode: 'DEMO', currency: 'USD' });
         assert.equal(page.balance(), '—', 'the previous account balance was carried across the switch');
-        await waitFor(() => page.balance() === 'USD 2500.00', 'the new account balance was not loaded');
+        await waitFor(() => page.balance() === '$2,500.00', 'the new account balance was not loaded');
         assert.ok(server.calls.filter((call) => call.name === 'get_account_summary').every((call) => ['practice-id', 'second-id'].includes(call.args.p_account_id)));
+    } finally { page.dom.window.close(); }
+});
+
+test('settlements show one dismissible win or loss popup and a readable net result in history', async () => {
+    const server = fakeServer(20);
+    const rpc = server.client.rpc.bind(server.client);
+    let rows = [];
+    server.client.rpc = async (name, args) => name === 'list_my_contracts' ? { data: args.p_account_id === 'practice-id' ? rows : [], error: null } : rpc(name, args);
+    const page = await openTradePage(server);
+    try {
+        await goLive(server, page);
+        const contractChannel = () => server.channels.filter((channel) => channel.topic === 'contracts:practice-id').at(-1);
+        await waitFor(() => contractChannel(), 'the contract channel was not opened');
+        const update = () => contractChannel().handlers.find((item) => item.type === 'postgres_changes').handler({ eventType: 'UPDATE' });
+        const first = { id: 'won-1', index_code: 'SPI10', contract_type: 'EVEN', barrier: null, stake: '10', payout: '19.30', settle_tick_no: 25, state: 'OPEN', exit_digit: null };
+        rows = [first]; update();
+        await waitFor(() => page.document.querySelector('[data-open-contracts]').textContent.includes('$19.30'), 'the open trade was not tracked');
+        assert.match(page.document.querySelector('[data-open-contracts]').textContent, /SPI10 · Even/);
+        assert.match(page.document.querySelector('[data-active-trade]').textContent, /Active: Even · 5 ticks left/);
+        assert.equal(page.document.querySelectorAll('.trade-toast').length, 0, 'an open trade was announced as a result');
+        rows = [{ ...first, state: 'WON', exit_digit: 2 }]; update();
+        await waitFor(() => page.document.querySelector('.trade-toast-won'), 'the win popup was not shown');
+        assert.match(page.document.querySelector('.trade-toast-won').textContent, /You won/);
+        assert.match(page.document.querySelector('.trade-toast-won').textContent, /\+\$9\.30/);
+        assert.match(page.document.querySelector('[data-settled-contracts]').textContent, /Won\+\$9\.302/);
+        assert.equal(page.document.querySelector('[data-active-trade]').hidden, true, 'a settled trade stayed active on the chart');
+        update(); await new Promise((resolve) => setTimeout(resolve, 20));
+        assert.equal(page.document.querySelectorAll('.trade-toast').length, 1, 'the same settlement was announced twice');
+
+        const second = { ...first, id: 'lost-2', contract_type: 'ODD', stake: '7', payout: '13.51', state: 'OPEN' };
+        rows = [second, ...rows]; update();
+        await waitFor(() => page.document.querySelector('[data-open-contracts]').textContent.includes('$7.00'), 'the second trade was not tracked');
+        assert.match(page.document.querySelector('[data-active-trade]').textContent, /Active: Odd/);
+        rows = [{ ...second, state: 'LOST', exit_digit: 4 }, ...rows.slice(1)]; update();
+        await waitFor(() => page.document.querySelector('.trade-toast-lost'), 'the loss popup was not shown');
+        assert.match(page.document.querySelector('.trade-toast-lost').textContent, /You lost/);
+        assert.match(page.document.querySelector('.trade-toast-lost').textContent, /−\$7\.00/);
+        assert.match(page.document.querySelector('[data-settled-contracts]').textContent, /Lost−\$7\.004/);
+        assert.equal(page.document.querySelector('[data-active-trade]').hidden, true, 'a lost trade stayed active on the chart');
+        page.document.querySelector('.trade-toast-lost button').click();
+        assert.equal(page.document.querySelector('.trade-toast-lost'), null, 'the popup could not be dismissed');
+        page.switchAccount({ accountId: 'second-id', mode: 'DEMO', currency: 'USD' });
+        assert.equal(page.document.querySelectorAll('.trade-toast').length, 0, 'the old account notification remained visible');
+        assert.equal(page.document.querySelector('[data-active-trade]').hidden, true, 'the old account trade remained on the chart');
+        await waitFor(() => page.document.querySelector('[data-settled-contracts]').textContent.includes('No settled trades yet'), 'old account results remained visible');
+        await waitFor(() => server.channels.some((channel) => channel.topic === 'contracts:second-id'), 'the new account subscription did not finish');
+    } finally { page.dom.window.close(); }
+});
+
+// Text a sighted customer sees: everything except visually hidden and hidden elements.
+function visibleText(document) {
+    const clone = document.body.cloneNode(true);
+    clone.querySelectorAll('.visually-hidden, [hidden], script').forEach((node) => node.remove());
+    return clone.textContent;
+}
+
+test('the trade page has no practice ribbon, no "Trade digit contracts" copy, and keeps the feed state and restriction notice', async () => {
+    const server = fakeServer(20);
+    const page = await openTradePage(server);
+    try {
+        await goLive(server, page);
+        const { document } = page;
+        assert.equal(document.querySelector('.practice-ribbon, [data-practice-ribbon]'), null);
+        assert.doesNotMatch(document.documentElement.outerHTML, /Trade digit contracts/, 'the heading text must be gone, including hidden copies');
+        assert.doesNotMatch(visibleText(document), /Practice · virtual funds|Practice mode/);
+        assert.ok(document.querySelector('[data-restriction-banner]'), 'the restriction notice mount was removed');
+        assert.equal(page.feedState(), 'Live');
+    } finally { page.dom.window.close(); }
+});
+
+test('a balance that cannot be read is shown as unavailable', async () => {
+    const server = fakeServer(20);
+    const rpc = server.client.rpc.bind(server.client);
+    server.client.rpc = async (name, args) => (name === 'get_account_summary' ? { data: null, error: { code: 'XX000', message: 'boom' } } : rpc(name, args));
+    const page = await openTradePage(server);
+    page.dom.window.console.error = () => {};
+    try {
+        assert.equal(page.balance(), '—', 'the balance starts in its loading state');
+        await waitFor(() => page.balance() === 'Balance unavailable', 'a failed balance read was not reported');
+    } finally { page.dom.window.close(); }
+});
+
+test('the digit row always shows 0 through 9 once and highlights only the latest digit without a per-tick live region', async () => {
+    const server = fakeServer(23);
+    const page = await openTradePage(server);
+    try {
+        const { document } = page;
+        const row = document.querySelector('[data-digits]');
+        const digits = () => [...row.children].map((node) => node.textContent);
+        assert.deepEqual(digits(), ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
+        assert.equal(row.getAttribute('role'), 'group');
+        assert.equal(document.getElementById(row.getAttribute('aria-labelledby')).textContent, 'Latest digit');
+        assert.deepEqual(page.highlighted(), []);
+
+        await waitFor(() => page.held().at(-1) === 23, 'initial ticks did not load');
+        await waitFor(() => page.highlighted().length === 1, 'the latest digit was not highlighted');
+        assert.deepEqual(page.highlighted(), ['3']);
+        assert.equal(row.querySelector('[aria-current="true"]').textContent, '3');
+        assert.equal(row.querySelectorAll('[aria-current]').length, 1);
+        const description = document.getElementById(row.getAttribute('aria-describedby'));
+        assert.equal(description.textContent, 'Latest digit: 3');
+        assert.equal(description.closest('[aria-live]:not([aria-live="off"])'), null, 'the current digit must not be a live region');
+        assert.equal(row.closest('[aria-live]:not([aria-live="off"])'), null, 'the digit row must not be a live region');
+
+        await goLive(server, page);
+        server.add(24);
+        page.broadcast(server.ticks[23]);
+        await waitFor(() => page.highlighted()[0] === '4', 'the highlight did not follow the latest tick');
+        assert.deepEqual(digits(), ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'], 'the row must stay stable');
+        assert.equal(page.highlighted().length, 1);
+        assert.equal(description.textContent, 'Latest digit: 4');
+    } finally { page.dom.window.close(); }
+});
+
+test('bursts of ticks are drawn in coalesced frames that always end on the latest tick, with a bounded chart window', async () => {
+    const server = fakeServer(40);
+    const page = await openTradePage(server);
+    try {
+        await waitFor(() => page.held().at(-1) === 40, 'initial ticks did not load');
+        await goLive(server, page);
+        const drawsBefore = page.drawn.length;
+        server.add(90);
+        for (let tick = 41; tick <= 90; tick++) page.broadcast(server.ticks[tick - 1]);
+        await waitFor(() => page.held().at(-1) === 90, 'the latest tick was not drawn');
+        await new Promise((resolve) => setTimeout(resolve, 40));
+        const draws = page.drawn.length - drawsBefore;
+        assert.ok(draws >= 1 && draws < 50, `50 ticks produced ${draws} redraws`);
+        assert.equal(page.held().at(-1), 90);
+        assert.ok(contiguous(page.held()), 'the drawn buffer has a gap');
+        assert.equal(page.held().length, 90, 'the chart must receive the full buffer so the window is applied from the latest tick');
+        // The options object comes from the jsdom realm; copy it so deepEqual compares values, not prototypes.
+        assert.deepEqual({ ...page.chartOptions.at(-1) }, { window: 300, markLatest: true, decimals: 3, pointer: null, directionColors: true });
+        assert.equal(page.document.querySelector('[data-live-price]').textContent, '$1000.090');
+        assert.equal(page.document.querySelector('[data-price-direction]').dataset.direction, 'up');
+        assert.match(page.document.querySelector('[data-price-direction]').textContent, /Rise \$0\.001/);
+        assert.deepEqual(page.highlighted(), ['0']);
+        server.add(91);
+        server.ticks[90].price = '999.000';
+        page.broadcast(server.ticks[90]);
+        await waitFor(() => page.document.querySelector('[data-price-direction]').dataset.direction === 'down', 'a falling price was not labelled');
+        assert.match(page.document.querySelector('[data-price-direction]').textContent, /Fall \$1\.090/);
+    } finally { page.dom.window.close(); }
+});
+
+test('switching index clears the old chart and never draws a pending frame from the previous index', async () => {
+    const server = fakeServer(30);
+    const page = await openTradePage(server);
+    try {
+        await waitFor(() => page.held().at(-1) === 30, 'initial ticks did not load');
+        await goLive(server, page);
+        // Note how many draws had happened when the new index's first tick read completed.
+        let drawsWhenNewIndexLoaded = null;
+        const rpc = server.client.rpc.bind(server.client);
+        server.client.rpc = async (name, args) => { const result = await rpc(name, args); if (name === 'get_ticks_since' && args.p_index === 'SPI25' && drawsWhenNewIndexLoaded === null) drawsWhenNewIndexLoaded = page.drawn.length; return result; };
+        server.add(31);
+        // Deliver a tick and let the feed accept it, so a frame is pending for the old index when it switches.
+        page.broadcast(server.ticks[30]);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        const index = page.document.querySelector('select[name="index"]');
+        index.value = 'SPI25';
+        index.dispatchEvent(new page.dom.window.Event('change'));
+        const switchedAt = page.drawn.length;
+        // The drawn array comes from the jsdom realm; copy it so deepEqual compares values, not prototypes.
+        assert.deepEqual([...page.drawn.at(-1)], [], 'the old chart was not cleared on switch');
+        assert.deepEqual(page.highlighted(), [], 'the old digit stayed highlighted after the switch');
+        await waitFor(() => page.drawn.length > switchedAt, 'the new index was never drawn');
+        assert.ok(drawsWhenNewIndexLoaded !== null && drawsWhenNewIndexLoaded === switchedAt, 'a frame from the previous index was drawn after the switch');
+        assert.equal(page.held().at(-1), 31);
+        assert.deepEqual(page.highlighted(), ['1']);
+    } finally { page.dom.window.close(); }
+});
+
+test('the chart crosshair follows the pointer with chart-only redraws and clears when the pointer leaves', async () => {
+    const server = fakeServer(20);
+    const page = await openTradePage(server);
+    try {
+        await waitFor(() => page.held().at(-1) === 20, 'initial ticks did not load');
+        await goLive(server, page);
+        const canvas = page.document.querySelector('[data-index-chart]');
+        const bars = page.document.querySelector('[data-frequency="100"]').firstElementChild;
+        const drawsBefore = page.drawn.length;
+        for (let x = 10; x <= 50; x += 10) canvas.dispatchEvent(new page.dom.window.MouseEvent('pointermove', { clientX: x, clientY: 40 }));
+        await waitFor(() => page.chartOptions.at(-1).pointer?.x === 50, 'the crosshair did not follow the pointer');
+        assert.deepEqual({ ...page.chartOptions.at(-1).pointer }, { x: 50, y: 40 });
+        assert.ok(page.drawn.length - drawsBefore < 5, 'pointer moves were not coalesced into frames');
+        assert.equal(page.document.querySelector('[data-frequency="100"]').firstElementChild, bars, 'a pointer move rebuilt the frequency bars');
+        assert.equal(page.held().at(-1), 20, 'the crosshair redraw lost the latest tick');
+        canvas.dispatchEvent(new page.dom.window.MouseEvent('pointerleave'));
+        await waitFor(() => page.chartOptions.at(-1).pointer === null, 'the crosshair stayed after the pointer left');
     } finally { page.dom.window.close(); }
 });
 

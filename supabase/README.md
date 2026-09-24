@@ -12,4 +12,6 @@ supabase db push
 
 After applying migrations, verify cron jobs named `engine-advance`, `engine-reveal-due-epochs`, and `engine-purge-ticks`; verify authenticated users can receive only `ticks:demo:*` private Broadcast topics. Also verify `public.engine_contracts` is in the `supabase_realtime` publication (added by `20260920520000_engine_contract_realtime.sql`); the trade page relies on it for contract results, and row-level security is the only filter on those change events. No Edge Function, provider credential, payment secret, or external market-data source is part of tick generation.
 
+For a read-only database check, run `node supabase/migration-status.cjs` with `TRADING_DB_URL` set in the shell. It reports applied migrations, engine objects, cron jobs, and tick movement across two readings. The retired `verify-demo-engine.cjs` checked spot-trading order tables and is no longer an engine verification step. A signed-in browser check is still required to confirm customer RPCs and private Realtime delivery.
+
 Practice enrolment is lazy through `enroll_practice_account()`. It creates one DEMO USD account with virtual credits. REAL remains disabled and cannot be enabled by updating a module row: the audited `enable_real_accounts` gate is the only route, and Real account creation, funding, and cashier work are deliberately absent.

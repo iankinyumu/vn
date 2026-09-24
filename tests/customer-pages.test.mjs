@@ -58,3 +58,11 @@ test('contact, dashboard and profile keep their designed layouts on the shared s
     }
     assert.doesNotMatch(page('contact.html'), /value="(deposit|withdrawal)"/, 'Practice accounts have no funding topics');
 });
+
+test('fairness uses the shared app header and keeps the verifier controls', () => {
+    const source = fs.readFileSync('pages/fairness.html', 'utf8');
+    for (const required of ['data-shell-surface="app"', 'data-shell-active="fairness"', 'data-shell-header', 'data-shell-footer', 'assets/js/shell.js', 'assets/css/fairness.css', 'data-fairness-form', 'data-fairness-result', 'data-fairness-epochs']) {
+        assert.ok(source.includes(required), `fairness page is missing ${required}`);
+    }
+    assert.doesNotMatch(source, /<header class="premium-header"/, 'fairness must not render a separate navbar');
+});

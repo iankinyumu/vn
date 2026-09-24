@@ -1,6 +1,5 @@
 :root { --mode-accent: #80d7ff; --mode-surface: rgba(34, 119, 163, .18); }
 body[data-mode="demo"] { --mode-accent: #80d7ff; --mode-surface: rgba(34, 119, 163, .18); }
 body[data-mode="real"] { --mode-accent: #f2b95b; --mode-surface: rgba(159, 107, 23, .18); }
-.practice-ribbon { background: var(--mode-surface); border-bottom: 1px solid var(--mode-accent); color: var(--mode-accent); font-size: .8rem; font-weight: 700; letter-spacing: .08em; padding: .35rem 1rem; text-align: center; }
 .account-switcher { background: rgba(255,255,255,.08); border: 1px solid var(--mode-accent); border-radius: .4rem; color: inherit; padding: .35rem .5rem; }
 .restriction-banner { background: #7f2d2d; color: #fff; padding: .75rem 1rem; text-align: center; }

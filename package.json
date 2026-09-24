@@ -2,6 +2,7 @@
   "name": "smartprofitbinary",
   "private": true,
   "scripts": {
+    "build": "node scripts/build-static.mjs",
     "test": "npm run check:parity && node scripts/test-engine-postgres.mjs && node --test --test-concurrency=1 tests/*.test.mjs",
     "check:parity": "node scripts/check-parity.mjs",
     "test:cryp\u0074o-legacy": "node --test --test-concurrency=1 modules/cryp\u0074o-spot/tests/*.test.mjs"

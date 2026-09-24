@@ -106,6 +106,8 @@
             } catch (error) { fail(error); }
         });
         document.addEventListener('smartprofit:account-changed', () => { output.textContent = ''; list?.replaceChildren(); });
+        document.addEventListener('smartprofit:account-changed', () => { window.refreshRestrictionBanner?.().catch?.(console.error); });
+        await window.refreshRestrictionBanner?.().catch?.(console.error);
         await defaultRange();
     }
     window.smartProfitFairness = { digit, verify, digest, describe };

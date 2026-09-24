@@ -154,14 +154,6 @@
         return footer;
     }
 
-    function buildRibbon() {
-        const ribbon = element('div', 'practice-ribbon');
-        ribbon.dataset.practiceRibbon = '';
-        ribbon.setAttribute('role', 'note');
-        ribbon.textContent = 'PRACTICE \u00B7 virtual funds';
-        return ribbon;
-    }
-
     function buildRestrictionBanner() {
         const banner = element('div', 'restriction-banner');
         banner.dataset.restrictionBanner = '';
@@ -184,7 +176,6 @@
         const footerMount = document.querySelector('[data-shell-footer]');
         if (headerMount) {
             headerMount.replaceChildren();
-            if (surface === 'app') headerMount.append(buildRibbon());
             const header = buildHeader(surface, active);
             headerMount.append(header);
             if (surface === 'app') headerMount.append(buildRestrictionBanner());
