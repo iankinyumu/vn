@@ -30,7 +30,7 @@
 
             <h2>Indices and ticks</h2>
             <p>SmartProfit runs five indices of its own, SPI10, SPI25, SPI50, SPI75 and SPI100. Each publishes a tick every 2 seconds, and each tick has a number, a scheduled time, a price with three decimal places and a digit from 0 to 9. The digit is always the final decimal digit of the price, so a price of <code>1004.237</code> carries digit <code>7</code>.</p>
-            <p>The digit is drawn from a keyed stream over the tick number and is independent of every other tick. The price path around it is cosmetic: the index's number (10 to 100) only changes how much the displayed price moves, never which digit appears or how often.</p>
+            <p>New ticks are generated as one continuous price stream. Each price update combines a controlled random move with a small unbiased decimal component; the final digit of the resulting price is the contract outcome. The index's number (10 to 100) changes the size of typical price moves, while each possible final digit remains equally likely. Older ticks used a separate digit stream and remain verifiable under their original rule.</p>
 
             <h2>Which tick decides the contract</h2>
             <p>When you buy, you choose an index, a contract type, a stake and a duration of 1 to 10 ticks. The server then fixes two tick numbers:</p>

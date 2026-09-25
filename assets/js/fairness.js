@@ -14,6 +14,37 @@
         return async (mode, index, tick) => { for (let counter = 0; ; counter++) { const block = new Uint8Array(await window.crypto.subtle.sign('HMAC', key, encoder.encode(`digit|${mode}|${index}|${tick}|${counter}`))); for (const value of block) if (value < 250) return value % 10; } };
     }
     async function digit(seed, mode, index, tick) { return (await signer(seed))(mode, index, tick); }
+    function fraction(value) {
+        const match = String(value).replace(/^\./, '0.').match(/^(-?)(\d+)(?:\.(\d+))?$/);
+        if (!match) throw new Error('invalid_verification_number');
+        const places = match[3] || '';
+        return { numerator: BigInt(`${match[1]}${match[2]}${places}`), denominator: 10n ** BigInt(places.length) };
+    }
+    function roundedUnits(value, factor) {
+        const { numerator, denominator } = fraction(value);
+        if (numerator < 0n) throw new Error('invalid_verification_number');
+        return (numerator * factor + denominator / 2n) / denominator;
+    }
+    async function priceV2(seed, mode, index, tick, previousPrice, basePrice, sigma, kappa, decimals) {
+        const factor = 10n ** BigInt(decimals);
+        const prior = roundedUnits(previousPrice, factor);
+        const base = roundedUnits(basePrice, factor);
+        const a = fraction(basePrice), s = fraction(sigma), k = fraction(kappa);
+        const sigmaUnits = (a.numerator * s.numerator * factor * 2n + a.denominator * s.denominator) / (2n * a.denominator * s.denominator);
+        const key = await window.crypto.subtle.importKey('raw', bytes(seed), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+        const block = async (counter) => new Uint8Array(await window.crypto.subtle.sign('HMAC', key, encoder.encode(`price-v2|${mode}|${index}|${tick}|${counter}`)));
+        let sample = await block(0), sum = 0, residue = null, counter = 0;
+        for (let i = 0; i < 12; i++) sum += sample[i];
+        while (residue === null) {
+            for (let i = 12; i <= 30; i++) if (sample[i] < 250) { residue = sample[i] % 10; break; }
+            if (residue === null) sample = await block(++counter);
+        }
+        const coarse = BigInt(sum - 1530) * sigmaUnits / 2560n;
+        const pull = k.numerator * (base - prior) / k.denominator;
+        const units = prior + pull + 10n * coarse + BigInt(residue - (sample[31] % 2 === 0 ? 4 : 5));
+        if (units <= 0n) throw new Error('invalid_verification_price');
+        return { units, digit: Number(units % 10n), price: `${units / factor}.${String(units % factor).padStart(decimals, '0')}` };
+    }
 
     /* Verifies ticks from..to of one index. Each tick belongs to the epoch whose
        [starts_at, ends_at) contains its scheduled_at, and is checked against that
@@ -22,7 +53,7 @@
        against its published commitment. */
     async function verify({ proofs, ticks, mode, index, from, to }) {
         const byTick = new Map();
-        for (const tick of ticks) { const number = Number(tick.tick_no); if (number >= from && number <= to) byTick.set(number, tick); }
+        for (const tick of ticks) { const number = Number(tick.tick_no); if (number >= from - 1 && number <= to) byTick.set(number, tick); }
         const epochs = proofs.map((proof) => ({ proof, starts: Date.parse(proof.starts_at), ends: Date.parse(proof.ends_at), ticks: [] }));
         const result = { from, to, verified: 0, mismatches: 0, mismatchedTicks: [], pending: 0, missing: 0, unassigned: 0, commitmentFailures: 0, epochs: [] };
         for (let number = from; number <= to; number++) {
@@ -40,7 +71,19 @@
             if (!summary.commitmentMatches) result.commitmentFailures++;
             const expected = await signer(epoch.proof.revealed_seed);
             for (const tick of epoch.ticks) {
-                if (Number(tick.digit) === await expected(mode, index, Number(tick.tick_no))) summary.verified++;
+                let matches = false;
+                try {
+                    const version = Number(tick.generation_version || 1);
+                    if (version === 2) {
+                        const decimals = Number(tick.generation_decimals);
+                        const predicted = await priceV2(epoch.proof.revealed_seed, mode, index, Number(tick.tick_no), tick.previous_price, tick.generation_base_price, tick.generation_sigma, tick.generation_kappa, decimals);
+                        const prior = byTick.get(Number(tick.tick_no) - 1);
+                        matches = predicted.units === roundedUnits(tick.price, 10n ** BigInt(decimals))
+                            && predicted.digit === Number(tick.digit)
+                            && (!prior || roundedUnits(prior.price, 10n ** BigInt(decimals)) === roundedUnits(tick.previous_price, 10n ** BigInt(decimals)));
+                    } else if (version === 1) matches = Number(tick.digit) === await expected(mode, index, Number(tick.tick_no));
+                } catch { matches = false; }
+                if (matches) summary.verified++;
                 else { summary.mismatches++; result.mismatchedTicks.push(Number(tick.tick_no)); }
             }
             result.verified += summary.verified;
@@ -93,8 +136,8 @@
             output.textContent = 'Verifying…';
             try {
                 const ticks = [];
-                for (let after = from - 1; after < to;) {
-                    const page = await rpc('get_ticks_since', { p_index: index, p_after_tick_no: after, p_limit: PAGE_SIZE });
+                for (let after = Math.max(0, from - 2); after < to;) {
+                    const page = await rpc('get_tick_verification_data', { p_account_id: account.accountId, p_index: index, p_after_tick_no: after, p_limit: PAGE_SIZE });
                     ticks.push(...page);
                     if (page.length < PAGE_SIZE) break;
                     after = Number(page[page.length - 1].tick_no);
@@ -110,6 +153,6 @@
         await window.refreshRestrictionBanner?.().catch?.(console.error);
         await defaultRange();
     }
-    window.smartProfitFairness = { digit, verify, digest, describe };
+    window.smartProfitFairness = { digit, priceV2, verify, digest, describe };
     window.addEventListener('DOMContentLoaded', () => start().catch((error) => { console.error(error); const output = document.querySelector('[data-fairness-result]'); if (output) output.textContent = 'The verifier could not load. Please reload the page.'; }));
 })();

@@ -67,7 +67,7 @@ async function openFairnessPage(data) {
             calls.push({ name, args: JSON.parse(JSON.stringify(args)) });
             const limit = Math.min(args.p_limit ?? 100, 500);
             if (name === 'get_recent_ticks') return { data: data.ticks.slice().reverse().slice(0, limit), error: null };
-            if (name === 'get_ticks_since') return { data: data.ticks.filter((tick) => tick.tick_no > args.p_after_tick_no).slice(0, limit), error: null };
+            if (name === 'get_tick_verification_data') return { data: data.ticks.filter((tick) => tick.tick_no > args.p_after_tick_no).slice(0, limit), error: null };
             if (name === 'get_epoch_proofs') return { data: data.proofs, error: null };
             return { data: null, error: { message: 'unexpected' } };
         }
@@ -123,6 +123,30 @@ test('honest ticks spanning two epochs verify against each epoch seed with no mi
         assert.equal(result.epochs.length, 2);
         assert.match(result.epochs[0], /2026-09-20 \(19 ticks\): commitment matches, 19 verified, 0 mismatches/);
         assert.match(result.epochs[1], /2026-09-21 \(20 ticks\): commitment matches, 20 verified, 0 mismatches/);
+    } finally { page.dom.window.close(); }
+});
+
+test('unified-price ticks verify their price, final digit, and previous-tick continuity', async () => {
+    const verifier = loadVerifier();
+    let price = '1000.000';
+    const ticks = [];
+    try {
+        for (let tick = 1; tick <= 6; tick++) {
+            const generated = await verifier.window.smartProfitFairness.priceV2(seeds[0], 'DEMO', 'SPI10', tick, price, '1000', '.0002', '.003', 3);
+            ticks.push({ index_code: 'SPI10', tick_no: tick, scheduled_at: new Date(DAY_ONE + tick * 2000).toISOString(),
+                price: generated.price, digit: generated.digit, generation_version: 2, previous_price: price,
+                generation_base_price: '1000', generation_sigma: '.0002', generation_kappa: '.003', generation_decimals: 3 });
+            price = generated.price;
+        }
+    } finally { verifier.window.close(); }
+    const proofs = [{ id: 'epoch-one', starts_at: new Date(DAY_ONE).toISOString(), ends_at: new Date(DAY_TWO).toISOString(), seed_commitment: commit(seeds[0]), revealed_seed: seeds[0] }];
+    const page = await openFairnessPage({ ticks, proofs });
+    try {
+        assert.match((await page.verify(1, 6)).text, /6 verified, 0 mismatches/);
+        ticks[2].price = '1000.999';
+        const tampered = await page.verify(1, 6);
+        assert.match(tampered.text, /4 verified, 2 mismatches/);
+        assert.match(tampered.text, /Mismatched ticks: 3, 4/);
     } finally { page.dom.window.close(); }
 });
 

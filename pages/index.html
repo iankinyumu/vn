@@ -85,7 +85,7 @@
         <section class="hero"><div class="container px-4"><div class="row align-items-center g-5">
             <div class="col-lg-7">
                 <h1>One digit decides.<br><em>Everything else is published.</em></h1>
-                <p class="hero-copy">SmartProfit generates its own indices and settles each contract on the final digit of a future tick. Every digit is drawn independently, the payout is quoted before you buy, and past results can be checked against a committed seed.</p>
+                <p class="hero-copy">SmartProfit generates its own indices and settles each contract on the final digit of a future tick. Each final digit is equally likely, the payout is quoted before you buy, and past results can be checked against a committed seed.</p>
                 <div class="hero-actions">
                     <a href="register.html" class="btn btn-premium-primary rounded-pill">Create your account <i class="fas fa-arrow-right ms-2"></i></a>
                     <a href="login.html" class="quiet-link">Sign in to your account <i class="fas fa-arrow-right ms-1"></i></a>
@@ -102,7 +102,7 @@
                         <div class="digit-strip" aria-hidden="true">
                             <span>4</span><span>0</span><span>7</span><span>1</span><span>9</span><span>2</span><span>5</span><span class="settled">8</span>
                         </div>
-                        <p class="digit-legend">The contract above settled on the highlighted digit. Every digit comes from the same committed stream, and each draw is independent of the ones before it.</p>
+                        <p class="digit-legend">The contract above settled on the highlighted final price digit. Every digit is equally likely, regardless of earlier results.</p>
                     </div>
                     <div class="digit-detail">
                         <div><span>Settlement</span><strong>Final digit</strong></div>
@@ -141,7 +141,7 @@
             </div>
             <div class="col-lg-7">
                 <div class="feature-stack">
-                    <article class="feature"><div class="feature-icon"><i class="fas fa-dice"></i></div><div><h3>Each digit is drawn independently</h3><p>A tick's digit comes from a keyed stream over the tick number. The price path is cosmetic: it never decides an outcome, and neither does the last result.</p></div></article>
+                    <article class="feature"><div class="feature-icon"><i class="fas fa-dice"></i></div><div><h3>Price decides the digit</h3><p>Each new tick has a generated price, and its last decimal digit settles the contract. Every final digit is equally likely; past results do not predict the next one.</p></div></article>
                     <article class="feature"><div class="feature-icon"><i class="fas fa-percent"></i></div><div><h3>The house margin is public</h3><p>Payouts are computed from the published margin, 3.5% in policy version 1, and the number of winning digits. Payouts are floored to the cent, so rounding always favours the house, never you.</p></div></article>
                     <article class="feature"><div class="feature-icon"><i class="fas fa-shield-halved"></i></div><div><h3>Commitments are chained</h3><p>Each epoch publishes its seed commitment before use and chains it to the previous one, so a changed seed is detectable after the fact.</p></div></article>
                 </div>

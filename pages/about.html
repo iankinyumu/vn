@@ -38,7 +38,7 @@
                         <div class="mission-icon"><i class="fas fa-chart-simple" aria-hidden="true"></i></div>
                         <h2 class="h4">From an index to a digit</h2>
                         <p>SmartProfit runs five self-generated indices, SPI10 to SPI100. Each one ticks on a fixed cadence and publishes a price with three decimal places.</p>
-                        <p class="mb-0">A contract settles on the final digit of the tick that closes it. The digit comes from a keyed stream over the tick number, so it is fixed the moment the tick exists and does not depend on the price path or on any previous digit.</p>
+                        <p class="mb-0">A contract settles on the final digit of the tick that closes it. New ticks come from a seeded price generator: the price is published first, and its final decimal digit is the outcome. Each possible final digit remains equally likely.</p>
                     </div>
                 </div>
                 <div class="col-md-6">

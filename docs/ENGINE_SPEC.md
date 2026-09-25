@@ -1,6 +1,22 @@
 # SmartProfit engine specification
 
-Each index is scoped by `(index_code, execution_mode)`. A tick number is fixed by its schedule, and the settlement digit is drawn by rejection sampling HMAC-SHA-256 blocks: `HMAC(seed, "digit|mode|index|tick|counter")`; bytes below 250 map modulo ten. The displayed price is cosmetic and its final decimal digit is constrained to equal the settlement digit. The price walk is deterministic: it evolves log-price as `x + kappa * (ln(base) - x) + sigma * z`, where `z` is Box-Muller output from two 53-bit uniforms taken from `HMAC(seed, "walk|mode|index|tick|0")`. A database trigger rejects any tick whose displayed final digit differs from its settlement digit.
+Each index is scoped by `(index_code, execution_mode)`. A tick number is fixed by its schedule. Generation version 1 drew the settlement digit by rejection sampling HMAC-SHA-256 blocks: `HMAC(seed, "digit|mode|index|tick|counter")`; bytes below 250 map modulo ten. The displayed price was cosmetic and its final decimal digit was constrained to equal the settlement digit. Its deterministic log-price walk used `x + kappa * (ln(base) - x) + sigma * z`, where `z` was Box-Muller output from `HMAC(seed, "walk|mode|index|tick|0")`. Version 1 ticks retain this rule and must never be rewritten.
+
+## Unified price generation (version 2)
+
+From migration `20260920560000`, the price is generated first and the settlement digit is `price_units mod 10`, where `price_units` is the price multiplied by `10^decimals`. The previous published price and the exact base, sigma, kappa and decimal settings are stored on each immutable tick. This keeps old proofs valid after a parameter change. Version 2 uses `HMAC(seed, "price-v2|mode|index|tick|counter")`. From block zero, add bytes 0–11 to get `sum`. Starting at byte 12, take the first byte below 250 from bytes 12–30; if none is found, try the next counter block. Let `residue = byte mod 10`, and use the final block's byte 31 for parity. All integer divisions truncate toward zero:
+
+```
+sigma_units = round(base_price * sigma_per_tick * 10^decimals)
+coarse = trunc((sum - 1530) * sigma_units / 2560)
+pull = trunc(kappa * (base_units - previous_units))
+jitter = residue - (byte31 even ? 4 : 5)
+next_units = previous_units + pull + 10 * coarse + jitter
+price = next_units / 10^decimals
+digit = next_units mod 10
+```
+
+The twelve-byte sum gives bounded, approximately bell-shaped price moves. The last-digit residue is uniform and independent of the coarse move, so every final digit has probability exactly 1/10 conditional on the previous published price. The parity choice centers the jitter at zero. This design preserves the existing digit-contract payout probabilities while making the chart price the settlement source. `sigma_per_tick` is a price-movement setting, **not** an annualized percentage or a claim of equivalence to another platform's index. The SQL price generator and browser verifier must agree on published version 2 ticks. Verification of a tick uses its stored previous price; neighboring ticks are also checked for continuity when available.
 
 The normative DEMO vectors use seed `000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f` (commitment `630dcd2966c4336691125448bbb25b4ff412a49c732db2c8abc1b8581bd710dd`):
 

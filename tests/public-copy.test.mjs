@@ -56,7 +56,8 @@ test('the FAQ states the margin, independent outcomes and that practice funds ar
     const answers = Object.fromEntries(dom.window.SMARTPROFIT_FAQS.map((faq) => [faq.id, faq.answer]));
     assert.ok(answers.margin.includes(`house margin of ${published.margin}`) && /between 0\.5% and 15%/.test(answers.margin) && /new purchases only/.test(answers.margin));
     assert.match(answers.rounding, /floored to the cent, never rounded up/);
-    assert.match(answers.independence, /Outcomes are independent/);
+    assert.match(answers.independence, /Every final digit remains equally likely/);
+    assert.match(answers.independence, /price and its final digit decides the result/);
     assert.match(answers.funds, /virtual/);
     assert.match(answers.funds, /cannot be withdrawn/);
     assert.match(answers.real, /^Not yet\./);

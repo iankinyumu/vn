@@ -57,3 +57,30 @@ test('engine advances deterministic ticks with the price-digit invariant', async
     }
     await db.close();
 });
+
+test('unified generator publishes a continuous price and derives the settlement digit from it', async () => {
+    const db = await createTestDatabase();
+    // PGlite has no pgcrypto HMAC. A fixed 32-byte block exercises the SQL
+    // price arithmetic, price continuity, and tick publication path.
+    await db.exec(`create function public.hmac(bytea,bytea,text) returns bytea language sql immutable as
+        $$ select decode(repeat('0123456789abcdef',4),'hex') $$;`);
+    await db.exec("update public.engine_indices set t0=now()-interval '8 seconds' where code='SPI10'");
+    await db.query('select public.engine_advance()');
+    const result = await db.query("select tick_no,price,digit,previous_price,generation_version,generation_sigma from public.index_ticks where index_code='SPI10' order by tick_no");
+    assert.ok(result.rows.length >= 3);
+    assert.equal(Number(result.rows[0].price), 999.722);
+    for (const [index, tick] of result.rows.entries()) {
+        assert.equal(Number(tick.generation_version), 2);
+        assert.equal(Number(tick.digit), Math.round(Number(tick.price) * 1000) % 10);
+        if (index) assert.equal(Number(tick.previous_price), Number(result.rows[index - 1].price));
+        assert.equal(Number(tick.generation_sigma), .0002);
+    }
+    await db.query("select set_config('request.jwt.claims',$1,false)", [JSON.stringify(claimsFor('customer'))]);
+    await db.exec('set role authenticated');
+    const account = await db.query('select public.enroll_practice_account() id');
+    const proofRows = await db.query("select * from public.get_tick_verification_data($1,'SPI10',0,10)", [account.rows[0].id]);
+    assert.equal(proofRows.rows.length, result.rows.length);
+    assert.equal(Number(proofRows.rows[0].generation_version), 2);
+    await db.exec('reset role');
+    await db.close();
+});

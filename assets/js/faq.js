@@ -27,7 +27,7 @@
         {
             id: 'independence', category: 'general',
             question: 'Can past digits predict the next one?',
-            answer: 'No. Outcomes are independent: each digit is drawn from a keyed stream over the tick number, every digit from 0 to 9 is equally likely on every tick, and no run of previous digits makes any outcome more or less likely. The price path is cosmetic and never decides a result.'
+            answer: 'No. Every final digit remains equally likely on each tick, so a run of previous digits does not make any outcome more or less likely. On new ticks, the engine generates the price and its final digit decides the result. Older ticks remain verifiable under their original digit rule.'
         },
         {
             id: 'margin', category: 'payouts',

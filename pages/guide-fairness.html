@@ -25,7 +25,7 @@
             <header class="guides-header">
                 <div class="guides-kicker"><a href="blog.html">Guides</a> · Fairness</div>
                 <h1 id="guideTitle">How to verify fairness, and what the proof cannot show</h1>
-                <p>Every digit comes from a secret seed that is committed to before it is used and revealed after. This guide explains that commit–reveal scheme, how to check published digits yourself, and where the proof stops.</p>
+                <p>Every tick comes from a secret seed that is committed to before it is used and revealed after. This guide explains that commit–reveal scheme, how to check published outcomes yourself, and where the proof stops.</p>
             </header>
 
             <h2>Seeds, epochs and commitments</h2>
@@ -36,24 +36,24 @@
                 <li>After the epoch ends, and once no open contract still depends on it (at the earliest 10 minutes after it ends), the seed is <strong>revealed</strong>.</li>
             </ul>
 
-            <h2>How a digit is derived from the seed</h2>
-            <p>For tick number <var>n</var> of an index, the engine computes HMAC-SHA-256 blocks keyed with the seed:</p>
+            <h2>How a price and digit are derived from the seed</h2>
+            <p>Older ticks (generation version 1) use HMAC-SHA-256 blocks keyed with the seed:</p>
             <code class="guide-formula">block = HMAC-SHA-256(key = seed, message = "digit|DEMO|&lt;index&gt;|&lt;n&gt;|&lt;k&gt;")   for k = 0, 1, 2, …<br>take the first byte b below 250; digit = b mod 10</code>
-            <p>Bytes of 250 or more are skipped so that every digit is exactly equally likely. <code>DEMO</code> is the Practice account type. Because the digit depends only on the seed, the index and the tick number, it is independent of every other tick and of the price path.</p>
+            <p>Version 1 skips bytes of 250 or more so every digit is equally likely. For new ticks (version 2), one keyed <code>price-v2</code> stream generates the next price from the previous published price, an index-specific movement setting, a pull toward its base and a small uniform decimal component. The contract digit is read from that finished price. The uniform component keeps each final digit equally likely even after previous prices are known. <code>DEMO</code> means Practice.</p>
 
             <h2>Running the verifier</h2>
             <ol>
                 <li>Sign in and open the <a href="fairness.html">Fairness</a> page. It uses the account type you have selected.</li>
                 <li>Choose an index and a range of tick numbers, up to 5,000 at a time. The form starts on the latest 20 ticks.</li>
-                <li>Select <em>Verify range</em>. Your browser fetches the published ticks and the epoch proofs, checks that each revealed seed hashes to its commitment, then recomputes every digit locally with the browser's built-in SHA-256 and HMAC functions.</li>
+                <li>Select <em>Verify range</em>. Your browser fetches the published ticks and epoch proofs, checks that each revealed seed hashes to its commitment, then recomputes version 1 digits or version 2 prices and digits locally with built-in SHA-256 and HMAC functions. For adjacent version 2 ticks it also checks that the next tick uses the previous published price.</li>
             </ol>
-            <p>The result reports how many digits were verified, how many did not match, and how many are not yet verifiable because their epoch has not been revealed. Each epoch is listed with whether its commitment matched. To check a contract you held, take the settle tick number from your contract history and include it in the range.</p>
+            <p>The result reports how many ticks were verified, how many did not match, and how many are not yet verifiable because their epoch has not been revealed. Each epoch is listed with whether its commitment matched. To check a contract you held, take the settle tick number from your contract history and include it in the range.</p>
             <p>The verifier does not recompute the chain hash. If you want to check the chain as well, apply the formula above to consecutive epochs.</p>
 
             <h2>What the proof establishes</h2>
             <ul>
                 <li>The seed behind a revealed epoch was fixed before the epoch began, and it was not swapped afterwards.</li>
-                <li>Every published digit in that epoch follows from that seed by the published rule. Nobody chose individual digits after seeing purchases.</li>
+                <li>Published version 1 digits and version 2 price updates follow from that seed by their respective rules, given the published previous price for each version 2 tick.</li>
             </ul>
 
             <h2>What the proof cannot establish</h2>
@@ -62,7 +62,7 @@
                 <li><strong>That future digits are secret from the operator.</strong> Practice seeds are stored in the platform's database until they are revealed, so anyone with direct database access could compute upcoming Practice digits. Moving seeds into isolated custody is a required step before any funded account type can open.</li>
                 <li><strong>Anything about the current day.</strong> Ticks from an epoch that has not been revealed cannot be checked until after it ends.</li>
                 <li><strong>That payouts and balances were posted correctly.</strong> The verifier checks digits, not accounting. Compare each settled contract's result with its settle digit and your balance history.</li>
-                <li><strong>Anything about the displayed price path</strong>, beyond its final digit. The price movement is cosmetic and is not part of the proof.</li>
+                <li><strong>Unbroken history outside the checked range.</strong> The verifier checks adjacent price continuity where both ticks are available. A missing or purged predecessor leaves that earlier link unchecked.</li>
                 <li><strong>What comes next.</strong> Verification looks backwards. Revealed seeds and past digits say nothing about the next digit.</li>
             </ul>
 

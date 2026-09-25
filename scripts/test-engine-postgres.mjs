@@ -116,7 +116,7 @@ try {
         create table public.engine_policy_versions(version integer, tick_retention_days integer);
         create function public.engine_settle_tick(text, public.execution_mode, bigint) returns void language sql as 'select';
     `);
-    for (const name of ['20260920250000_engine_deterministic_ticks.sql', '20260920380000_engine_determinism_hardening.sql', '20260920460000_engine_epoch_uuid_fix.sql', '20260920540000_engine_pgcrypto_schema_bridge.sql']) {
+    for (const name of ['20260920250000_engine_deterministic_ticks.sql', '20260920380000_engine_determinism_hardening.sql', '20260920460000_engine_epoch_uuid_fix.sql', '20260920540000_engine_pgcrypto_schema_bridge.sql', '20260920560000_engine_unified_price_ticks.sql']) {
         await client.query(await readFile(new URL(`../supabase/migrations/${name}`, import.meta.url), 'utf8'));
     }
     const seed = '000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f';
@@ -145,7 +145,14 @@ try {
     `);
     const generated = await client.query(`select count(*)::integer ticks, min(s.last_x) <> ln(1000::numeric) evolved from public.index_state s join public.index_ticks t on t.index_code=s.index_code and s.execution_mode=t.execution_mode group by s.last_x`);
     assert.ok(generated.rows.some((row) => row.ticks > 0 && row.evolved));
+    const unified = await client.query(`select t.tick_no,t.price,t.digit,t.previous_price,t.generation_version,
+      case when t.tick_no=1 then 1000::numeric else lag(t.price) over(order by t.tick_no) end prior
+      from public.index_ticks t order by t.tick_no`);
+    assert.ok(unified.rows.every((row) => Number(row.generation_version) === 2));
+    assert.ok(unified.rows.every((row) => Number(row.previous_price) === Number(row.prior)));
+    assert.ok(unified.rows.every((row) => Math.round(Number(row.price) * 1000) % 10 === Number(row.digit)));
     console.log('PostgreSQL pgcrypto digit, walk, and price invariant vectors: PASS');
+
     // Version 3 SQL reference functions, applied on top of existing v2 history.
     const historyBefore = await client.query(`select md5(string_agg(t::text, '|' order by tick_no)) digest from public.index_ticks t`);
     await client.query(await readFile(new URL('../supabase/migrations/20260924100000_engine_v3_reference_functions.sql', import.meta.url), 'utf8'));
