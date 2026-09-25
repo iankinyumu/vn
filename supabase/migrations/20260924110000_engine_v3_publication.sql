@@ -41,6 +41,14 @@ create table public.engine_v3_settings (
 );
 insert into public.engine_v3_settings default values;
 
+-- The engine_advance cron job runs every second and locks engine_indices before
+-- index_state and index_ticks. Take every lock this migration needs up front, in
+-- that order, so it waits for an in-flight tick instead of deadlocking with it.
+-- New ticks queue behind it for the moment it runs; a busy database fails the
+-- migration cleanly after 15 s and it can be pushed again.
+set local lock_timeout = '15s';
+lock table public.engine_indices, public.index_state, public.index_ticks, public.engine_contracts in access exclusive mode;
+
 alter table public.engine_indices
  add column engine_generation smallint not null default 2 check (engine_generation in (2,3)),
  add column v3_shadow boolean not null default false,

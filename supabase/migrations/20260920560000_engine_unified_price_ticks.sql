@@ -5,6 +5,14 @@
 -- version 1 ticks, with its version 1 parameters, until its scheduled
 -- v2_start_tick_no. The start is set by an engine manager (or a SQL operator)
 -- for the start of a UTC day at least 12 hours ahead, so it can be announced.
+-- The engine_advance cron job runs every second and locks engine_indices before
+-- index_state and index_ticks. Take every lock this migration needs up front, in
+-- that order, so it waits for an in-flight tick instead of deadlocking with it.
+-- New ticks queue behind it for the moment it runs; a busy database fails the
+-- migration cleanly after 15 s and it can be pushed again.
+set local lock_timeout = '15s';
+lock table public.engine_indices, public.index_state, public.index_ticks in access exclusive mode;
+
 alter table public.index_ticks
  add column generation_version smallint not null default 1 check (generation_version in (1,2)),
  add column previous_price numeric,

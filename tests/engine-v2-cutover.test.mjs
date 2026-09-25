@@ -138,3 +138,23 @@ test('at the scheduled tick the index switches to version 2, continuing from the
         await assert.rejects(db.query(`select engine_private.operator_schedule_v2_start('DEMO','SPI10',$1::timestamptz,'Try to move a started index')`, [new Date(next).toISOString()]), /engine_v2_already_started/);
     } finally { await close(); }
 });
+
+// Live push of 20260920560000 deadlocked with the engine_advance cron job: the tick
+// transaction held engine_indices and waited for index_ticks, while the migration
+// held index_ticks and waited for engine_indices. This replays that interleaving.
+test('the pending chain waits for an in-flight tick instead of deadlocking with it', async () => {
+    const { db, connect, close } = await createRealDatabase({ extra: [], before: V2 });
+    const tick = await connect();
+    try {
+        await tick.query('begin');
+        await tick.query('select count(*) from public.engine_indices'); // engine_advance reads its indices first
+        let applied = false;
+        const migrating = apply(db, PENDING).then(() => { applied = true; });
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        assert.equal(applied, false, 'the migration waits for the tick transaction');
+        await tick.query('lock table public.index_ticks in row exclusive mode'); // then inserts its tick
+        await tick.query('commit');
+        await migrating;
+        assert.equal((await one(db, `select count(*)::int n from information_schema.columns where table_name='engine_indices' and column_name='v2_start_tick_no'`)).n, 1);
+    } finally { await tick.end().catch(() => {}); await close(); }
+});
