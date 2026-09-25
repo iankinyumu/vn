@@ -60,7 +60,7 @@ Staff (owner, aal2, fresh TOTP) ──▶ Postgres RPC: rates, treasury snapshot
 | `REJECTED` | Daraja refused the initiation (`ResponseCode ≠ 0` or 4xx). No money moved | `funding_svc_record_initiation` | — |
 | `EXPIRED` | `UNKNOWN` for 24 h with no token-bound callback. Queued for the operator to check against the M-Pesa statement | `funding_svc_expire_stale` | `MANUAL_REVIEW` |
 | `MANUAL_REVIEW` | A conflict: amount mismatch, callback success with query failure (or the reverse), a callback after a final state, or query errors past 24 h | several | `CONFIRMED` or `FAILED` (owner resolution) |
-| `REVERSED` | A compensating posting was made after two-person approval | `funding_approve_reversal` | — |
+| `REVERSED` | A compensating posting was made after two-person approval | `funding_approve_action` (REVERSE) | — |
 
 Rules:
 
@@ -139,8 +139,10 @@ A provider statement comparison needs the M-Pesa org portal statement, entered b
 
 | Capability | Role | RPCs |
 | --- | --- | --- |
-| `funding.manage` | owner, aal2, fresh TOTP | `funding_publish_rate`, `funding_record_treasury_snapshot`, `funding_set_module`, `funding_set_sandbox_tester`, `funding_request_reversal`, `funding_approve_reversal` (a different owner), `funding_resolve_review` |
-| `funding.read` | owner, administrator | read-only |
+| `funding.manage` | owner, aal2, fresh TOTP | `funding_publish_rate`, `funding_record_treasury_snapshot`, `funding_set_sandbox_module`, `funding_set_sandbox_tester`, `funding_record_statement_total`, `funding_resolve_reconciliation`, `funding_request_action` and `funding_approve_action` (see below) |
+| `funding.read` | owner, administrator | `funding_staff_overview` (read-only) |
+
+Every financial decision (`REVERSE`, `RESOLVE_CONFIRMED`, `RESOLVE_FAILED`) is a `funding.staff_actions` row. One owner requests it and a **different** owner approves it. A check constraint enforces this, and so does `second_approver_required`.
 
 ## 10. Failure and recovery matrix
 

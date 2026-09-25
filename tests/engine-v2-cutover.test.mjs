@@ -7,10 +7,10 @@ import { execFile } from 'node:child_process';
 import { readFile, readdir } from 'node:fs/promises';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { V3_MIGRATIONS, asUser, createRealDatabase } from './helpers/pg-real.mjs';
+import { FUNDING_MIGRATIONS, V3_MIGRATIONS, asUser, createRealDatabase } from './helpers/pg-real.mjs';
 
 const V2 = '20260920560000_engine_unified_price_ticks.sql';
-const PENDING = [V2, ...V3_MIGRATIONS];
+const PENDING = [V2, ...V3_MIGRATIONS, ...FUNDING_MIGRATIONS];
 const DAY = 86400000;
 
 async function apply(db, names) {
