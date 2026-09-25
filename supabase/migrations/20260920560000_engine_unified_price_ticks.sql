@@ -5,13 +5,22 @@
 -- version 1 ticks, with its version 1 parameters, until its scheduled
 -- v2_start_tick_no. The start is set by an engine manager (or a SQL operator)
 -- for the start of a UTC day at least 12 hours ahead, so it can be announced.
+--
 -- The engine_advance cron job runs every second and locks engine_indices before
--- index_state and index_ticks. Take every lock this migration needs up front, in
--- that order, so it waits for an in-flight tick instead of deadlocking with it.
--- New ticks queue behind it for the moment it runs; a busy database fails the
--- migration cleanly after 15 s and it can be pushed again.
-set local lock_timeout = '15s';
-lock table public.engine_indices, public.index_state, public.index_ticks in access exclusive mode;
+-- index_ticks. This migration alters the tables in the same order, and keeps each
+-- lock until it commits, so it waits for an in-flight tick instead of deadlocking
+-- with it. (The Supabase CLI runs migrations outside a transaction block, so LOCK
+-- TABLE and SET LOCAL are not available.) New ticks queue behind it while it runs;
+-- if the tables stay busy for 15 s the migration fails cleanly and can be pushed again.
+set lock_timeout = '15s';
+
+-- Version 2 parameters are separate from version 1's sigma_per_tick and kappa,
+-- which stay in force until the index's first version 2 tick.
+alter table public.engine_indices
+ add column v2_start_tick_no bigint check (v2_start_tick_no > 0),
+ add column v2_sigma_per_tick numeric check (v2_sigma_per_tick > 0),
+ add column v2_kappa numeric check (v2_kappa >= 0 and v2_kappa < 1),
+ add constraint engine_indices_v2_parameters check (v2_start_tick_no is null or (v2_sigma_per_tick is not null and v2_kappa is not null));
 
 alter table public.index_ticks
  add column generation_version smallint not null default 1 check (generation_version in (1,2)),
@@ -24,14 +33,6 @@ alter table public.index_ticks add constraint index_ticks_v2_previous_price
  check (generation_version <> 2 or (previous_price > 0 and generation_base_price > 0
   and generation_sigma > 0 and generation_kappa >= 0 and generation_kappa < 1
   and generation_decimals between 2 and 5));
-
--- Version 2 parameters are separate from version 1's sigma_per_tick and kappa,
--- which stay in force until the index's first version 2 tick.
-alter table public.engine_indices
- add column v2_start_tick_no bigint check (v2_start_tick_no > 0),
- add column v2_sigma_per_tick numeric check (v2_sigma_per_tick > 0),
- add column v2_kappa numeric check (v2_kappa >= 0 and v2_kappa < 1),
- add constraint engine_indices_v2_parameters check (v2_start_tick_no is null or (v2_sigma_per_tick is not null and v2_kappa is not null));
 
 create or replace function public.engine_price_units_v2(
  p_seed bytea,p_mode public.execution_mode,p_index text,p_tick_no bigint,

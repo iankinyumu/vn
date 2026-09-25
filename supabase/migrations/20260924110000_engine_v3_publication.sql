@@ -42,12 +42,13 @@ create table public.engine_v3_settings (
 insert into public.engine_v3_settings default values;
 
 -- The engine_advance cron job runs every second and locks engine_indices before
--- index_state and index_ticks. Take every lock this migration needs up front, in
--- that order, so it waits for an in-flight tick instead of deadlocking with it.
--- New ticks queue behind it for the moment it runs; a busy database fails the
--- migration cleanly after 15 s and it can be pushed again.
-set local lock_timeout = '15s';
-lock table public.engine_indices, public.index_state, public.index_ticks, public.engine_contracts in access exclusive mode;
+-- index_ticks. This migration alters the tables in the same order, and keeps each
+-- lock until it commits, so it waits for an in-flight tick instead of deadlocking
+-- with it. (The Supabase CLI runs migrations outside a transaction block, so LOCK
+-- TABLE and SET LOCAL are not available.) New ticks queue behind it while it runs;
+-- if the tables stay busy for 15 s the migration fails cleanly and can be pushed again.
+-- Order: engine_indices, index_ticks, then the engine_contracts trigger, as in a tick.
+set lock_timeout = '15s';
 
 alter table public.engine_indices
  add column engine_generation smallint not null default 2 check (engine_generation in (2,3)),

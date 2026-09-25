@@ -3,8 +3,10 @@
 // migrations must not change any live price: every index keeps producing the
 // exact version 1 series until its scheduled version 2 start tick.
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { execFile } from 'node:child_process';
+import { readFile, readdir } from 'node:fs/promises';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 import { V3_MIGRATIONS, asUser, createRealDatabase } from './helpers/pg-real.mjs';
 
 const V2 = '20260920560000_engine_unified_price_ticks.sql';
@@ -139,22 +141,47 @@ test('at the scheduled tick the index switches to version 2, continuing from the
     } finally { await close(); }
 });
 
-// Live push of 20260920560000 deadlocked with the engine_advance cron job: the tick
-// transaction held engine_indices and waited for index_ticks, while the migration
-// held index_ticks and waited for engine_indices. This replays that interleaving.
-test('the pending chain waits for an in-flight tick instead of deadlocking with it', async () => {
-    const { db, connect, close } = await createRealDatabase({ extra: [], before: V2 });
+// The live push runs through the Supabase CLI, which sends each migration as a
+// pipeline of statements outside a transaction block (so LOCK TABLE and SET LOCAL
+// fail there, as the second live attempt showed). This rehearsal pushes the pending
+// migrations with the real CLI to a database in the live state, while a tick
+// transaction is mid-flight: it holds engine_indices and then needs index_ticks.
+// The first live attempt deadlocked in exactly this interleaving.
+test('supabase db push applies the pending chain while a tick is in flight, without deadlock', async () => {
+    const { db, connect, port, close } = await createRealDatabase({ extra: [], before: V2 });
     const tick = await connect();
     try {
+        const all = (await readdir(new URL('../supabase/migrations/', import.meta.url))).filter((name) => name.endsWith('.sql')).sort();
+        assert.deepEqual(all.filter((name) => name >= V2), PENDING, 'the pending set matches the live dry run');
+        for (const name of PENDING) {
+            const sql = await readFile(new URL(`../supabase/migrations/${name}`, import.meta.url), 'utf8');
+            assert.doesNotMatch(sql, /^\s*(lock\s+table|set\s+local|begin\s*;|commit\s*;)/im, `${name} must run outside a transaction block`);
+        }
+        await db.exec(`create schema supabase_migrations;
+            create table supabase_migrations.schema_migrations(version text primary key, statements text[], name text)`);
+        for (const name of all.filter((item) => item < V2)) await db.query('insert into supabase_migrations.schema_migrations(version,name) values($1,$2)', name.replace('.sql', '').split(/_(.*)/s).slice(0, 2));
+        await db.exec(`update public.engine_indices set t0=clock_timestamp()-interval '20 seconds'`);
+        await db.query('select public.engine_advance()');
+
         await tick.query('begin');
         await tick.query('select count(*) from public.engine_indices'); // engine_advance reads its indices first
-        let applied = false;
-        const migrating = apply(db, PENDING).then(() => { applied = true; });
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        assert.equal(applied, false, 'the migration waits for the tick transaction');
+        const cli = `"${fileURLToPath(new URL(`../node_modules/.bin/supabase${process.platform === 'win32' ? '.cmd' : ''}`, import.meta.url))}"`;
+        let exited = null;
+        const push = new Promise((resolve) => {
+            execFile(cli, ['db', 'push', '--db-url', `postgresql://postgres:postgres@127.0.0.1:${port}/postgres?sslmode=disable`, '--yes'],
+                { shell: true, timeout: 240000 }, (error, stdout, stderr) => { exited = error ? error.code ?? 1 : 0; resolve({ stdout, stderr }); });
+        });
+        await new Promise((resolve) => setTimeout(resolve, 4000));
+        if (exited !== null) { const early = await push; assert.fail(`the push ended before the tick transaction finished:\n${early.stdout}\n${early.stderr}`); }
         await tick.query('lock table public.index_ticks in row exclusive mode'); // then inserts its tick
         await tick.query('commit');
-        await migrating;
-        assert.equal((await one(db, `select count(*)::int n from information_schema.columns where table_name='engine_indices' and column_name='v2_start_tick_no'`)).n, 1);
+        const output = await push;
+        assert.equal(exited, 0, `supabase db push failed:\n${output.stderr}`);
+        const applied = (await db.query('select version from supabase_migrations.schema_migrations where version>=$1 order by 1', [V2.slice(0, 14)])).rows.map((row) => row.version);
+        assert.deepEqual(applied, PENDING.map((name) => name.slice(0, 14)));
+        assert.equal((await one(db, 'select count(*)::int n from public.engine_indices where v2_start_tick_no is not null')).n, 0);
+        await elapse(db, 6);
+        assert.ok((await one(db, 'select public.engine_advance() n')).n > 0, 'ticks continue after the push');
+        assert.equal((await one(db, 'select count(*)::int n from public.index_ticks where generation_version<>1')).n, 0);
     } finally { await tick.end().catch(() => {}); await close(); }
 });
