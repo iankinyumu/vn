@@ -501,3 +501,22 @@ test('a startup failure is explained on the trade page and leaves nothing buyabl
         assert.doesNotMatch(document.body.textContent, /permission denied|42501|Reference:/);
     } finally { dom.window.close(); }
 });
+
+test('an announced price model change is shown for the selected index until it takes effect', async () => {
+    const future = new Date(Date.UTC(2099, 0, 2)).toISOString();
+    const config = defaultConfig();
+    config.indices[0].v2_starts_at = future;
+    config.indices[1].v2_starts_at = new Date(Date.UTC(2020, 0, 2)).toISOString();
+    const server = fakeServer(5);
+    const page = await openTradePage(server, '', { config });
+    try {
+        const note = () => page.document.querySelector('[data-price-model-note]');
+        await waitFor(() => note() && !note().hidden, 'the scheduled change was not announced');
+        assert.match(note().textContent, /from Fri, 02 Jan 2099 00:00:00 UTC, SmartProfit Index 10 prices use price model version 2/);
+        const index = page.document.querySelector('select[name="index"]');
+        index.value = 'SPI25';
+        index.dispatchEvent(new page.dom.window.Event('change'));
+        await waitFor(() => note().hidden, 'a change that already took effect is still announced');
+        await waitFor(() => server.calls.some((call) => call.name === 'channel' && call.topic === 'ticks:demo:SPI25'), 'the new index was not subscribed');
+    } finally { page.dom.window.close(); }
+});

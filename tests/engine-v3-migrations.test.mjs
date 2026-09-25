@@ -9,7 +9,8 @@ import { V3_MIGRATIONS, asUser, createRealDatabase } from './helpers/pg-real.mjs
 test('v3 migrations apply onto v1/v2 history without changing it, and v2 keeps running', async () => {
     const { db, close } = await createRealDatabase({ extra: [] });
     try {
-        await db.exec(`update public.engine_indices set t0=clock_timestamp()-interval '30 seconds'`);
+        // Version 2 history: every index started version 2 at tick 1.
+        await db.exec(`update public.engine_indices set t0=clock_timestamp()-interval '30 seconds',v2_start_tick_no=1`);
         await db.query('select public.engine_advance()');
         const account = (await asUser(db, 'customer', () => db.query('select public.enroll_practice_account() id'))).rows[0].id;
         await asUser(db, 'customer', () => db.query(`select public.engine_buy_contract($1,'SPI10','EVEN',null,5,1,'v2-before-v3')`, [account]));

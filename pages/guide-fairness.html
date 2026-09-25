@@ -39,7 +39,7 @@
             <h2>How a price and digit are derived from the seed</h2>
             <p>Older ticks (generation version 1) use HMAC-SHA-256 blocks keyed with the seed:</p>
             <code class="guide-formula">block = HMAC-SHA-256(key = seed, message = "digit|DEMO|&lt;index&gt;|&lt;n&gt;|&lt;k&gt;")   for k = 0, 1, 2, …<br>take the first byte b below 250; digit = b mod 10</code>
-            <p>Version 1 skips bytes of 250 or more so every digit is equally likely. For new ticks (version 2), one keyed <code>price-v2</code> stream generates the next price from the previous published price, an index-specific movement setting, a pull toward its base and a small uniform decimal component. The contract digit is read from that finished price. The uniform component keeps each final digit equally likely even after previous prices are known. <code>DEMO</code> means Practice.</p>
+            <p>Version 1 skips bytes of 250 or more so every digit is equally likely. From each index's announced start, shown on the Trade page, ticks use version 2: one keyed <code>price-v2</code> stream generates the next price from the previous published price, an index-specific movement setting, a pull toward its base and a small uniform decimal component. The contract digit is read from that finished price. The uniform component keeps each final digit equally likely even after previous prices are known. <code>DEMO</code> means Practice.</p>
 
             <h2>Running the verifier</h2>
             <ol>

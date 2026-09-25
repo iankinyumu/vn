@@ -116,6 +116,9 @@ try {
         create table public.engine_policy_versions(version integer, tick_retention_days integer);
         create function public.engine_settle_tick(text, public.execution_mode, bigint) returns void language sql as 'select';
     `);
+    // The stub schema has only the engine tables. SQL-language functions that read other
+    // tables (get_engine_config) are resolved on the full chain in tests/engine-v2-cutover.test.mjs.
+    await client.query('set check_function_bodies = off');
     for (const name of ['20260920250000_engine_deterministic_ticks.sql', '20260920380000_engine_determinism_hardening.sql', '20260920460000_engine_epoch_uuid_fix.sql', '20260920540000_engine_pgcrypto_schema_bridge.sql', '20260920560000_engine_unified_price_ticks.sql']) {
         await client.query(await readFile(new URL(`../supabase/migrations/${name}`, import.meta.url), 'utf8'));
     }
@@ -145,12 +148,20 @@ try {
     `);
     const generated = await client.query(`select count(*)::integer ticks, min(s.last_x) <> ln(1000::numeric) evolved from public.index_state s join public.index_ticks t on t.index_code=s.index_code and s.execution_mode=t.execution_mode group by s.last_x`);
     assert.ok(generated.rows.some((row) => row.ticks > 0 && row.evolved));
+    // Unscheduled indices stay on version 1; version 2 starts at the scheduled tick
+    // and continues from the last version 1 price.
+    const v1 = await client.query('select count(*)::integer n, max(tick_no)::integer last from public.index_ticks where generation_version=1');
+    assert.equal(v1.rows[0].n, generated.rows.reduce((sum, row) => sum + row.ticks, 0));
+    await client.query(`update public.engine_indices set v2_start_tick_no=$1,v2_sigma_per_tick=.0002,v2_kappa=.003,t0=t0-interval '6 seconds';
+      `.replace('$1', String(v1.rows[0].last + 1)));
+    await client.query('select public.engine_advance()');
     const unified = await client.query(`select t.tick_no,t.price,t.digit,t.previous_price,t.generation_version,
-      case when t.tick_no=1 then 1000::numeric else lag(t.price) over(order by t.tick_no) end prior
+      lag(t.price) over(order by t.tick_no) prior
       from public.index_ticks t order by t.tick_no`);
-    assert.ok(unified.rows.every((row) => Number(row.generation_version) === 2));
-    assert.ok(unified.rows.every((row) => Number(row.previous_price) === Number(row.prior)));
-    assert.ok(unified.rows.every((row) => Math.round(Number(row.price) * 1000) % 10 === Number(row.digit)));
+    const v2 = unified.rows.filter((row) => Number(row.tick_no) > v1.rows[0].last);
+    assert.ok(v2.length > 0 && v2.every((row) => Number(row.generation_version) === 2));
+    assert.ok(v2.every((row) => Number(row.previous_price) === Number(row.prior)));
+    assert.ok(v2.every((row) => Math.round(Number(row.price) * 1000) % 10 === Number(row.digit)));
     console.log('PostgreSQL pgcrypto digit, walk, and price invariant vectors: PASS');
 
     // Version 3 SQL reference functions, applied on top of existing v2 history.

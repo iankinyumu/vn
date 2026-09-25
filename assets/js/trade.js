@@ -170,12 +170,23 @@
         const gateNote = Object.assign(document.createElement('p'), { className: 'trade-gate-note' });
         gateNote.dataset.v3Gate = ''; gateNote.setAttribute('role', 'status'); gateNote.hidden = true;
         submit.after(gateNote);
+        // An announced price model change for the selected index, shown until it takes effect.
+        const modelNote = Object.assign(document.createElement('p'), { className: 'trade-gate-note' });
+        modelNote.dataset.priceModelNote = ''; modelNote.hidden = true;
+        gateNote.after(modelNote);
+        const updateModelNote = () => {
+            const item = (config.indices || []).find((entry) => entry.code === index.value);
+            const startsAt = item?.v2_starts_at ? new Date(item.v2_starts_at) : null;
+            modelNote.hidden = !(startsAt && startsAt > new Date());
+            modelNote.textContent = modelNote.hidden ? '' : `Scheduled change: from ${startsAt.toUTCString().replace('GMT', 'UTC')}, ${item.display_name || item.code} prices use price model version 2. The feed continues from the last price, and earlier ticks remain verifiable on the Fairness page.`;
+        };
         const gateReason = () => v3Status.get(index.value)?.engine_generation === 3 ? v3Status.get(index.value).purchase_block : null;
         const updateBuy = () => {
             const reason = gateReason();
             gateNote.hidden = !reason;
             gateNote.textContent = reason ? (messages[reason] || 'Trading on this index is paused.') : '';
             submit.disabled = Boolean(reason) || !['live', 'polling'].includes(feedState) || !index.value || !type.value;
+            updateModelNote();
         };
         // The server re-checks the gate on every purchase; this only explains a closed gate before the customer tries.
         async function refreshGate() {

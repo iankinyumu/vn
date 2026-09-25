@@ -31,8 +31,10 @@ function freePort() {
 }
 
 /** Starts a server, applies the full chain plus `extra` migrations, and returns
- *  { db, connect(), close() }. `db` mirrors PGlite's exec/query surface. */
-export async function createRealDatabase({ extra = V3_MIGRATIONS } = {}) {
+ *  { db, connect(), close() }. `db` mirrors PGlite's exec/query surface.
+ *  `before` stops the shared chain before that migration (a database that has
+ *  not yet received it), so a test can apply the rest itself. */
+export async function createRealDatabase({ extra = V3_MIGRATIONS, before = null } = {}) {
     const dir = path.join(os.tmpdir(), `smartprofit-pg-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}`);
     const port = await freePort();
     const server = new EmbeddedPostgres({ databaseDir: dir, port, user: 'postgres', password: 'postgres', persistent: false, onLog: () => {}, onError: () => {} });
@@ -51,7 +53,8 @@ export async function createRealDatabase({ extra = V3_MIGRATIONS } = {}) {
         for (const user of Object.values(identities)) {
             await db.query('insert into auth.users values($1,$2,now(),$3)', [user.id, user.email, JSON.stringify({ display_name: user.email.split('@')[0] })]);
         }
-        for (const name of [...await sharedMigrationList(), ...extra]) {
+        const shared = (await sharedMigrationList()).filter((name) => !before || name < before);
+        for (const name of [...shared, ...extra]) {
             let sql = (await readFile(new URL(`../../supabase/migrations/${name}`, import.meta.url), 'utf8')).replace(/^﻿/, '');
             sql = sql.replace(new RegExp('create extension if not exists pg' + 'cryp' + 'to;', 'gi'), '-- pgcrypto already installed in extensions');
             try { await db.exec(sql); } catch (error) { error.message = `${name}: ${error.message}`; throw error; }

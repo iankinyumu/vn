@@ -552,13 +552,15 @@ drop trigger if exists engine_contract_v3_gate on public.engine_contracts;
 create trigger engine_contract_v3_gate before insert on public.engine_contracts for each row execute function public.engine_v3_contract_gate();
 
 -- ---------------------------------------------------------------- v2 generator: stop at cutover, skip v3 indices
+-- Same as 20260920560000 (version 1 until each index's scheduled version 2 start),
+-- limited to generation-2 indices and stopped at a scheduled v3 cutover.
 create or replace function public.engine_advance() returns integer language plpgsql security definer set search_path='' as $$
 declare r record; v_due bigint; v_tick bigint; v_epoch uuid; v_seed bytea;
-        v_units bigint; v_previous numeric; v_factor numeric; v_price numeric;
+        v_units bigint; v_previous numeric; v_factor numeric; v_price numeric; v_x numeric;
         v_digit smallint; v_generated integer:=0;
 begin
  perform public.engine_ensure_epochs();
- for r in select i.*,s.last_tick_no,s.last_price from public.engine_indices i
+ for r in select i.*,s.last_tick_no,s.last_x,s.last_price from public.engine_indices i
   join public.index_state s on s.index_code=i.code and s.execution_mode=i.execution_mode
   where i.status in ('ACTIVE','PAUSED') and i.engine_generation=2 loop
   continue when not pg_try_advisory_xact_lock(hashtextextended('engine:'||r.code||':'||r.execution_mode::text,0));
@@ -568,18 +570,28 @@ begin
    v_epoch:=public.engine_ensure_epoch(r.execution_mode,r.t0+(v_tick*r.tick_interval_ms)*interval '1 millisecond');
    select s.seed into v_seed from engine_private.epoch_seeds s where s.epoch_id=v_epoch;
    if v_seed is null then raise exception 'engine_epoch_seed_missing'; end if;
-   v_previous:=coalesce(r.last_price,r.base_price);
-   v_units:=public.engine_price_units_v2(v_seed,r.execution_mode,r.code,v_tick,
-    round(v_previous*v_factor)::bigint,round(r.base_price*v_factor)::bigint,
-    round(r.base_price*r.sigma_per_tick*v_factor)::bigint,r.kappa);
-   v_price:=v_units/v_factor;
-   v_digit:=mod(v_units,10)::smallint;
-   insert into public.index_ticks(index_code,execution_mode,tick_no,epoch_id,scheduled_at,price,digit,generation_version,previous_price,generation_base_price,generation_sigma,generation_kappa,generation_decimals)
-    values(r.code,r.execution_mode,v_tick,v_epoch,r.t0+(v_tick*r.tick_interval_ms)*interval '1 millisecond',v_price,v_digit,2,v_previous,r.base_price,r.sigma_per_tick,r.kappa,r.decimals)
-    on conflict do nothing;
-   update public.index_state set last_tick_no=v_tick,last_x=ln(v_price),last_price=v_price,updated_at=now()
+   if r.v2_start_tick_no is not null and v_tick>=r.v2_start_tick_no then
+    v_previous:=coalesce(r.last_price,r.base_price);
+    v_units:=public.engine_price_units_v2(v_seed,r.execution_mode,r.code,v_tick,
+     round(v_previous*v_factor)::bigint,round(r.base_price*v_factor)::bigint,
+     round(r.base_price*r.v2_sigma_per_tick*v_factor)::bigint,r.v2_kappa);
+    v_price:=v_units/v_factor;
+    v_digit:=mod(v_units,10)::smallint;
+    v_x:=ln(v_price);
+    insert into public.index_ticks(index_code,execution_mode,tick_no,epoch_id,scheduled_at,price,digit,generation_version,previous_price,generation_base_price,generation_sigma,generation_kappa,generation_decimals)
+     values(r.code,r.execution_mode,v_tick,v_epoch,r.t0+(v_tick*r.tick_interval_ms)*interval '1 millisecond',v_price,v_digit,2,v_previous,r.base_price,r.v2_sigma_per_tick,r.v2_kappa,r.decimals)
+     on conflict do nothing;
+   else
+    v_digit:=public.engine_digit(v_seed,r.execution_mode,r.code,v_tick);
+    v_x:=coalesce(r.last_x,ln(r.base_price))+r.kappa*(ln(r.base_price)-coalesce(r.last_x,ln(r.base_price)))+r.sigma_per_tick*public.engine_walk_normal(v_seed,r.execution_mode,r.code,v_tick);
+    v_price:=public.engine_tick_price(r.base_price,r.decimals,v_x,v_digit);
+    insert into public.index_ticks(index_code,execution_mode,tick_no,epoch_id,scheduled_at,price,digit)
+     values(r.code,r.execution_mode,v_tick,v_epoch,r.t0+(v_tick*r.tick_interval_ms)*interval '1 millisecond',v_price,v_digit)
+     on conflict do nothing;
+   end if;
+   update public.index_state set last_tick_no=v_tick,last_x=v_x,last_price=v_price,updated_at=now()
     where index_code=r.code and execution_mode=r.execution_mode;
-   r.last_price:=v_price; v_generated:=v_generated+1;
+   r.last_x:=v_x; r.last_price:=v_price; v_generated:=v_generated+1;
    perform public.engine_settle_tick(r.code,r.execution_mode,v_tick);
   end loop;
  end loop;

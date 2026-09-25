@@ -64,7 +64,8 @@ test('unified generator publishes a continuous price and derives the settlement 
     // price arithmetic, price continuity, and tick publication path.
     await db.exec(`create function public.hmac(bytea,bytea,text) returns bytea language sql immutable as
         $$ select decode(repeat('0123456789abcdef',4),'hex') $$;`);
-    await db.exec("update public.engine_indices set t0=now()-interval '8 seconds' where code='SPI10'");
+    // Version 2 runs only from a scheduled start tick; here it starts at tick 1.
+    await db.exec("update public.engine_indices set t0=now()-interval '8 seconds',v2_start_tick_no=1 where code='SPI10'");
     await db.query('select public.engine_advance()');
     const result = await db.query("select tick_no,price,digit,previous_price,generation_version,generation_sigma from public.index_ticks where index_code='SPI10' order by tick_no");
     assert.ok(result.rows.length >= 3);
