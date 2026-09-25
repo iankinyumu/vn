@@ -13,6 +13,7 @@ import pg from 'pg';
 import { authSchema, claimsFor, identities } from './test-db.mjs';
 
 export { claimsFor, identities };
+export const FUNDING_MIGRATIONS = ['20260926100000_funding_foundation.sql', '20260926110000_funding_rpc.sql'];
 export const V3_MIGRATIONS = ['20260924100000_engine_v3_reference_functions.sql', '20260924110000_engine_v3_publication.sql', '20260924120000_engine_v3_observed_volatility.sql', '20260925100000_engine_v3_witness_attestation.sql'];
 
 async function sharedMigrationList() {
@@ -37,7 +38,12 @@ function freePort() {
 export async function createRealDatabase({ extra = V3_MIGRATIONS, before = null } = {}) {
     const dir = path.join(os.tmpdir(), `smartprofit-pg-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}`);
     const port = await freePort();
-    const server = new EmbeddedPostgres({ databaseDir: dir, port, user: 'postgres', password: 'postgres', persistent: false, onLog: () => {}, onError: () => {} });
+    // io_method=sync: PostgreSQL 18 otherwise starts io_worker processes on demand.
+    // On Windows the cluster is stopped with `taskkill /t`, and an io_worker started
+    // while the tree is being killed survives as an orphan holding the server's
+    // stdio pipes, so the test process never exits.
+    const server = new EmbeddedPostgres({ databaseDir: dir, port, user: 'postgres', password: 'postgres', persistent: false, onLog: () => {}, onError: () => {},
+        postgresFlags: ['-c', 'io_method=sync'] });
     await server.initialise();
     await server.start();
     const connect = async (user = 'postgres', password = 'postgres') => {
