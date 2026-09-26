@@ -14,6 +14,7 @@
         ['tabCustomers', 'customersPanel', 'customers.read'],
         ['tabContracts', 'contractsPanel', 'contracts.read'],
         ['tabEngine', 'enginePanel', 'engine.read'],
+        ['tabFunding', 'fundingPanel', 'funding.read'],
         ['tabStaff', 'staffPanel', 'staff.manage'],
         ['tabAudit', 'auditPanel', 'audit.read'],
     ];
@@ -28,6 +29,7 @@
         rate_limited: 'Too many changes in a short time. Wait a moment and try again.',
         self_role_change_forbidden: 'You cannot change your own role.',
         last_owner_required: 'At least one active owner must remain.',
+        rate_invalid: 'The rate must be between 50 and 500 KES per USD with at most four decimals, dated today or earlier (Nairobi time).',
     });
     const STALE = Symbol('stale');
     const codeOf = (error) => String(error?.message || '').match(/^[a-z_]+/)?.[0];
@@ -114,6 +116,7 @@
             this.bindContractEvents();
             this.bindEngineEvents();
             this.bindStaffEvents();
+            this.bindFundingEvents();
         }
 
         switchTab(panelId) {
@@ -127,6 +130,7 @@
             else if (panelId === 'contractsPanel') this.loadContracts();
             else if (panelId === 'enginePanel') this.loadEngine();
             else if (panelId === 'staffPanel') this.loadStaff();
+            else if (panelId === 'fundingPanel') this.loadFunding();
             else if (panelId === 'auditPanel') { const audit = el('auditOpen'); if (audit && !audit.hidden) audit.click(); }
         }
 
@@ -407,6 +411,95 @@
                 status.textContent = 'Contract voided and the stake refunded.';
                 if (this.contract?.id === contractId) await this.openContract(contractId);
                 if (this.activeTab === 'enginePanel') this.loadStuck();
+            } catch (error) { this.report(status, error); }
+        }
+
+        // ================= FUNDING =================
+        /* The KES/USD reference rate and the treasury snapshot are data, not code:
+           an owner (funding.manage, with a recent authenticator code) publishes
+           them here. The server validates and audits every change. */
+        bindFundingEvents() {
+            el('fundingRefresh').onclick = () => this.loadFunding();
+            el('fundingEnvironment').onchange = () => this.loadFunding();
+            el('fundingRateForm').onsubmit = (event) => { event.preventDefault(); this.publishRate(); };
+            el('fundingTreasuryForm').onsubmit = (event) => { event.preventDefault(); this.recordTreasury(); };
+            ['fundingRateInput', 'fundingRateDate'].forEach((id) => { el(id).oninput = () => { this.rateConfirmed = null; el('fundingRateCheck').hidden = true; }; });
+        }
+
+        async loadFunding() {
+            const status = el('fundingStatus');
+            const manage = this.can('funding.manage');
+            el('fundingRateForm').hidden = !manage;
+            el('fundingTreasuryForm').hidden = !manage;
+            if (!el('fundingRateDate').value) el('fundingRateDate').value = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Nairobi' }).format(new Date());
+            status.textContent = 'Loading funding status…';
+            try {
+                const overview = await this.call('funding_staff_overview', { p_environment: el('fundingEnvironment').value });
+                this.funding = overview;
+                const rate = overview.rate || {};
+                el('fundingRateValue').textContent = rate.kes_per_usd ? `KES ${Number(rate.kes_per_usd).toFixed(4)}` : 'No rate';
+                el('fundingRateMeta').textContent = rate.version ? `Version ${rate.version}, dated ${rate.rate_date}. ${rate.stale ? 'STALE: quotes are paused until a new rate is published.' : 'Fresh.'}` : '';
+                el('fundingRateMeta').classList.toggle('text-danger', Boolean(rate.stale));
+                const treasury = overview.treasury || {};
+                const coverage = treasury.coverage_bp != null ? ` · ${(Number(treasury.coverage_bp) / 100).toFixed(2)}%` : '';
+                el('fundingTreasuryValue').textContent = treasury.status === 'UNKNOWN' ? 'Unknown' : `${treasury.status || '—'}${coverage}`;
+                el('fundingTreasuryMeta').textContent = treasury.snapshot_at
+                    ? `Reserve KES ${Number(treasury.kes_liquid_reserve).toLocaleString('en-KE')} recorded ${new Date(treasury.snapshot_at).toLocaleString()}; next snapshot due by ${new Date(new Date(treasury.snapshot_at).getTime() + 24 * 3600 * 1000).toLocaleString()}.`
+                    : 'No snapshot recorded.';
+                el('fundingTreasuryMeta').classList.toggle('text-danger', treasury.status !== 'OK');
+                status.textContent = `${overview.environment} · sandbox module ${overview.sandbox_module ? 'on' : 'off'} · production module ${overview.production_module ? 'on' : 'off'}`;
+            } catch (error) { this.report(status, error); }
+        }
+
+        async publishRate() {
+            const status = el('fundingRateStatus');
+            const check = el('fundingRateCheck');
+            const value = el('fundingRateInput').value.trim();
+            const date = el('fundingRateDate').value;
+            const reason = el('fundingRateReason').value.trim();
+            if (!/^\d+(\.\d{1,4})?$/.test(value) || Number(value) < 50 || Number(value) > 500) { status.textContent = 'Enter a rate between 50 and 500 with at most four decimals.'; return; }
+            if (!date) { status.textContent = 'Choose the rate date.'; return; }
+            if (reason.length < 10) { status.textContent = 'Give a reason of at least 10 characters.'; return; }
+            // A large move is more often a typo than a market: ask for a second submit.
+            const current = Number(this.funding?.rate?.kes_per_usd);
+            const change = current ? Math.abs(Number(value) - current) / current : 0;
+            const key = `${value}|${date}`;
+            if (change > 0.03 && this.rateConfirmed !== key) {
+                this.rateConfirmed = key;
+                check.hidden = false;
+                check.textContent = `KES ${value} differs from the current KES ${current.toFixed(4)} by ${(change * 100).toFixed(1)}%. Check the figure, then submit again to publish it.`;
+                return;
+            }
+            status.textContent = 'Publishing rate…';
+            try {
+                let result;
+                if (!await this.runProtected(el('fundingRateForm'), status, async () => {
+                    result = await this.call('funding_publish_rate', { p_kes_per_usd: Number(value), p_rate_date: date, p_source_reference: el('fundingRateSource').value.trim(), p_reason: reason });
+                })) return;
+                this.rateConfirmed = null;
+                check.hidden = true;
+                el('fundingRateReason').value = '';
+                el('fundingRateInput').value = '';
+                status.textContent = `Published rate version ${result.version}: KES ${Number(result.kes_per_usd).toFixed(4)} per USD dated ${result.rate_date}.`;
+                await this.loadFunding();
+            } catch (error) { this.report(status, error); }
+        }
+
+        async recordTreasury() {
+            const status = el('fundingTreasuryStatus');
+            const value = el('fundingTreasuryInput').value.trim();
+            const note = el('fundingTreasuryNote').value.trim();
+            if (!/^\d+(\.\d{1,2})?$/.test(value)) { status.textContent = 'Enter the reserve in KES with at most two decimals.'; return; }
+            if (note.length < 10) { status.textContent = 'Give a note of at least 10 characters.'; return; }
+            status.textContent = 'Recording snapshot…';
+            try {
+                let result;
+                if (!await this.runProtected(el('fundingTreasuryForm'), status, async () => {
+                    result = await this.call('funding_record_treasury_snapshot', { p_environment: el('fundingEnvironment').value, p_kes_liquid_reserve: Number(value), p_note: note });
+                })) return;
+                el('fundingTreasuryNote').value = '';
+                status.textContent = `Snapshot recorded. Coverage status: ${result.status}.`;
+                await this.loadFunding();
             } catch (error) { this.report(status, error); }
         }
 

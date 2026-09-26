@@ -226,6 +226,12 @@ async function capabilitiesFor(role) {
     if (!roleCapabilities) {
         const db = await createTestDatabase();
         try {
+            // The shared test database stops before the funding migrations; apply the
+            // capability registry exactly as 20260926100000 defines it (funding.read, funding.manage).
+            const funding = fs.readFileSync('supabase/migrations/20260926100000_funding_foundation.sql', 'utf8');
+            const registry = funding.match(/create or replace function admin_private\.role_capabilities\(p_role text\)[\s\S]*?\n\$\$;/);
+            assert.ok(registry, 'the funding migration defines the capability registry');
+            await db.query(registry[0]);
             roleCapabilities = {};
             for (const name of ['support_agent', 'administrator', 'owner']) roleCapabilities[name] = (await db.query('select admin_private.role_capabilities($1) caps', [name])).rows[0].caps;
         } finally { await db.close(); }
@@ -258,6 +264,7 @@ const consoleData = {
     list_admin_engine_epochs: [{ id: 'e1', execution_mode: 'DEMO', starts_at: '2026-09-23T00:00:00Z', ends_at: '2026-09-24T00:00:00Z', seed_commitment: 'ab'.repeat(32), chain_hash: 'cd'.repeat(32), committed_at: '2026-09-22T00:00:00Z', revealed_at: null, reveal_status: 'active' }],
     list_admin_stuck_contracts: [{ ...openContract, last_tick_no: 50, stuck_reason: 'settle_tick_passed' }],
     list_staff_members: [],
+    funding_staff_overview: { environment: 'SANDBOX', sandbox_module: true, production_module: false, rate: { version: 1, kes_per_usd: 129.62, rate_date: '2026-09-25', stale: false }, treasury: { environment: 'SANDBOX', status: 'OK', coverage_bp: 50000, kes_liquid_reserve: 250000, snapshot_at: '2026-09-26T03:00:00Z' }, states: {}, attention: [], open_actions: [], last_reconciliation: null },
 };
 
 async function openConsole(role, responses = {}) {
@@ -280,9 +287,9 @@ async function openConsole(role, responses = {}) {
 
 test('each role sees exactly the console tabs its capabilities allow', async () => {
     const expected = {
-        support_agent: { tabOverview: false, tabCustomers: false, tabContracts: false, tabEngine: false, tabStaff: false, tabAudit: false },
-        administrator: { tabOverview: true, tabCustomers: true, tabContracts: true, tabEngine: true, tabStaff: false, tabAudit: false },
-        owner: { tabOverview: true, tabCustomers: true, tabContracts: true, tabEngine: true, tabStaff: true, tabAudit: true },
+        support_agent: { tabOverview: false, tabCustomers: false, tabContracts: false, tabEngine: false, tabFunding: false, tabStaff: false, tabAudit: false },
+        administrator: { tabOverview: true, tabCustomers: true, tabContracts: true, tabEngine: true, tabFunding: true, tabStaff: false, tabAudit: false },
+        owner: { tabOverview: true, tabCustomers: true, tabContracts: true, tabEngine: true, tabFunding: true, tabStaff: true, tabAudit: true },
     };
     for (const [role, tabs] of Object.entries(expected)) {
         const page = await openConsole(role);
@@ -417,5 +424,62 @@ test('lifting uses an inline reason form and reports the result in a live region
         await page.until(() => document.getElementById('restrictionListStatus').textContent === 'Restriction lifted.');
         assert.deepEqual(page.calls.find((call) => call.name === 'lift_account_restriction').args, { p_restriction_id: 'r-severe', p_reason: 'Reviewed and cleared' });
         assert.equal(document.getElementById('restrictionListStatus').getAttribute('aria-live'), 'polite');
+    } finally { page.dom.window.close(); }
+});
+
+test('the Funding tab shows the current rate and treasury; only an owner publishes a rate, with a typo guard and a fresh authenticator code', async () => {
+    const admin = await openConsole('administrator');
+    try {
+        admin.dom.window.adminOperations.switchTab('fundingPanel');
+        await admin.until(() => admin.document.getElementById('fundingRateValue').textContent !== '—');
+        assert.equal(admin.document.getElementById('fundingRateValue').textContent, 'KES 129.6200');
+        assert.match(admin.document.getElementById('fundingRateMeta').textContent, /Version 1, dated 2026-09-25\. Fresh\./);
+        assert.match(admin.document.getElementById('fundingTreasuryValue').textContent, /^OK · 500\.00%$/);
+        assert.equal(admin.visible('fundingRateForm'), false, 'an administrator only reads');
+        assert.equal(admin.visible('fundingTreasuryForm'), false);
+    } finally { admin.dom.window.close(); }
+
+    let publishAttempts = 0;
+    const page = await openConsole('owner', {
+        funding_publish_rate: (() => ({ then(resolve) { publishAttempts += 1; resolve(publishAttempts === 1 ? { data: null, error: { message: 'reauthentication_required' } } : { data: { version: 2, kes_per_usd: 135.5, rate_date: '2026-09-26' }, error: null }); } }))(),
+    });
+    try {
+        const { document } = page;
+        page.click(document.getElementById('tabFunding'));
+        await page.until(() => document.getElementById('fundingRateValue').textContent === 'KES 129.6200');
+        assert.equal(page.visible('fundingRateForm'), true);
+        const submit = () => document.getElementById('fundingRateForm').dispatchEvent(new page.dom.window.Event('submit', { cancelable: true }));
+        const publishCalls = () => page.calls.filter((call) => call.name === 'funding_publish_rate');
+        document.getElementById('fundingRateInput').value = '1296.2';
+        document.getElementById('fundingRateDate').value = '2026-09-26';
+        document.getElementById('fundingRateReason').value = 'CBK mean for 26 September';
+        submit();
+        assert.match(document.getElementById('fundingRateStatus').textContent, /between 50 and 500/);
+        document.getElementById('fundingRateInput').value = '135.5';
+        submit();
+        assert.match(document.getElementById('fundingRateCheck').textContent, /differs from the current KES 129\.6200 by 4\.5%/);
+        assert.equal(publishCalls().length, 0, 'a large move needs a second submit');
+        submit();
+        await page.until(() => /authenticator code/.test(document.getElementById('fundingRateStatus').textContent));
+        assert.equal(document.querySelector('#fundingRateForm [data-reverify]').hidden, false);
+        assert.deepEqual(publishCalls()[0].args, { p_kes_per_usd: 135.5, p_rate_date: '2026-09-26', p_source_reference: 'https://www.centralbank.go.ke/rates/forex-exchange-rates/', p_reason: 'CBK mean for 26 September' });
+    } finally { page.dom.window.close(); }
+});
+
+test('the treasury snapshot form validates, then records the reserve for the chosen environment', async () => {
+    const page = await openConsole('owner', { funding_record_treasury_snapshot: { data: { status: 'OK' }, error: null } });
+    try {
+        const { document } = page;
+        page.click(document.getElementById('tabFunding'));
+        await page.until(() => document.getElementById('fundingTreasuryValue').textContent !== '—');
+        const submit = () => document.getElementById('fundingTreasuryForm').dispatchEvent(new page.dom.window.Event('submit', { cancelable: true }));
+        document.getElementById('fundingTreasuryInput').value = '250000';
+        document.getElementById('fundingTreasuryNote').value = 'short';
+        submit();
+        assert.match(document.getElementById('fundingTreasuryStatus').textContent, /at least 10 characters/);
+        document.getElementById('fundingTreasuryNote').value = 'Sandbox test float, not real cash';
+        submit();
+        await page.until(() => /Snapshot recorded/.test(document.getElementById('fundingTreasuryStatus').textContent));
+        assert.deepEqual(page.calls.find((call) => call.name === 'funding_record_treasury_snapshot').args, { p_environment: 'SANDBOX', p_kes_liquid_reserve: 250000, p_note: 'Sandbox test float, not real cash' });
     } finally { page.dom.window.close(); }
 });
