@@ -127,3 +127,20 @@ All automated coverage uses a scripted Daraja double on real PostgreSQL. **No li
 **Prepared, not run:** a secrets script that reads only `DARAJA_CONSUMER_KEY` and `DARAJA_CONSUMER_SECRET` from `.env.redis.local` (the file uses these names, not `DARAJA_SANDBOX_*`), takes the sandbox test shortcode `174379` and passkey from the official portal sample, generates `FUNDING_CRON_SECRET`, writes them to the function secret store and Vault through temporary files that are then deleted, and prints names only. The tester to add is the active owner staff account `1d180b1b-eff7-4b4f-a571-30d710e1fb32`. The live drill also needs a signed-in browser session for that account.
 
 **Statuses:** `CODE_READY` not ready (full suite incomplete). `DARAJA_SANDBOX_READY` and `KES_USD_QUOTE_READY` **not set**: no deployment or live drill. `DARAJA_PRODUCTION_READY` and `REAL_READY` false.
+
+## 9. Deployment state verified on 2026-09-26 (03:13–03:17 UTC)
+
+The Owner applied the two funding migrations (`supabase db push`). Claude deployed the three Edge Functions from `f9fb1e6`. A second executor then set the function secrets, the Vault cron secret, the pg_cron jobs, the tester and treasury snapshot, and enabled `daraja_sandbox`, and deployed the site. Claude verified the result read-only:
+
+| Check | Result |
+| --- | --- |
+| Modules | `daraja_sandbox` **on** (03:06:10 UTC); `daraja_production` off; `real_accounts` off |
+| Tester, treasury, rate | One enabled tester (`1d180b1b-…`, the active owner account); one SANDBOX snapshot of KES 250,000 marked fictional; rate v1 129.62 dated 2026-09-25 (fresh until 2026-09-28 21:00 UTC) |
+| Audit | `funding.sandbox_tester`, `funding.treasury_snapshot` and `funding.sandbox_module` rows with `actor_type = operator` |
+| Grants | No funding service function is executable by `anon` or `authenticated` |
+| Scheduler | `funding-sweep-every-minute` (`* * * * *`) and `funding-reconcile-daily` (`30 21 * * *` = 00:30 EAT) read the cron secret from Vault; sweeps return HTTP 200, which proves the cron secret matches and the Daraja sandbox configuration loads |
+| CORS | `funding-deposit` preflight allows only `https://smartprofitbinaryv2.vercel.app`; a foreign origin gets no allow-origin header |
+| Site | `https://smartprofitbinaryv2.vercel.app/sandbox-deposit.html` is served, and its `sandbox-deposit.js` is byte-identical to the repository; `supabase-config.js` contains only the public URL and publishable key |
+| Live drill case 4 (forged callback) | A success callback with no token and with a random token: HTTP 200 `Accepted`, 0 provider events, 0 payments |
+
+**Not yet done:** the signed-in drill (valid USD 5 deposit, cancellation, timeout, idempotent retry, status recovery), the simulated reconciliation, and the emergency stop. They need a browser session signed in as the tester account; Claude in Chrome was not connected. `DARAJA_SANDBOX_READY` and `KES_USD_QUOTE_READY` remain **not set**.
