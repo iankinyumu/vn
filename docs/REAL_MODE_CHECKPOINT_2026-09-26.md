@@ -178,7 +178,7 @@ Findings are ranked by Claude's view of their importance. Items marked **(self)*
   - automatic publications have `published_by` null and an `operator` audit row;
   - the homepage scrape is a single point of failure, visible as `FAILED` in the console.
 
-- `929c9bc`: automatic SANDBOX treasury carry-forward. It adds migration `20260927110000`, pg_cron job `funding-treasury-carry-hourly` and a console status line. **Audit point:** automatic rows re-use a fictional owner figure. The control is that production is refused in both the function and a table constraint, and an owner figure is required every 30 days.
+- `929c9bc`: automatic SANDBOX treasury carry-forward. It adds migration `20260927110000`, pg_cron job `funding-treasury-carry-daily` (once a day at 00:01 Nairobi time, per `a121db5`) and a console status line. **Audit point:** automatic rows re-use a fictional owner figure. The control is that production is refused in both the function and a table constraint, and an owner figure is required every 30 days.
 
 ## 9. Audit checklist (suggested)
 

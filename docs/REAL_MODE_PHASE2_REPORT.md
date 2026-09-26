@@ -227,3 +227,11 @@ The Owner gave a standing instruction to apply migrations and deploy without wai
 **Owner confirmation due:** the carry-forward stops 30 days after the last owner figure, on 2026-10-26 03:01 UTC for snapshot 1. Record a new sandbox figure in Staff console → Funding before then.
 
 **To verify later:** `select * from cron.job_run_details where jobid = 8 order by start_time desc limit 3`, and a `funding.treasury_snapshots` row with `carried_from = 1`.
+
+**Update, same night (Owner: "daily and once"):**
+
+- Migration `20260927120000_funding_treasury_carry_daily.sql` (`a121db5`) replaces the 20-hour skip with at most one automatic snapshot per Nairobi day.
+- The hourly job 8 was removed after one successful run at 21:25 UTC. That run returned `FRESH` under the old rule.
+- Today's refresh ran once by hand at 21:36:58 UTC: snapshot 2 was `CARRIED_FORWARD` from snapshot 1, and coverage is `OK`.
+- The daily job `funding-treasury-carry-daily` (`1 21 * * *`, 00:01 Nairobi time, job 9) makes the next refresh at 2026-09-27 21:01 UTC, inside snapshot 2's 24 hours.
+- Carry-forward tests 5/5.
