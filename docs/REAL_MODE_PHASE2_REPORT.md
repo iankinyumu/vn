@@ -144,3 +144,19 @@ The Owner applied the two funding migrations (`supabase db push`). Claude deploy
 | Live drill case 4 (forged callback) | A success callback with no token and with a random token: HTTP 200 `Accepted`, 0 provider events, 0 payments |
 
 **Not yet done:** the signed-in drill (valid USD 5 deposit, cancellation, timeout, idempotent retry, status recovery), the simulated reconciliation, and the emergency stop. They need a browser session signed in as the tester account; Claude in Chrome was not connected. `DARAJA_SANDBOX_READY` and `KES_USD_QUOTE_READY` remain **not set**.
+
+## 10. Signed-in drill attempt on 2026-09-26 (03:37–03:45 UTC)
+
+Claude drove `sandbox-deposit.html` in Chrome, signed in as the enabled tester (`1d180b1b-…`), against the deployment in section 9.
+
+| Step | Result |
+| --- | --- |
+| Access | The page showed the sandbox panel, test balance USD 0.00, limits "USD 5.00 to USD 500.00; at most USD 1000.00 and 3 deposits in 24 hours", and one masked test number `2547*****149` |
+| Quote USD 5 (03:37:07) | KES 649, rate 129.62 (CBK, 2026-09-25), rounding KES 0.90, five-minute lock, matching the runbook's expected case 1 figures |
+| Send (03:37:14) | Payment `94d6d00f-dd42-4599-8e19-0edd5feae567` went `REJECTED` / `provider_rejected` at 03:37:16. There was no checkout ID and one `INITIATION` provider event with result `404.001.03` "Invalid Access Token". The page showed "M-Pesa could not start this payment. No money was taken." No credit was made |
+
+**Cause is outside the code.** A local probe used the owner's own `DARAJA_CONSUMER_KEY`/`SECRET` from `.env.redis.local`; the values were not printed, and they have no stray whitespace or quotes. OAuth `GET /oauth/v1/generate` returned 200 and a token (`expires_in` 3599). A harmless STK Query with that token and a dummy checkout ID then returned the same `404.001.03 Invalid Access Token` on three attempts. After that, Safaricom's Incapsula WAF answered 403 and probing stopped. The Daraja app that owns these keys issues tokens, but M-Pesa Express does not accept them. Most likely the app lacks the **M-Pesa Express Sandbox** product.
+
+**Owner action:** in the Daraja portal, add M-Pesa Express Sandbox to the app. If that is not possible, create a sandbox app with it and replace `DARAJA_CONSUMER_KEY`/`SECRET` in `.env.redis.local`. Claude then re-maps the keys to `DARAJA_SANDBOX_CONSUMER_*` and reruns cases 1, 2, 5, 6 and 7–9. No redeploy is needed: the functions read secrets at start.
+
+**Observed safety:** the rejected initiation failed closed. It was a terminal `REJECTED` with no checkout ID, no push, no ledger entry, and an honest customer message. `DARAJA_SANDBOX_READY` and `KES_USD_QUOTE_READY` remain **not set**.
