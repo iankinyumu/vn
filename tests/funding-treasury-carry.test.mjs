@@ -36,8 +36,8 @@ test('an owner figure older than 30 days is not carried forward', async () => {
     assert.equal((await db.query('select count(*)::int n from funding.treasury_snapshots where carried_from is not null')).rows[0].n, 0);
 });
 
-test('a stale owner figure is carried forward once, restoring coverage; a fresh one is left alone', async () => {
-    const owner = await ownerSnapshot(250000, '23 hours');
+test('the daily run carries the owner figure forward exactly once per Nairobi day, even when the figure is recent', async () => {
+    const owner = await ownerSnapshot(250000, '18 hours');
     const carried = await carry();
     assert.deepEqual([carried.outcome, carried.carried_from, Number(carried.kes_liquid_reserve)], ['CARRIED_FORWARD', owner, 250000]);
     const row = (await db.query('select recorded_by, carried_from, note from funding.treasury_snapshots where id = $1', [carried.snapshot_id])).rows[0];
@@ -45,7 +45,9 @@ test('a stale owner figure is carried forward once, restoring coverage; a fresh 
     assert.equal(Number(row.carried_from), owner);
     assert.match(row.note, new RegExp(`^Automatic sandbox carry-forward of owner snapshot ${owner} recorded `));
     assert.equal((await status()).status, 'OK');
-    assert.equal((await carry()).outcome, 'FRESH', 'the carried snapshot is fresh for 20 hours');
+    const again = await carry();
+    assert.deepEqual([again.outcome, again.snapshot_id], ['ALREADY_REFRESHED_TODAY', carried.snapshot_id], 'a second run the same day records nothing');
+    assert.equal((await db.query('select count(*)::int n from funding.treasury_snapshots where carried_from is not null')).rows[0].n, 1);
     const audit = (await db.query(`select actor_type, actor_id from public.admin_audit_events where action = 'funding.treasury_carry_forward'`)).rows;
     assert.deepEqual(audit, [{ actor_type: 'operator', actor_id: null }]);
 });

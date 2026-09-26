@@ -111,15 +111,16 @@ The reference rate keeps itself fresh on CBK business days, with no code change 
 
 ## 5. Automatic sandbox treasury snapshot
 
-- **What runs:** every hour, pg_cron runs `select public.funding_svc_carry_forward_treasury('SANDBOX')` directly in the database, with no Edge Function and no secret. Migration `20260927110000`.
+- **What runs:** once a day at 00:01 Nairobi time (21:01 UTC), pg_cron runs `select public.funding_svc_carry_forward_treasury('SANDBOX')` directly in the database, with no Edge Function and no secret. Migrations `20260927110000` and `20260927120000`.
 - **What it does:**
-  - **Latest SANDBOX snapshot under 20 hours old:** `FRESH`; nothing is recorded.
-  - **Otherwise:** it re-records the latest **owner-recorded** sandbox reserve as a new snapshot, `CARRIED_FORWARD`. The new row has no recorder, names the owner snapshot in `carried_from`, and writes an `operator` audit row.
+  - **Normal case:** it re-records the latest **owner-recorded** sandbox reserve as a new snapshot, `CARRIED_FORWARD`, exactly once per Nairobi day. The new row has no recorder, names the owner snapshot in `carried_from`, and writes an `operator` audit row.
+  - **A second run the same day:** `ALREADY_REFRESHED_TODAY`; nothing is recorded.
   - **No owner figure, or the last one is over 30 days old:** `OWNER_SNAPSHOT_REQUIRED`; nothing is recorded, and deposits pause once the last snapshot passes 24 hours.
-  - **PRODUCTION:** always refused (`production_requires_real_evidence`), and a table constraint forbids carried rows there. Production snapshots must come from real provider or bank evidence.
-- **Owner task:** record a sandbox figure in Staff console → Funding at least once every 30 days. The treasury card shows whether the latest snapshot was automatic, and the date by which the next owner figure is due.
-- **One-time scheduler setup:**
+  - **PRODUCTION:** always refused (`production_requires_real_evidence`), and a table constraint forbids carried rows there.
+- **Timing:** a snapshot is valid for 24 hours, and the job runs every 24 hours, so each run replaces the previous day's row just as it expires. At most there can be a second-long gap if a run starts later than the previous one did.
+- **Owner task:** record a sandbox figure in Staff console → Funding at least once every 30 days. The treasury card shows whether the latest snapshot was automatic, and when the next owner figure is due.
+- **Scheduler:**
   ```sql
-  select cron.schedule('funding-treasury-carry-hourly', '25 * * * *', $$ select public.funding_svc_carry_forward_treasury('SANDBOX') $$);
+  select cron.schedule('funding-treasury-carry-daily', '1 21 * * *', $$ select public.funding_svc_carry_forward_treasury('SANDBOX') $$);
   ```
-  To stop it: `select cron.unschedule('funding-treasury-carry-hourly');`.
+  To stop it: `select cron.unschedule('funding-treasury-carry-daily');`.
