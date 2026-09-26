@@ -108,3 +108,18 @@ The reference rate keeps itself fresh on CBK business days, with no code change 
   $$);
   ```
   To stop it: `select cron.unschedule('funding-rate-sync-hourly');`. Manual publishing keeps working.
+
+## 5. Automatic sandbox treasury snapshot
+
+- **What runs:** every hour, pg_cron runs `select public.funding_svc_carry_forward_treasury('SANDBOX')` directly in the database, with no Edge Function and no secret. Migration `20260927110000`.
+- **What it does:**
+  - **Latest SANDBOX snapshot under 20 hours old:** `FRESH`; nothing is recorded.
+  - **Otherwise:** it re-records the latest **owner-recorded** sandbox reserve as a new snapshot, `CARRIED_FORWARD`. The new row has no recorder, names the owner snapshot in `carried_from`, and writes an `operator` audit row.
+  - **No owner figure, or the last one is over 30 days old:** `OWNER_SNAPSHOT_REQUIRED`; nothing is recorded, and deposits pause once the last snapshot passes 24 hours.
+  - **PRODUCTION:** always refused (`production_requires_real_evidence`), and a table constraint forbids carried rows there. Production snapshots must come from real provider or bank evidence.
+- **Owner task:** record a sandbox figure in Staff console → Funding at least once every 30 days. The treasury card shows whether the latest snapshot was automatic, and the date by which the next owner figure is due.
+- **One-time scheduler setup:**
+  ```sql
+  select cron.schedule('funding-treasury-carry-hourly', '25 * * * *', $$ select public.funding_svc_carry_forward_treasury('SANDBOX') $$);
+  ```
+  To stop it: `select cron.unschedule('funding-treasury-carry-hourly');`.

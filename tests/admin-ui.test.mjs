@@ -264,6 +264,7 @@ const consoleData = {
     list_admin_engine_epochs: [{ id: 'e1', execution_mode: 'DEMO', starts_at: '2026-09-23T00:00:00Z', ends_at: '2026-09-24T00:00:00Z', seed_commitment: 'ab'.repeat(32), chain_hash: 'cd'.repeat(32), committed_at: '2026-09-22T00:00:00Z', revealed_at: null, reveal_status: 'active' }],
     list_admin_stuck_contracts: [{ ...openContract, last_tick_no: 50, stuck_reason: 'settle_tick_passed' }],
     list_staff_members: [],
+    funding_treasury_snapshot_status: { environment: 'SANDBOX', automatic: true, latest_id: 2, latest_recorded_at: '2026-09-27T03:25:00Z', latest_automatic: true, owner_snapshot_id: 1, owner_recorded_at: '2026-09-26T03:00:00Z', owner_kes_liquid_reserve: 250000, owner_confirmation_due: '2099-10-26T03:00:00Z' },
     funding_rate_sync_status: { band_bp: 150, last: { id: 9, last_seen_at: '2026-09-28T10:15:00Z', kes_per_usd: 135, rate_date: '2026-09-28', outcome: 'PENDING_APPROVAL', detail: 'move larger than the automatic band', change_bp: 415 }, last_success_at: '2026-09-28T10:15:00Z', pending: [{ id: 9, kes_per_usd: 135, rate_date: '2026-09-28', change_bp: 415, detail: 'move larger than the automatic band' }], recent: [] },
     funding_staff_overview: { environment: 'SANDBOX', sandbox_module: true, production_module: false, rate: { version: 1, kes_per_usd: 129.62, rate_date: '2026-09-25', stale: false }, treasury: { environment: 'SANDBOX', status: 'OK', coverage_bp: 50000, kes_liquid_reserve: 250000, snapshot_at: '2026-09-26T03:00:00Z' }, states: {}, attention: [], open_actions: [], last_reconciliation: null },
 };
@@ -436,6 +437,8 @@ test('the Funding tab shows the current rate and treasury; only an owner publish
         assert.equal(admin.document.getElementById('fundingRateValue').textContent, 'KES 129.6200');
         assert.match(admin.document.getElementById('fundingRateMeta').textContent, /Version 1, dated 2026-09-25\. Fresh\./);
         assert.match(admin.document.getElementById('fundingTreasuryValue').textContent, /^OK · 500\.00%$/);
+        await admin.until(() => admin.document.getElementById('fundingTreasuryChain').textContent !== '');
+        assert.match(admin.document.getElementById('fundingTreasuryChain').textContent, /^Latest snapshot was carried forward automatically from the owner figure of KES 250,000 .*Automatic refresh continues until .*record a new figure before then.$/);
         assert.equal(admin.visible('fundingRateForm'), false, 'an administrator only reads');
         assert.equal(admin.visible('fundingTreasuryForm'), false);
     } finally { admin.dom.window.close(); }

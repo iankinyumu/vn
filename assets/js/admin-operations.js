@@ -450,6 +450,7 @@
                     : 'No snapshot recorded.';
                 el('fundingTreasuryMeta').classList.toggle('text-danger', treasury.status !== 'OK');
                 this.loadRateSync();
+                this.loadTreasuryChain();
                 status.textContent = `${overview.environment} · sandbox module ${overview.sandbox_module ? 'on' : 'off'} · production module ${overview.production_module ? 'on' : 'off'}`;
             } catch (error) { this.report(status, error); }
         }
@@ -486,6 +487,23 @@
                 }));
             } catch (error) {
                 if (error !== STALE) { meta.textContent = `Could not load the automatic import. ${explain(error)}`; body.replaceChildren(); }
+            }
+        }
+
+        /* Sandbox snapshots are carried forward automatically from the last owner
+           figure for up to 30 days; production ones never are. */
+        async loadTreasuryChain() {
+            const line = el('fundingTreasuryChain');
+            try {
+                const chain = await this.call('funding_treasury_snapshot_status', { p_environment: el('fundingEnvironment').value });
+                if (!chain.automatic) { line.textContent = 'Production snapshots are never automatic: record each one from provider or bank evidence.'; return; }
+                if (!chain.owner_snapshot_id) { line.textContent = 'Automatic refresh is waiting for a first owner-recorded sandbox figure.'; return; }
+                const due = new Date(chain.owner_confirmation_due);
+                const overdue = due.getTime() < Date.now();
+                line.textContent = `${chain.latest_automatic ? 'Latest snapshot was carried forward automatically' : 'Latest snapshot was recorded by an owner'} from the owner figure of KES ${Number(chain.owner_kes_liquid_reserve).toLocaleString('en-KE')} (${new Date(chain.owner_recorded_at).toLocaleString()}). ${overdue ? 'Automatic refresh has stopped: record a new owner figure.' : `Automatic refresh continues until ${due.toLocaleString()}; record a new figure before then.`}`;
+                line.classList.toggle('text-danger', overdue);
+            } catch (error) {
+                if (error !== STALE) line.textContent = `Could not load the snapshot history. ${explain(error)}`;
             }
         }
 
