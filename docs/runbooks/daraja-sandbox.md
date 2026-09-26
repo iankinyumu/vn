@@ -22,7 +22,11 @@ Never paste a secret value into chat, a commit, a ticket or a screenshot.
    | `FUNDING_CRON_SECRET` | At least 32 random characters |
 
    Do **not** set any `DARAJA_PRODUCTION_*` value. The sandbox loader refuses to start if one is present.
-3. **Deploy the functions:**
+3. **Check, then deploy the functions.** Before deploying, type-check the entry points in a clean Deno 2 environment, and do not deploy an unchecked wrapper:
+   ```
+   deno check --no-config supabase/functions/funding-deposit/index.ts supabase/functions/daraja-callback/index.ts supabase/functions/funding-reconcile/index.ts
+   ```
+   Then deploy:
    ```
    npx supabase functions deploy funding-deposit daraja-callback funding-reconcile --project-ref cdaxvkpmgqjfukbtrzys
    ```
@@ -30,7 +34,7 @@ Never paste a secret value into chat, a commit, a ticket or a screenshot.
 4. **Open the sandbox for yourself.** In an owner session with fresh TOTP, run these in the SQL editor as the owner, or through the console once it has a funding panel:
    - `select public.funding_set_sandbox_module(true, '<reason>')`
    - `select public.funding_set_sandbox_tester('<your user id>', true, '<reason>')`
-   - `select public.funding_record_treasury_snapshot('SANDBOX', <test float KES>, 'Sandbox test float, not real cash')`
+   - `select public.funding_record_treasury_snapshot('SANDBOX', <test float KES>, 'Sandbox test float, not real cash')`. A reserve of 0 admits no deposit: admission projects coverage *after* the new deposit. Record a fresh snapshot at least every 24 hours, or deposits pause (`treasury_unknown`) and paid credits are held in funded suspense.
 5. **Rate:** the migration seeds CBK 129.62 dated 2026-09-25. A rate goes stale 72 hours after the end of its date. On each business day, publish the CBK mean with `select public.funding_publish_rate(<rate>, '<date>', '<CBK page>', '<reason>')`.
 6. **Schedule the sweep:** every minute, `POST .../funding-reconcile` with `{"action":"sweep"}`, and daily at 00:30 EAT, `{"action":"daily"}`. Both send the header `X-Funding-Cron-Secret`. Use an external scheduler, or pg_cron with the secret stored in Vault. Never put the secret in a migration.
 
@@ -46,13 +50,24 @@ Use only the Daraja sandbox test MSISDN. For each case, record the time, the pay
 | 4 | Forged callback | POST a success body with no or a wrong `t` | 200 `Accepted`, no provider event, no state change |
 | 5 | Timeout / no answer | Let the prompt time out | The sweep queries and the payment ends `FAILED` (1037 or 1019) |
 | 6 | Repeat request | Re-send case 1's `funding-deposit` request with the same idempotency key | Same payment returned, no second push |
-| 7 | Daily reconciliation | `{"action":"daily","business_date":"<today>"}` | `MATCHED`, or differences that are explained |
+| 7 | Daily reconciliation | Record the day's statement first: `funding_record_statement_total('SANDBOX', '<day>', <opening>, <gross>, <reversals>, <fees>, <net settlement>, <closing>, 'SANDBOX_SIMULATED', '<where the figures came from>', '<sha256 of the evidence file>', '<reason>')`. Use `PROVIDER_DOWNLOAD` only for a statement actually downloaded from the M-Pesa org portal. Then `{"action":"daily","business_date":"<day>"}` | `MATCHED`, or differences an independent owner explains. Without a statement the run shows `statement_missing`. The summary shows `statement.simulated` |
 | 8 | Reversal | Owner A: `funding_request_action(<id>,'REVERSE',…)`. Owner B: `funding_approve_action` | `REVERSED`, balance back. The same owner approving is refused |
+| 9 | Limits | Quote USD 500.01; complete deposits to reach three, or USD 1,000, in 24 h; then quote again | `amount_above_maximum`, then `deposit_limit_reached` |
+| 10 | Callback with a wrong checkout id | Only with a sandbox payment of your own: POST a success callback carrying that payment's token but another sandbox checkout id. This needs the token, which is never logged, so run it only through the test harness or a deliberately instrumented drill build | `MANUAL_REVIEW` (`callback_checkout_conflict` or `callback_without_initiation_checkout`), no STK Query of the claimed id, no credit |
 
 **Evidence per case:** environment `SANDBOX`, project ref, source commit, UTC interval, performer, reviewer (the Owner, a different person from the performer), and digests of the redacted artifacts. Redact the MSISDN to `2547*****XXX`, and never record tokens or secrets.
 
 ## 3. Operations
 
-- **Needs attention:** `funding_staff_overview('SANDBOX')` lists `MANUAL_REVIEW`, `EXPIRED` and attention reasons. Resolve with the two-person `RESOLVE_CONFIRMED` or `RESOLVE_FAILED`, and only after checking the M-Pesa statement.
+- **Needs attention:** `funding_staff_overview('SANDBOX')` lists `MANUAL_REVIEW`, `EXPIRED` and attention reasons.
+- **Resolving a payment as received** needs three different owners:
+  1. **Recorder:** downloads the statement, computes its SHA-256 and records the matching line with `funding_record_statement_item('SANDBOX', '<receipt>', <exact KES>, '<shortcode>', '<transaction time>', '<account reference or null>', '<2547… MSISDN or null>', 'SANDBOX_SIMULATED' | 'PROVIDER_DOWNLOAD', '<evidence reference>', '<sha256>', '<note>')`.
+  2. **Requester:** `funding_request_action(<payment>, 'RESOLVE_CONFIRMED', '<reason>', <statement item id>)`.
+  3. **Approver:** `funding_approve_action(<action>, '<reason>')`.
+
+  A line that does not bind is refused with `statement_evidence_invalid: <field>`. Two-person approval without a statement line is not accepted as proof of payment.
+- **Resolving a payment as failed** (`RESOLVE_FAILED`) is refused once the provider has confirmed the money (`payment_funds_received`).
+- **Funded suspense** (`funded_suspense_treasury_paused`, `_treasury_unknown` or `_deposit_limit_reached`): the customer paid, the KES is booked, and no USD was credited. Restore coverage (a fresh snapshot) and resolve with `RESOLVE_CONFIRMED` as above; the approval re-checks coverage and limits. There is no refund path yet: escalate to the Owner.
+- **Unbound callbacks** (`callback_without_initiation_checkout`): never trust the callback's checkout id or receipt. Resolve only from the statement.
 - **Emergency stop:** `funding_set_sandbox_module(false, '<reason>')`. Open payments still finalize through the sweep.
 - **Rollback:** turn the module off and remove the Daraja secrets. The funding tables are append-only and are kept.
