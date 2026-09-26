@@ -146,7 +146,7 @@ Findings are ranked by Claude's view of their importance. Items marked **(self)*
 | C | Case 7: daily reconciliation with a `SANDBOX_SIMULATED` statement | Can run now. Needs an owner session to record the statement total (there is no console UI yet) |
 | D | Case 10: callback with a wrong checkout id | Only through the test harness. Already covered in the suite |
 | E | Decide `DARAJA_SANDBOX_READY` / `KES_USD_QUOTE_READY` | Owner/supervisor, after A-C |
-| F | Rate freshness is now automatic on CBK business days. Refresh the treasury snapshot every 24 hours | Owner, in Staff console → Funding |
+| F | Rate freshness is automatic on CBK business days (§14). The sandbox treasury snapshot is carried forward automatically (`929c9bc`, report §15); the owner re-confirms the figure every 30 days. Production snapshots stay manual and evidence-based | Owner, monthly |
 | G | ~~Automatic rate source~~ **Done (`9d105f1`, report §14):** an hourly CBK homepage import. It auto-publishes within 1.5%, holds larger moves for owner approval, and records failures. Audit risk: it depends on the homepage layout (a parser break shows as `FAILED` in the console) | Monitor |
 | H | Full `npm test` on adequate hardware, for `CODE_READY` | Hardware |
 | I | Phase 3: F1 Real gate, refund path for funded suspense, legacy crypto function deletion (after the caller check), production Daraja design | Plan |
@@ -177,6 +177,8 @@ Findings are ranked by Claude's view of their importance. Items marked **(self)*
   - the 1.5% band is a constant in SQL;
   - automatic publications have `published_by` null and an `operator` audit row;
   - the homepage scrape is a single point of failure, visible as `FAILED` in the console.
+
+- `929c9bc`: automatic SANDBOX treasury carry-forward. It adds migration `20260927110000`, pg_cron job `funding-treasury-carry-hourly` and a console status line. **Audit point:** automatic rows re-use a fictional owner figure. The control is that production is refused in both the function and a table constraint, and an owner figure is required every 30 days.
 
 ## 9. Audit checklist (suggested)
 

@@ -213,3 +213,17 @@ The Owner gave a standing instruction to apply migrations and deploy without wai
 | Tests | Parser 3/3, rate-sync real PostgreSQL 4/4, Edge handlers 13/13, console 22/22, funding sandbox with secrets and copy 34/34 |
 
 **Expected next:** when CBK posts the 28 September rate, the hourly job publishes it if it is within 1.5% of 129.62. Otherwise it is held for Owner approval in Staff console → Funding.
+
+## 15. Automatic sandbox treasury carry-forward deployed (2026-09-27, about 21:10 UTC on 2026-09-26)
+
+| Step | Result |
+| --- | --- |
+| Migration `20260927110000_funding_treasury_carry_forward.sql` | Applied; the dry run showed it as the only pending migration |
+| Live run | `funding_svc_carry_forward_treasury('SANDBOX')` returned `FRESH`. The only snapshot (id 1, KES 250,000, owner-recorded 2026-09-26 03:01 UTC) was about 18 hours old, and coverage is `OK` |
+| Scheduler | pg_cron `funding-treasury-carry-hourly` (`25 * * * *`), job 8. It should carry snapshot 1 forward at the 23:25 UTC run, when it passes 20 hours, before it goes stale at 03:01 UTC |
+| Site | Vercel `dpl_GrEgotrm12PUe4SrACnt4mnQPgHX`. Live console files match the build |
+| Tests | Carry-forward real PostgreSQL 5/5, console 22/22, funding sandbox with rate sync 29/29 |
+
+**Owner confirmation due:** the carry-forward stops 30 days after the last owner figure, on 2026-10-26 03:01 UTC for snapshot 1. Record a new sandbox figure in Staff console → Funding before then.
+
+**To verify later:** `select * from cron.job_run_details where jobid = 8 order by start_time desc limit 3`, and a `funding.treasury_snapshots` row with `carried_from = 1`.
