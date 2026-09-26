@@ -325,3 +325,25 @@ test('reconcile: sweep and daily call the service RPCs; daily defaults to yester
     await handle(cron({ action: 'daily', business_date: '2026-09-20' }));
     assert.equal(supa.calls.rpc.at(-1).args.p_business_date, '2026-09-20');
 });
+
+test('reconcile: rate_sync hands the CBK homepage figure, or a named failure, to the database, even without Daraja configuration', async () => {
+    const page = '<h3>Daily KES Exchange Rates</h3><table><tr><td>US DOLLAR</td><td>130.5</td></tr></table><p>Posted On: 28-09-2026</p>';
+    const supa = fakeSupabase({ rpc: async () => ({ data: { observation_id: 7, outcome: 'PUBLISHED', version: 2 }, error: null }) });
+    const noDaraja = { ...ENV };
+    delete noDaraja.DARAJA_SANDBOX_CONSUMER_SECRET;
+    const fetched = [];
+    const handle = createReconcileHandler({ getEnv: () => noDaraja, createClient: supa.createClient, logger: capture().logger, fetch: async (url) => { fetched.push(String(url)); return new Response(page); } });
+    let response = await handle(cron({ action: 'rate_sync' }));
+    assert.equal(response.status, 200);
+    assert.deepEqual(await json(response), { observation_id: 7, outcome: 'PUBLISHED', version: 2 });
+    assert.deepEqual(fetched, ['https://www.centralbank.go.ke/']);
+    assert.deepEqual(supa.calls.rpc.at(-1), { name: 'funding_svc_record_rate_observation', args: { p_kes_per_usd: 130.5, p_rate_date: '2026-09-28', p_source_reference: 'https://www.centralbank.go.ke/', p_failure: null } });
+
+    const down = createReconcileHandler({ getEnv: () => ENV, createClient: supa.createClient, logger: capture().logger, fetch: async () => new Response('<p>maintenance</p>') });
+    response = await down(cron({ action: 'rate_sync' }));
+    assert.equal(response.status, 200);
+    assert.deepEqual(supa.calls.rpc.at(-1).args, { p_kes_per_usd: null, p_rate_date: null, p_source_reference: 'https://www.centralbank.go.ke/', p_failure: 'rates_box_missing' });
+
+    const wrongSecret = await handle(cron({ action: 'rate_sync' }, 'x'.repeat(40)));
+    assert.equal(wrongSecret.status, 401);
+});

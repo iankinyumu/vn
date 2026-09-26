@@ -520,6 +520,28 @@
           </div>
         </div>
 
+        <div class="detail-card mb-3">
+          <h3 class="h6 text-uppercase text-secondary fw-bold">Automatic CBK import</h3>
+          <p class="small mb-2" id="fundingSyncMeta">—</p>
+          <div class="table-responsive">
+            <table class="table align-middle small mb-0">
+              <thead><tr><th class="ps-3">Rate date</th><th>KES per USD</th><th>Change</th><th>Why held</th><th class="text-end pe-3">Decision</th></tr></thead>
+              <tbody id="fundingPendingBody"></tbody>
+            </table>
+          </div>
+          <form id="fundingDecisionForm" class="p-3 rounded bg-white border mt-2" hidden>
+            <input type="hidden" id="fundingDecisionId">
+            <input type="hidden" id="fundingDecisionApprove">
+            <p class="small mb-2" id="fundingDecisionSummary"></p>
+            <label for="fundingDecisionReason" class="form-label small text-uppercase text-secondary fw-bold">Reason (audited)</label>
+            <input id="fundingDecisionReason" class="form-control bg-light mb-2" minlength="10" maxlength="500" required placeholder="For example: checked against the CBK site">
+            <label class="d-block small mb-2" data-reverify hidden>Authenticator code <input inputmode="numeric" maxlength="6" autocomplete="one-time-code" class="form-control form-control-sm"></label>
+            <button type="submit" class="btn btn-premium-primary btn-sm"><i class="fas fa-check me-1"></i> Confirm</button>
+            <button type="button" id="fundingDecisionCancel" class="btn btn-light btn-sm border ms-1">Cancel</button>
+          </form>
+          <p id="fundingDecisionStatus" role="status" aria-live="polite" class="text-secondary small mt-2 mb-0"></p>
+        </div>
+
         <form id="fundingRateForm" class="p-3 rounded bg-white border mb-3" hidden>
           <h4 class="h6 text-dark fw-bold">Publish the day's rate</h4>
           <p class="small text-secondary">Enter the CBK mean KES per USD for the business day. New quotes use it at once; locked quotes keep their own rate. A rate goes stale 72 hours after the end of its date, and quotes pause then.</p>

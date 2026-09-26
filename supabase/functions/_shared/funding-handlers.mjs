@@ -9,6 +9,7 @@
 
 import { preflightResponse } from './cors.mjs';
 import { CALLBACK_ACK, createDarajaClient, DarajaConfigError, loadDarajaConfig } from './daraja.mjs';
+import { CBK_HOMEPAGE_URL, CbkRateError, fetchCbkRate } from './cbk-rate.mjs';
 import { FundingError, handleCallback, initiateDeposit, reconcileOpenPayments } from './funding-flow.mjs';
 import { createRequestId, errorResponse, jsonResponse } from './http.mjs';
 
@@ -181,15 +182,6 @@ export function createReconcileHandler({ getEnv, createClient, fetch = null, log
         if (secret.length < 32 || !sameSecret(request.headers.get('X-Funding-Cron-Secret') ?? '', secret)) {
             return errorResponse({ ...respond, code: 'unauthorized', detail: 'funding cron secret missing or mismatched' });
         }
-        let config;
-        try {
-            config = loadDarajaConfig(env);
-        } catch (error) {
-            return errorResponse({ ...respond, code: 'payments_unavailable', detail: configFailure(error) });
-        }
-        const rpc = serviceRpc(createClient, env);
-        if (!rpc) return errorResponse({ ...respond, code: 'payments_unavailable', detail: 'supabase configuration missing' });
-
         const text = await readBodyText(request, MAX_RECONCILE_BODY_BYTES);
         if (text === null) return errorResponse({ ...respond, code: 'payload_too_large', detail: 'reconcile body over limit' });
         let body = {};
@@ -201,9 +193,21 @@ export function createReconcileHandler({ getEnv, createClient, fetch = null, log
             }
         }
         const action = body.action ?? 'sweep';
-        if (action !== 'sweep' && action !== 'daily') return errorResponse({ ...respond, code: 'validation_failed', detail: 'unknown action' });
+        if (action !== 'sweep' && action !== 'daily' && action !== 'rate_sync') return errorResponse({ ...respond, code: 'validation_failed', detail: 'unknown action' });
         if (body.business_date !== undefined && (typeof body.business_date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(body.business_date))) {
             return errorResponse({ ...respond, code: 'validation_failed', detail: 'business_date must be YYYY-MM-DD' });
+        }
+
+        const rpc = serviceRpc(createClient, env);
+        if (!rpc) return errorResponse({ ...respond, code: 'payments_unavailable', detail: 'supabase configuration missing' });
+        // The rate import needs no Daraja configuration, so a Daraja problem never
+        // stops the reference rate from being kept fresh.
+        if (action === 'rate_sync') return syncCbkRate({ rpc, fetch, respond });
+        let config;
+        try {
+            config = loadDarajaConfig(env);
+        } catch (error) {
+            return errorResponse({ ...respond, code: 'payments_unavailable', detail: configFailure(error) });
         }
 
         try {
@@ -218,4 +222,23 @@ export function createReconcileHandler({ getEnv, createClient, fetch = null, log
             return errorResponse({ ...respond, code: 'internal', detail: error });
         }
     };
+}
+
+/** Reads the CBK homepage rate and lets the database decide what to do with it. */
+async function syncCbkRate({ rpc, fetch, respond }) {
+    let rate = null;
+    let failure = null;
+    try {
+        rate = await fetchCbkRate(fetch ? { fetch } : {});
+    } catch (error) {
+        failure = error instanceof CbkRateError ? error.code : 'parse_failed';
+    }
+    try {
+        const result = await rpc('funding_svc_record_rate_observation', {
+            p_kes_per_usd: rate?.kesPerUsd ?? null, p_rate_date: rate?.rateDate ?? null, p_source_reference: CBK_HOMEPAGE_URL, p_failure: failure,
+        });
+        return jsonResponse(result, respond);
+    } catch (error) {
+        return errorResponse({ ...respond, code: 'internal', detail: error });
+    }
 }

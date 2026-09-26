@@ -264,6 +264,7 @@ const consoleData = {
     list_admin_engine_epochs: [{ id: 'e1', execution_mode: 'DEMO', starts_at: '2026-09-23T00:00:00Z', ends_at: '2026-09-24T00:00:00Z', seed_commitment: 'ab'.repeat(32), chain_hash: 'cd'.repeat(32), committed_at: '2026-09-22T00:00:00Z', revealed_at: null, reveal_status: 'active' }],
     list_admin_stuck_contracts: [{ ...openContract, last_tick_no: 50, stuck_reason: 'settle_tick_passed' }],
     list_staff_members: [],
+    funding_rate_sync_status: { band_bp: 150, last: { id: 9, last_seen_at: '2026-09-28T10:15:00Z', kes_per_usd: 135, rate_date: '2026-09-28', outcome: 'PENDING_APPROVAL', detail: 'move larger than the automatic band', change_bp: 415 }, last_success_at: '2026-09-28T10:15:00Z', pending: [{ id: 9, kes_per_usd: 135, rate_date: '2026-09-28', change_bp: 415, detail: 'move larger than the automatic band' }], recent: [] },
     funding_staff_overview: { environment: 'SANDBOX', sandbox_module: true, production_module: false, rate: { version: 1, kes_per_usd: 129.62, rate_date: '2026-09-25', stale: false }, treasury: { environment: 'SANDBOX', status: 'OK', coverage_bp: 50000, kes_liquid_reserve: 250000, snapshot_at: '2026-09-26T03:00:00Z' }, states: {}, attention: [], open_actions: [], last_reconciliation: null },
 };
 
@@ -481,5 +482,39 @@ test('the treasury snapshot form validates, then records the reserve for the cho
         submit();
         await page.until(() => /Snapshot recorded/.test(document.getElementById('fundingTreasuryStatus').textContent));
         assert.deepEqual(page.calls.find((call) => call.name === 'funding_record_treasury_snapshot').args, { p_environment: 'SANDBOX', p_kes_liquid_reserve: 250000, p_note: 'Sandbox test float, not real cash' });
+    } finally { page.dom.window.close(); }
+});
+
+test('the automatic CBK import shows its last check; a held rate is approved by an owner with a reason and a fresh code', async () => {
+    const admin = await openConsole('administrator');
+    try {
+        admin.dom.window.adminOperations.switchTab('fundingPanel');
+        await admin.until(() => admin.document.querySelectorAll('#fundingPendingBody tr').length === 1);
+        assert.match(admin.document.getElementById('fundingSyncMeta').textContent, /held for approval \(KES 135\.0000 posted 2026-09-28\)\. New CBK rates within 1\.5% of the current rate publish automatically/);
+        assert.equal(admin.document.querySelectorAll('#fundingPendingBody button').length, 0, 'an administrator cannot decide');
+    } finally { admin.dom.window.close(); }
+
+    let attempts = 0;
+    const page = await openConsole('owner', {
+        funding_decide_rate_observation: (() => ({ then(resolve) { attempts += 1; resolve(attempts === 1 ? { data: null, error: { message: 'reauthentication_required' } } : { data: { observation_id: 9, outcome: 'APPROVED', version: 3 }, error: null }); } }))(),
+    });
+    try {
+        const { document } = page;
+        page.dom.window.adminOperations.switchTab('fundingPanel');
+        await page.until(() => document.querySelectorAll('#fundingPendingBody button').length === 2);
+        const row = document.querySelector('#fundingPendingBody tr').textContent;
+        assert.match(row, /2026-09-28.*KES 135\.0000.*4\.15%.*move larger than the automatic band/s);
+        page.click([...document.querySelectorAll('#fundingPendingBody button')].find((button) => button.textContent === 'Approve'));
+        assert.equal(page.visible('fundingDecisionForm'), true);
+        assert.equal(document.getElementById('fundingDecisionSummary').textContent, 'Publish KES 135.0000 per USD posted 2026-09-28.');
+        const submit = () => document.getElementById('fundingDecisionForm').dispatchEvent(new page.dom.window.Event('submit', { cancelable: true }));
+        document.getElementById('fundingDecisionReason').value = 'short';
+        submit();
+        assert.match(document.getElementById('fundingDecisionStatus').textContent, /at least 10 characters/);
+        document.getElementById('fundingDecisionReason').value = 'Checked against the CBK site';
+        submit();
+        await page.until(() => /authenticator code/.test(document.getElementById('fundingDecisionStatus').textContent));
+        assert.equal(document.querySelector('#fundingDecisionForm [data-reverify]').hidden, false);
+        assert.deepEqual(page.calls.find((call) => call.name === 'funding_decide_rate_observation').args, { p_observation: 9, p_approve: true, p_reason: 'Checked against the CBK site' });
     } finally { page.dom.window.close(); }
 });

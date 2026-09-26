@@ -76,3 +76,35 @@ Use only the Daraja sandbox test MSISDN. For each case, record the time, the pay
 - **Tester page (Real mode only):** Daraja sandbox testing lives in Real mode, and Practice mode stays strictly virtual. For an enabled tester, while `daraja_sandbox` is on, the header account switcher offers **Real — Sandbox (test funds)**, which opens `sandbox-deposit.html` ("Real mode · Daraja Sandbox - test funds only"). That page selects no trading account, and its footer states that no real money moves. Choosing Practice returns to the dashboard. There is no sandbox entry anywhere in Practice, and Profile no longer links to it. Everyone else sees only Practice, and the page itself shows "not available".
 - **Emergency stop:** `funding_set_sandbox_module(false, '<reason>')`. Open payments still finalize through the sweep.
 - **Rollback:** turn the module off and remove the Daraja secrets. The funding tables are append-only and are kept.
+
+## 4. Automatic CBK rate import
+
+The reference rate keeps itself fresh on CBK business days, with no code change and no manual step while CBK moves normally.
+
+- **What runs:** every hour, pg_cron calls `POST funding-reconcile {"action":"rate_sync"}` with the `X-Funding-Cron-Secret` header. The function reads the "Daily KES Exchange Rates" box on the CBK homepage (`https://www.centralbank.go.ke/`): the US DOLLAR mean and its "Posted On: DD-MM-YYYY" date. It runs even if the Daraja configuration is broken. CBK's machine feeds end in January 2024, so the homepage is the only current source.
+- **What the database decides** (`funding_svc_record_rate_observation`, migration `20260927100000`):
+
+  | Observation | Outcome | Effect |
+  | --- | --- | --- |
+  | Same as or older than the current rate | `UNCHANGED` | Nothing |
+  | Newer date, within 1.5% of the current rate | `PUBLISHED` | New CBK rate version with no human publisher and an `operator` audit row |
+  | Move over 1.5%, or a different figure for the current rate's date | `PENDING_APPROVAL` | Nothing until an owner decides |
+  | Rate outside 50–500, or a date in the future or over 14 days old | `INVALID` | Nothing |
+  | Page unreadable | `FAILED` | Records the reason, for example `rates_box_missing` or `http_503` |
+
+  Each distinct figure is decided once; hourly repeats only count sightings.
+- **Owner tasks, in Staff console → Funding:**
+  - "Automatic CBK import" shows the last check and anything held. **Approve** publishes the held rate under your name; **Reject** leaves the current rate. Both need an audited reason and a recent authenticator code.
+  - If the last check says "could not read the CBK page", CBK has probably changed its homepage. Publish the rate manually in the same tab and report the reason code, so the parser can be updated.
+  - Manual **Publish rate** still works at any time.
+- **One-time scheduler setup** (after the migration and the `funding-reconcile` deploy). It uses the existing Vault secret, so no secret appears here:
+  ```sql
+  select cron.schedule('funding-rate-sync-hourly', '15 * * * *', $$
+    select net.http_post(
+      url := 'https://cdaxvkpmgqjfukbtrzys.supabase.co/functions/v1/funding-reconcile',
+      headers := jsonb_build_object('Content-Type','application/json','X-Funding-Cron-Secret',(select decrypted_secret from vault.decrypted_secrets where name='funding_cron_secret')),
+      body := '{"action":"rate_sync"}'::jsonb
+    );
+  $$);
+  ```
+  To stop it: `select cron.unschedule('funding-rate-sync-hourly');`. Manual publishing keeps working.

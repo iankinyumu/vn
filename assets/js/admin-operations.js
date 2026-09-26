@@ -423,6 +423,8 @@
             el('fundingEnvironment').onchange = () => this.loadFunding();
             el('fundingRateForm').onsubmit = (event) => { event.preventDefault(); this.publishRate(); };
             el('fundingTreasuryForm').onsubmit = (event) => { event.preventDefault(); this.recordTreasury(); };
+            el('fundingDecisionForm').onsubmit = (event) => { event.preventDefault(); this.decideRate(); };
+            el('fundingDecisionCancel').onclick = () => { el('fundingDecisionForm').hidden = true; };
             ['fundingRateInput', 'fundingRateDate'].forEach((id) => { el(id).oninput = () => { this.rateConfirmed = null; el('fundingRateCheck').hidden = true; }; });
         }
 
@@ -447,7 +449,70 @@
                     ? `Reserve KES ${Number(treasury.kes_liquid_reserve).toLocaleString('en-KE')} recorded ${new Date(treasury.snapshot_at).toLocaleString()}; next snapshot due by ${new Date(new Date(treasury.snapshot_at).getTime() + 24 * 3600 * 1000).toLocaleString()}.`
                     : 'No snapshot recorded.';
                 el('fundingTreasuryMeta').classList.toggle('text-danger', treasury.status !== 'OK');
+                this.loadRateSync();
                 status.textContent = `${overview.environment} · sandbox module ${overview.sandbox_module ? 'on' : 'off'} · production module ${overview.production_module ? 'on' : 'off'}`;
+            } catch (error) { this.report(status, error); }
+        }
+
+        /* The automatic CBK import: when it last looked, what it saw, and any
+           rate it held because the move was larger than its band. */
+        async loadRateSync() {
+            const meta = el('fundingSyncMeta');
+            const body = el('fundingPendingBody');
+            try {
+                const sync = await this.call('funding_rate_sync_status');
+                const last = sync.last;
+                const band = `${(Number(sync.band_bp) / 100).toFixed(1)}%`;
+                const outcome = {
+                    PUBLISHED: 'published automatically', UNCHANGED: 'no newer CBK rate', PENDING_APPROVAL: 'held for approval',
+                    APPROVED: 'approved', REJECTED: 'rejected', INVALID: 'ignored as implausible', FAILED: 'could not read the CBK page',
+                };
+                meta.textContent = last
+                    ? `Last check ${new Date(last.last_seen_at).toLocaleString()}: ${outcome[last.outcome] || last.outcome}${last.outcome === 'FAILED' ? ` (${last.detail})` : ` (KES ${Number(last.kes_per_usd).toFixed(4)} posted ${last.rate_date})`}. New CBK rates within ${band} of the current rate publish automatically; larger moves wait for an owner.`
+                    : `No automatic check has run yet. New CBK rates within ${band} of the current rate will publish automatically; larger moves wait for an owner.`;
+                meta.classList.toggle('text-danger', last?.outcome === 'FAILED');
+                const manage = this.can('funding.manage');
+                if (!sync.pending.length) { body.replaceChildren(emptyRow(5, 'Nothing is waiting for approval.')); return; }
+                body.replaceChildren(...sync.pending.map((row) => {
+                    const cells = [row.rate_date, `KES ${Number(row.kes_per_usd).toFixed(4)}`, row.change_bp == null ? '—' : `${(Number(row.change_bp) / 100).toFixed(2)}%`, row.detail || ''];
+                    const actions = h('td', { className: 'text-end pe-3' });
+                    if (manage) {
+                        const decide = (approve) => () => this.openRateDecision(row, approve);
+                        actions.append(
+                            h('button', { className: 'btn btn-premium-primary btn-sm me-1', text: 'Approve', attrs: { type: 'button' }, onClick: decide(true) }),
+                            h('button', { className: 'btn btn-light btn-sm border', text: 'Reject', attrs: { type: 'button' }, onClick: decide(false) }));
+                    }
+                    return h('tr', {}, [...cells.map((value, i) => h('td', { className: i === 0 ? 'ps-3' : '', text: value })), actions]);
+                }));
+            } catch (error) {
+                if (error !== STALE) { meta.textContent = `Could not load the automatic import. ${explain(error)}`; body.replaceChildren(); }
+            }
+        }
+
+        openRateDecision(row, approve) {
+            el('fundingDecisionForm').hidden = false;
+            el('fundingDecisionId').value = String(row.id);
+            el('fundingDecisionApprove').value = approve ? 'yes' : 'no';
+            el('fundingDecisionSummary').textContent = `${approve ? 'Publish' : 'Reject'} KES ${Number(row.kes_per_usd).toFixed(4)} per USD posted ${row.rate_date}.`;
+            el('fundingDecisionStatus').textContent = '';
+            el('fundingDecisionReason').focus?.();
+        }
+
+        async decideRate() {
+            const status = el('fundingDecisionStatus');
+            const reason = el('fundingDecisionReason').value.trim();
+            if (reason.length < 10) { status.textContent = 'Give a reason of at least 10 characters.'; return; }
+            const approve = el('fundingDecisionApprove').value === 'yes';
+            status.textContent = approve ? 'Publishing rate…' : 'Rejecting…';
+            try {
+                let result;
+                if (!await this.runProtected(el('fundingDecisionForm'), status, async () => {
+                    result = await this.call('funding_decide_rate_observation', { p_observation: Number(el('fundingDecisionId').value), p_approve: approve, p_reason: reason });
+                })) return;
+                el('fundingDecisionReason').value = '';
+                el('fundingDecisionForm').hidden = true;
+                status.textContent = approve ? `Approved and published as rate version ${result.version}.` : 'Rejected. The current rate is unchanged.';
+                await this.loadFunding();
             } catch (error) { this.report(status, error); }
         }
 
