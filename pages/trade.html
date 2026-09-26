@@ -3,81 +3,94 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Trade SmartProfit's self-generated digit indices with practice funds.">
-    <title>Trade indices — SmartProfit</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <meta name="description" content="Trade SmartProfit's self-generated digit indices.">
+    <title>Trade — SmartProfit</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="../assets/css/glassmorphism.css" rel="stylesheet">
-    <link href="../assets/css/style.css" rel="stylesheet">
     <link href="../assets/css/app-shell.css" rel="stylesheet">
     <link href="../assets/css/mode-tokens.css" rel="stylesheet">
     <link href="../assets/css/trade.css" rel="stylesheet">
 </head>
-<body class="premium-theme app-shell trade-page">
+<body class="app-shell trade-page" data-shell-surface="app" data-shell-active="trade">
     <script src="../assets/js/auth.js"></script>
     <script>requireAuth()</script>
-    <header class="premium-header">
-        <nav class="navbar navbar-expand">
-            <div class="container-fluid trade-header-inner">
-                <a class="navbar-brand premium-logo" href="dashboard.html">SmartProfit</a>
-                <div class="navbar-nav ms-auto">
-                    <a class="nav-link" href="dashboard.html">Dashboard</a>
-                    <a class="nav-link active" href="trade.html" aria-current="page">Trade</a>
-                    <a class="nav-link" href="fairness.html">Fairness</a>
-                    <a class="nav-link" href="profile.html">Profile</a>
-                    <select class="account-switcher ms-2" data-account-switcher aria-label="Account"></select>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="restriction-banner" data-restriction-banner aria-live="polite" hidden></div>
+    <div data-shell-header></div>
     <main class="trade-main">
-        <div class="trade-heading">
-            <div class="trade-balance" aria-live="polite" aria-atomic="true"><span>Virtual funds balance</span><strong data-trade-balance>—</strong></div>
-            <span class="feed-state" data-feed-state aria-live="polite">Loading</span>
-        </div>
-        <section class="market-panel" aria-label="Live index chart">
-            <div class="market-toolbar">
-                <label class="index-picker" for="trade-index"><span>Index</span><select id="trade-index" form="trade-form" name="index" class="form-select"></select></label>
-                <div class="market-price"><span>Latest tick</span><strong data-live-price aria-label="Live price">—</strong><small class="price-direction" data-price-direction data-direction="flat">Waiting for ticks</small></div>
-                <div class="market-meta"><span class="market-active" data-active-trade hidden></span></div>
-            </div>
-            <div class="chart-frame"><canvas class="index-chart" data-index-chart aria-label="Recent index prices with a price axis" role="img"></canvas></div>
-        </section>
-        <section class="digits-panel" aria-labelledby="digits-heading">
-            <div class="panel-title"><div><p class="trade-eyebrow">Live results</p><h2 id="digits-heading">Latest digit</h2></div></div>
-            <div class="digits" role="group" aria-labelledby="digits-heading" aria-describedby="current-digit" data-digits><span data-digit="0" class="even">0</span><span data-digit="1" class="odd">1</span><span data-digit="2" class="even">2</span><span data-digit="3" class="odd">3</span><span data-digit="4" class="even">4</span><span data-digit="5" class="odd">5</span><span data-digit="6" class="even">6</span><span data-digit="7" class="odd">7</span><span data-digit="8" class="even">8</span><span data-digit="9" class="odd">9</span></div>
-            <p id="current-digit" class="visually-hidden" data-current-digit>No digit yet</p>
-        </section>
-        <section class="order-panel" aria-labelledby="order-heading">
-            <div class="panel-title"><div><p class="trade-eyebrow">Order ticket</p><h2 id="order-heading">Set up your contract</h2></div></div>
-            <form id="trade-form" data-trade-form>
-                <div class="order-fields">
-                    <label class="trade-field">Contract type<select name="type" class="form-select"></select></label>
-                    <label class="trade-field">Barrier<select name="barrier" class="form-select"><option value="">Select digit</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option></select></label>
-                    <label class="trade-field">Stake <span class="field-unit">USD</span><input name="stake" type="number" min="1" step=".01" class="form-control" placeholder="1.00" required></label>
-                    <label class="trade-field">Duration <span class="field-unit">ticks</span><input name="ticks" type="number" min="1" max="10" value="1" class="form-control" required></label>
+        <form id="trade-form" class="trade-layout" data-trade-form novalidate>
+            <fieldset class="trade-families" data-families>
+                <legend class="visually-hidden">Contract</legend>
+            </fieldset>
+
+            <section class="trade-market" aria-label="Market">
+                <div class="market-bar">
+                    <label class="index-picker"><span class="visually-hidden">Index</span><select name="index" data-index-select></select></label>
+                    <div class="market-price">
+                        <strong data-live-price aria-label="Live price">—</strong>
+                        <small class="price-direction" data-price-direction data-direction="flat"></small>
+                    </div>
+                    <span class="feed-state" data-feed-state data-state="loading" aria-live="polite">Loading</span>
                 </div>
-                <div class="order-action"><p data-quote>Choose contract details to see a live quote.</p><button class="btn btn-premium-primary" type="submit" disabled>Buy contract <span>· Practice</span></button></div>
-            </form>
-            <p data-trade-status role="status" aria-live="polite" class="trade-status"></p>
-        </section>
-        <section class="frequency-section" aria-label="Digit frequency">
-            <div class="frequency-panel"><div class="panel-title"><h2>Last 100 ticks</h2><span>Digit frequency</span></div><div class="bars" data-frequency="100"></div></div>
-            <div class="frequency-panel"><div class="panel-title"><h2>Last 1,000 ticks</h2><span>Digit frequency</span></div><div class="bars" data-frequency="1000"></div></div>
-            <p>Each final digit is equally likely. Past digits do not predict the next one.</p>
-        </section>
-        <section class="contract-history" aria-label="Your contracts">
-            <div class="history-panel"><h2>Open contracts</h2><div class="table-responsive"><table class="table table-dark"><thead><tr><th>Contract</th><th>Stake</th><th>Progress</th><th>Potential payout</th></tr></thead><tbody data-open-contracts></tbody></table></div></div>
-            <div class="history-panel"><h2>Settled history</h2><div class="table-responsive"><table class="table table-dark"><thead><tr><th>Contract</th><th>Result</th><th>Net P/L</th><th>Final digit</th></tr></thead><tbody data-settled-contracts></tbody></table></div></div>
+                <div class="chart-frame">
+                    <canvas class="index-chart" data-index-chart aria-label="Recent index prices" role="img"></canvas>
+                    <span class="market-active" data-active-trade hidden></span>
+                </div>
+                <div class="digit-strip" role="group" aria-label="Last digit" aria-describedby="current-digit" data-digits>
+                    <span class="digit-pointer" data-digit-pointer aria-hidden="true" hidden></span>
+                </div>
+                <p id="current-digit" class="visually-hidden" data-current-digit>No digit yet</p>
+            </section>
+
+            <section class="trade-ticket" aria-label="Trade">
+                <div class="ticket-row barrier-row" data-barrier-row hidden>
+                    <span class="ticket-label" id="barrier-label">Digit</span>
+                    <div class="barrier-picker" role="radiogroup" aria-labelledby="barrier-label" data-barrier-picker></div>
+                </div>
+
+                <div class="ticket-row">
+                    <label class="ticket-label" for="trade-stake">Stake</label>
+                    <div class="stake-control">
+                        <button type="button" class="stake-step" data-stake-step="-1" aria-label="Decrease stake">−</button>
+                        <div class="stake-field"><span aria-hidden="true">$</span><input id="trade-stake" name="stake" type="number" inputmode="decimal" step="0.01" min="1" value="1.00" required></div>
+                        <button type="button" class="stake-step" data-stake-step="1" aria-label="Increase stake">+</button>
+                    </div>
+                </div>
+
+                <div class="ticket-row">
+                    <span class="ticket-label" id="ticks-label">Ticks</span>
+                    <div class="tick-chips" role="radiogroup" aria-labelledby="ticks-label" data-tick-chips></div>
+                </div>
+
+                <div class="ticket-row session-row">
+                    <div class="session-stats"><span class="ticket-label">Session</span><strong data-session-net>$0.00</strong><small data-session-count>0W · 0L</small></div>
+                    <label class="session-limit"><span class="ticket-label">Take profit</span><input name="takeProfit" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Off" data-take-profit></label>
+                    <label class="session-limit"><span class="ticket-label">Stop loss</span><input name="stopLoss" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Off" data-stop-loss></label>
+                </div>
+
+                <p class="trade-gate" data-session-guard role="status" hidden><span data-session-guard-text></span> <button type="button" class="trade-gate-action" data-session-resume>Start new session</button></p>
+                <p class="trade-status" data-trade-status role="status" aria-live="polite"></p>
+
+                <div class="trade-actions" data-trade-actions>
+                    <button type="button" class="trade-side trade-side-a" data-side="a" disabled><span class="side-name"><i aria-hidden="true"></i><span data-side-label>—</span></span><span class="side-payout"><strong data-side-payout>—</strong><small>Payout</small></span></button>
+                    <button type="button" class="trade-side trade-side-b" data-side="b" disabled><span class="side-name"><i aria-hidden="true"></i><span data-side-label>—</span></span><span class="side-payout"><strong data-side-payout>—</strong><small>Payout</small></span></button>
+                </div>
+            </section>
+        </form>
+
+        <section class="trade-activity" aria-label="Your trades">
+            <div class="activity-tabs" role="tablist" aria-label="Your trades">
+                <button type="button" role="tab" id="tab-open" aria-controls="panel-open" aria-selected="true" data-activity-tab="open">Open <span data-open-count>0</span></button>
+                <button type="button" role="tab" id="tab-settled" aria-controls="panel-settled" aria-selected="false" tabindex="-1" data-activity-tab="settled">History</button>
+            </div>
+            <ul class="activity-list" id="panel-open" role="tabpanel" aria-labelledby="tab-open" data-open-contracts></ul>
+            <ul class="activity-list" id="panel-settled" role="tabpanel" aria-labelledby="tab-settled" data-settled-contracts hidden></ul>
         </section>
     </main>
-    <div class="trade-toast-stack" data-trade-toasts aria-label="Trade notifications" aria-live="polite"></div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <div class="trade-toast-stack" data-trade-toasts aria-label="Trade results" aria-live="polite"></div>
+    <script src="../assets/js/shell.js"></script>
     <script src="../assets/js/account-context.js"></script>
     <script src="../assets/js/account-keys.js"></script>
     <script src="../assets/js/account-switcher.js"></script>
+    <script src="../assets/js/deposit-sheet.js"></script>
     <script src="../assets/js/restriction-banner.js"></script>
     <script src="../assets/js/charts.js"></script>
     <script src="../assets/js/trade.js"></script>

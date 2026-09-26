@@ -201,20 +201,20 @@ test('trade: a closed v3 gate disables Buy with an explanation; contracts show g
     const note = page.locator('[data-v3-gate]');
     await note.waitFor({ state: 'visible' });
     assert.match(await note.textContent(), /independently timestamped/);
-    assert.equal(await page.locator('[data-trade-form] button[type="submit"], form button[type="submit"]').first().isDisabled(), true);
-    await page.waitForFunction(() => document.querySelectorAll('.contract-ticks').length >= 2); // contracts load after the gate
-    const rows = await page.locator('.contract-ticks').allTextContents();
-    assert.ok(rows.includes('v3 · ticks #1001 → #1003') && rows.includes('v2 · ticks #880 → #882'), rows.join(' | '));
+    assert.equal(await page.locator('[data-side="a"]').isDisabled(), true);
+    await page.waitForFunction(() => document.querySelectorAll('.activity-item').length >= 2); // contracts load after the gate
+    const rows = await page.locator('.activity-item small').allTextContents();
+    assert.ok(rows.some((row) => row.includes('v3 · #1001 → #1003')) && rows.some((row) => row.includes('v2 · #880 → #882')), rows.join(' | '));
     await shot(page, 'trade-v3-gate-closed');
     // Gate opens: Buy becomes available; a server-side refusal is reported and nothing is shown as bought.
     await page.evaluate((status) => { window.__FAKE__.rpc.get_engine_v3_status = status; window.__FAKE__.rpc.engine_buy_contract = { __error: 'engine_unwitnessed' }; }, v3Status());
     await page.waitForFunction(() => document.querySelector('[data-v3-gate]').hidden, null, { timeout: 15000 });
-    const buy = page.locator('form button[type="submit"]').first();
-    await page.waitForFunction(() => !document.querySelector('form button[type="submit"]').disabled, null, { timeout: 10000 });
+    const buy = page.locator('[data-side="a"]');
+    await page.waitForFunction(() => !document.querySelector('[data-side="a"]').disabled, null, { timeout: 10000 });
     await page.fill('#trade-form [name="stake"]', '10'); // the form requires a stake, as for a customer
     await buy.click();
     await page.waitForFunction(() => /independently timestamped/.test(document.querySelector('[data-trade-status]').textContent));
-    assert.doesNotMatch(await page.locator('[data-trade-status]').textContent(), /purchased/i);
+    assert.doesNotMatch(await page.locator('[data-trade-status]').textContent(), /bought/i);
     assert.ok(!errors.some((e) => e.startsWith('pageerror')), errors.join(' | '));
     record('trade gate + contract ticks', { closedReason: 'engine_unwitnessed', rows });
     await context.close();
