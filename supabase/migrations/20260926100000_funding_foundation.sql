@@ -110,6 +110,9 @@ create table funding.payments (
     -- keeps its claimed id in callback_checkout_request_id and goes to review.
     checkout_request_id text unique,
     callback_checkout_request_id text,
+    -- The verified M-Pesa receipt: set only from a bound provider statement item.
+    -- A callback's MpesaReceiptNumber stays a claim in funding.provider_events, and
+    -- receipt_pending stays true until a statement item binds the receipt.
     mpesa_receipt text unique,
     receipt_pending boolean not null default false,
     callback_result_code integer,
@@ -255,7 +258,7 @@ alter table funding.payments add constraint payments_statement_item_fk foreign k
 create table funding.staff_actions (
     id uuid primary key default gen_random_uuid(),
     payment_id uuid not null references funding.payments(id),
-    kind text not null check (kind in ('REVERSE', 'RESOLVE_CONFIRMED', 'RESOLVE_FAILED')),
+    kind text not null check (kind in ('REVERSE', 'RESOLVE_CONFIRMED', 'RESOLVE_FAILED', 'BIND_RECEIPT')),
     statement_item_id bigint references funding.provider_statement_items(id),
     requested_by uuid not null references auth.users(id),
     requested_at timestamptz not null default now(),
@@ -264,7 +267,7 @@ create table funding.staff_actions (
     approved_at timestamptz,
     approval_reason text,
     check (approved_by is null or approved_by <> requested_by),
-    check ((kind = 'RESOLVE_CONFIRMED') = (statement_item_id is not null))
+    check ((kind in ('RESOLVE_CONFIRMED', 'BIND_RECEIPT')) = (statement_item_id is not null))
 );
 create unique index staff_actions_one_open_per_payment on funding.staff_actions(payment_id) where approved_by is null;
 

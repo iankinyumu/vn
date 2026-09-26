@@ -259,8 +259,9 @@ test('happy path: push, callback, provider status confirms, USD credited once; r
     assert.deepEqual(await handleCallback({ rpc: serviceRpc, daraja, bodyText: body, token: d.token }), { status: 200, body: { ResultCode: 0, ResultDesc: 'Accepted' } });
     let row = await payment(d.id);
     assert.equal(row.state, 'CONFIRMED');
-    assert.equal(row.mpesa_receipt, 'TST0000001');
-    assert.equal(row.receipt_pending, false);
+    assert.equal(row.mpesa_receipt, null, 'a callback receipt is a claim, never the verified receipt');
+    assert.equal(row.receipt_pending, true, 'identity waits for a statement item');
+    assert.equal((await db.query(`select receipt from funding.provider_events where payment_id=$1 and source='CALLBACK'`, [d.id])).rows[0].receipt, 'TST0000001');
     assert.ok(row.provider_confirmed_at);
     assert.equal(await testBalance('customer'), 5);
     const kes = (await db.query(`select kind, kes_amount::text a from funding.kes_clearing_entries where payment_id=$1 order by kind`, [d.id])).rows;
@@ -582,7 +583,7 @@ test('projected coverage is re-checked at credit: a rate rise after the quote ho
     assert.equal(row.state, 'MANUAL_REVIEW');
     assert.equal(row.attention_reason, 'funded_suspense_treasury_paused');
     assert.ok(row.provider_confirmed_at);
-    assert.equal(row.mpesa_receipt, receipt);
+    assert.equal(row.mpesa_receipt, null);
     assert.equal((await kesReceipt(d.id)).a, '649.000000', 'the customer money is recorded, not lost');
     assert.equal(await testBalance('treasuryB'), 0, 'no unbacked balance');
     assert.match(await errorOf(as('owner', `select public.funding_request_action($1, 'RESOLVE_FAILED', 'Trying to fail a paid payment')`, [d.id])), /payment_funds_received/);
@@ -658,10 +659,7 @@ test('manual confirmation needs a binding provider statement item and three diff
     assert.equal(await testBalance('customer'), before + 7.5);
     assert.deepEqual(await kesReceipt(p.id), { a: '973.000000', d: (await db.query('select business_date::text d from funding.provider_statement_items where id=$1', [good])).rows[0].d });
 
-    // The funded-suspense payment: its callback receipt must match the line, and
-    // the credit still needs coverage (restored earlier in this suite).
-    assert.match(await errorOf(as('owner', `select public.funding_request_action($1, 'RESOLVE_CONFIRMED', 'Wrong line for the held payment', $2)`,
-        [suspensePayment.id, await recordItem('ian', { kes: 649, msisdn: MSISDN })])), /statement_evidence_invalid: receipt/);
+    // The funded-suspense payment: the credit still needs coverage (restored earlier in this suite).
     const heldItem = await recordItem('ian', { receipt: suspensePayment.receipt, kes: 649, msisdn: MSISDN });
     const heldAction = (await one('owner', `select public.funding_request_action($1, 'RESOLVE_CONFIRMED', 'Held payment is on the statement', $2) id`, [suspensePayment.id, heldItem])).id;
     await snapshot(0, 'Reserve drained to prove approval rechecks coverage');
@@ -678,6 +676,48 @@ test('manual confirmation needs a binding provider statement item and three diff
     assert.match(await errorOf(recordItem('ian', { kes: 649 })), /validation_failed/, 'a line needs an account reference or phone');
     assert.match(await errorOf(recordItem('administrator', { kes: 649, msisdn: MSISDN })), /forbidden/);
     assert.match(await errorOf(db.query(`update funding.provider_statement_items set kes_amount = 1`)), /funding_record_immutable/);
+});
+
+// ------------------------------------------------------------------ R7: a callback receipt is only a claim
+
+test('a leaked token with the right checkout and amount cannot plant a fabricated receipt', async () => {
+    const daraja = fakeDaraja();
+    const d = await startDeposit('customer2', 5, daraja);
+    const before = await testBalance('customer2');
+    const fabricated = 'FAKE00RCPT01';
+    await handleCallback({ rpc: serviceRpc, daraja, bodyText: callbackBody({ checkout: d.checkout, amount: 649, receipt: fabricated }), token: d.token });
+    let row = await payment(d.id);
+    assert.equal(row.state, 'CONFIRMED', 'the bound checkout really succeeded, so the non-spendable credit posts');
+    assert.equal(await testBalance('customer2'), before + 5);
+    assert.equal(row.mpesa_receipt, null, 'the fabricated receipt is not the payment receipt');
+    assert.equal(row.receipt_pending, true);
+    assert.equal((await one('customer2', 'select public.funding_my_payments() p')).p.find((v) => v.payment_id === d.id).mpesa_receipt, null);
+    assert.equal(await scalar(`select count(*)::int from funding.payments where mpesa_receipt=$1`, [fabricated]), 0);
+
+    // Reconciliation stays open while the identity is unverified.
+    const run = await serviceRpc('funding_svc_reconcile', { p_environment: 'SANDBOX', p_business_date: nairobiToday() });
+    assert.equal(run.status, 'DIFFERENCES');
+    assert.ok(run.differences.some((x) => x.kind === 'receipt_unverified' && x.payment_id === d.id));
+
+    // Only a bound statement line, with three different people, makes a receipt authoritative.
+    const real = nextReceipt('REAL');
+    const line = await recordItem('ian', { receipt: real, kes: 649, accountReference: row.account_reference, msisdn: MSISDN });
+    assert.match(await errorOf(as('owner', `select public.funding_request_action($1, 'BIND_RECEIPT', 'Bind without evidence')`, [d.id])), /statement_evidence_required/);
+    assert.match(await errorOf(as('ian', `select public.funding_request_action($1, 'BIND_RECEIPT', 'I recorded the line myself', $2)`, [d.id, line])), /independent_reviewer_required/);
+    const wrong = await recordItem('ian', { kes: 650, accountReference: row.account_reference });
+    assert.match(await errorOf(as('owner', `select public.funding_request_action($1, 'BIND_RECEIPT', 'Line with the wrong amount', $2)`, [d.id, wrong])), /statement_evidence_invalid: kes_amount/);
+    const bind = (await one('owner', `select public.funding_request_action($1, 'BIND_RECEIPT', 'Statement line matches the payment', $2) id`, [d.id, line])).id;
+    assert.match(await errorOf(as('ian', `select public.funding_approve_action($1, 'The statement recorder approving')`, [bind])), /independent_reviewer_required/);
+    await as('owner2', `select public.funding_approve_action($1, 'Independent owner binds the statement receipt')`, [bind]);
+    row = await payment(d.id);
+    assert.equal(row.mpesa_receipt, real);
+    assert.equal(row.receipt_pending, false);
+    assert.equal(row.statement_item_id, String(line));
+    assert.equal(await testBalance('customer2'), before + 5, 'binding the identity moves no money');
+    assert.match(await errorOf(as('owner', `select public.funding_request_action($1, 'BIND_RECEIPT', 'Binding a second line', $2)`,
+        [d.id, await recordItem('ian', { kes: 649, msisdn: MSISDN })])), /payment_state_invalid/);
+    const after = await serviceRpc('funding_svc_reconcile', { p_environment: 'SANDBOX', p_business_date: nairobiToday() });
+    assert.equal(after.differences.some((x) => x.kind === 'receipt_unverified' && x.payment_id === d.id), false);
 });
 
 // ------------------------------------------------------------------ R4 and staff
@@ -716,7 +756,7 @@ test('reversal needs two owners; reconciliation rolls the KES statement forward 
     await statement(day, { opening, gross, reversals, fees, settlement, closing });
 
     run = await serviceRpc('funding_svc_reconcile', { p_environment: 'SANDBOX', p_business_date: day });
-    assert.deepEqual(kinds(run).filter((k) => !['needs_attention', 'statement_item_unmatched'].includes(k)), [], JSON.stringify(run.differences));
+    assert.deepEqual(kinds(run).filter((k) => !['needs_attention', 'statement_item_unmatched', 'receipt_unverified'].includes(k)), [], JSON.stringify(run.differences));
     const unmatched = run.differences.filter((d) => d.kind === 'statement_item_unmatched').map((d) => d.receipt);
     assert.ok(unmatched.length >= 4, 'the rejected evidence lines stay open as statement lines without a payment');
     assert.equal(Number(run.summary.customer_balance_usd), Number(run.summary.confirmed_usd));

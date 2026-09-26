@@ -459,8 +459,11 @@ begin
     if p.state in ('INITIATING', 'PENDING', 'UNKNOWN', 'VERIFYING') then
         if p.callback_result_code is not null and p.callback_result_code <> p_result_code then v_verdict := 'CONFLICT'; end if;
         if p_result_code = 0 and p_amount is distinct from p.kes_due::numeric then v_verdict := 'MISMATCH'; end if;
+        -- A claimed receipt already verified for, or already claimed by, another payment.
         if v_verdict = 'APPLIED' and p_result_code = 0 and p_receipt is not null
-           and exists (select 1 from funding.payments where mpesa_receipt = p_receipt and id <> p.id) then v_verdict := 'CONFLICT'; end if;
+           and (exists (select 1 from funding.payments where mpesa_receipt = p_receipt and id <> p.id)
+                or exists (select 1 from funding.provider_events e where e.receipt = p_receipt and e.source = 'CALLBACK'
+                            and e.verdict = 'APPLIED' and e.payment_id <> p.id)) then v_verdict := 'CONFLICT'; end if;
     elsif p.state = 'FAILED' and p_result_code = 0 then v_verdict := 'CONFLICT';
     elsif p.state = 'CONFIRMED' and p_result_code <> 0 then v_verdict := 'CONFLICT';
     else v_verdict := 'LATE';
@@ -477,7 +480,6 @@ begin
         update funding.payments set merchant_request_id = coalesce(merchant_request_id, p_merchant_request_id),
             callback_result_code = case when v_verdict = 'APPLIED' then p_result_code else callback_result_code end,
             callback_amount = case when v_verdict = 'APPLIED' and p_result_code = 0 then p_amount else callback_amount end,
-            mpesa_receipt = case when v_verdict = 'APPLIED' and p_result_code = 0 then p_receipt else mpesa_receipt end,
             updated_at = now() where id = p.id;
         if v_verdict = 'APPLIED' then
             perform funding.transition(p.id, 'VERIFYING', 'callback_received');
@@ -547,7 +549,9 @@ begin
             update funding.payments set attention_reason = 'amount_mismatch' where id = p.id;
             perform funding.transition(p.id, 'MANUAL_REVIEW', 'amount_mismatch');
         else
-            update funding.payments set receipt_pending = (mpesa_receipt is null) where id = p.id;
+            -- STK Query confirms the checkout's status, not a receipt: the transaction
+            -- identity stays unverified until a statement item binds it (BIND_RECEIPT).
+            update funding.payments set receipt_pending = (statement_item_id is null) where id = p.id;
             perform funding.confirm_and_credit(p.id, 'provider_status_confirmed', funding.nairobi_date(now()), true);
         end if;
     else
@@ -672,7 +676,11 @@ begin
                 and not exists (select 1 from funding.payments p where p.environment = s.environment and (p.statement_item_id = s.id or p.mpesa_receipt = s.receipt)) loop
         v_diff := v_diff || jsonb_build_object('kind', 'statement_item_unmatched', 'statement_item_id', r.id, 'receipt', r.receipt, 'kes_amount', r.kes_amount);
     end loop;
-    -- 6. Open payments past their window, and payments needing review (including funded suspense).
+    -- 6. A credit whose transaction identity no statement item has verified keeps the run open.
+    for r in select id from funding.payments where environment = p_environment and state = 'CONFIRMED' and receipt_pending loop
+        v_diff := v_diff || jsonb_build_object('kind', 'receipt_unverified', 'payment_id', r.id);
+    end loop;
+    -- 7. Open payments past their window, and payments needing review (including funded suspense).
     for r in select id, state, attention_reason from funding.payments where environment = p_environment
                and ((state in ('INITIATING', 'PENDING', 'VERIFYING') and created_at < now() - interval '30 minutes') or state in ('MANUAL_REVIEW', 'EXPIRED')) loop
         v_diff := v_diff || jsonb_build_object('kind', 'needs_attention', 'payment_id', r.id, 'state', r.state, 'reason', r.attention_reason);
@@ -788,8 +796,9 @@ $$;
 
 -- Why a statement item cannot confirm this payment, or null when it binds: same
 -- environment, exact KES, same shortcode, matching account reference and/or phone
--- (at least one is on every item), a transaction inside the payment's window, the
--- callback receipt if one was bound, and an item and receipt no other payment uses.
+-- (at least one is on every item), a transaction inside the payment's window, no
+-- item already bound to this payment, and an item and receipt no other payment
+-- uses. A callback's claimed receipt plays no part: it is never authoritative.
 create or replace function funding.statement_binding_refusal(p funding.payments, s funding.provider_statement_items) returns text
 language plpgsql stable security definer set search_path = '' as $$
 begin
@@ -800,27 +809,29 @@ begin
     if s.account_reference is not null and s.account_reference <> p.account_reference then return 'account_reference'; end if;
     if s.phone_hash is not null and s.phone_hash <> p.phone_hash then return 'phone'; end if;
     if s.transaction_at < p.created_at - interval '10 minutes' or s.transaction_at > p.created_at + interval '24 hours' then return 'transaction_time'; end if;
-    if p.mpesa_receipt is not null and p.mpesa_receipt <> s.receipt then return 'receipt'; end if;
+    if p.statement_item_id is not null then return 'already_bound'; end if;
     if exists (select 1 from funding.payments o where o.id <> p.id and (o.statement_item_id = s.id or o.mpesa_receipt = s.receipt)) then return 'already_used'; end if;
     return null;
 end;
 $$;
 
--- RESOLVE_CONFIRMED must cite a provider statement item that binds to the
--- payment, and whoever recorded that item may not request it. RESOLVE_FAILED is
--- refused once the provider has confirmed the money.
+-- RESOLVE_CONFIRMED (a payment in review) and BIND_RECEIPT (a status-confirmed
+-- payment whose receipt is still unverified) must cite a provider statement item
+-- that binds to the payment, and whoever recorded that item may not request it.
+-- RESOLVE_FAILED is refused once the provider has confirmed the money.
 create or replace function public.funding_request_action(p_payment uuid, p_kind text, p_reason text, p_statement_item bigint default null)
 returns uuid language plpgsql security definer set search_path = '' as $$
 declare p funding.payments; s funding.provider_statement_items; v_id uuid; v_refusal text;
 begin
     perform admin_private.require_staff('funding.manage', true);
     perform funding.require_reason(p_reason);
-    if p_kind is null or p_kind not in ('REVERSE', 'RESOLVE_CONFIRMED', 'RESOLVE_FAILED') then raise exception 'validation_failed'; end if;
+    if p_kind is null or p_kind not in ('REVERSE', 'RESOLVE_CONFIRMED', 'RESOLVE_FAILED', 'BIND_RECEIPT') then raise exception 'validation_failed'; end if;
     select * into p from funding.payments where id = p_payment for update;
     if not found then raise exception 'payment_not_found'; end if;
     if p_kind = 'REVERSE' and p.state <> 'CONFIRMED' then raise exception 'payment_state_invalid'; end if;
     if p_kind in ('RESOLVE_CONFIRMED', 'RESOLVE_FAILED') and p.state not in ('MANUAL_REVIEW', 'EXPIRED') then raise exception 'payment_state_invalid'; end if;
-    if p_kind = 'RESOLVE_CONFIRMED' then
+    if p_kind = 'BIND_RECEIPT' and (p.state <> 'CONFIRMED' or p.statement_item_id is not null) then raise exception 'payment_state_invalid'; end if;
+    if p_kind in ('RESOLVE_CONFIRMED', 'BIND_RECEIPT') then
         if p_statement_item is null then raise exception 'statement_evidence_required'; end if;
         select * into s from funding.provider_statement_items where id = p_statement_item;
         v_refusal := funding.statement_binding_refusal(p, s);
@@ -871,6 +882,14 @@ begin
         if v_refusal is not null then raise exception 'statement_evidence_invalid: %', v_refusal; end if;
         update funding.payments set statement_item_id = s.id, mpesa_receipt = s.receipt, receipt_pending = false, updated_at = now() where id = p.id;
         perform funding.confirm_and_credit(p.id, 'staff_resolution', s.business_date, false, auth.uid());
+    elsif a.kind = 'BIND_RECEIPT' then
+        -- Identity only: the money was already credited on the provider's status.
+        if p.state <> 'CONFIRMED' then raise exception 'payment_state_invalid'; end if;
+        select * into s from funding.provider_statement_items where id = a.statement_item_id;
+        if s.recorded_by = auth.uid() then raise exception 'independent_reviewer_required'; end if;
+        v_refusal := funding.statement_binding_refusal(p, s);
+        if v_refusal is not null then raise exception 'statement_evidence_invalid: %', v_refusal; end if;
+        update funding.payments set statement_item_id = s.id, mpesa_receipt = s.receipt, receipt_pending = false, updated_at = now() where id = p.id;
     else
         if p.state not in ('MANUAL_REVIEW', 'EXPIRED') then raise exception 'payment_state_invalid'; end if;
         if p.provider_confirmed_at is not null then raise exception 'payment_funds_received'; end if;
