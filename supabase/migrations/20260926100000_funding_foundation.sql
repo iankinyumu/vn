@@ -70,6 +70,15 @@ create table funding.sandbox_testers (
     reason text not null
 );
 
+-- Sandbox pushes go only to Safaricom's published sandbox test MSISDN(s). A real
+-- customer number can never receive a sandbox prompt from this system.
+create table funding.sandbox_msisdns (
+    msisdn text primary key check (msisdn ~ '^254(7|1)[0-9]{8}$'),
+    note text not null check (char_length(note) between 3 and 300),
+    added_at timestamptz not null default now()
+);
+insert into funding.sandbox_msisdns(msisdn, note) values ('254708374149', 'Daraja sandbox test MSISDN (Safaricom developer portal test data)');
+
 create table funding.deposit_quotes (
     id uuid primary key default gen_random_uuid(),
     user_id uuid not null references auth.users(id),
@@ -318,7 +327,7 @@ declare t text;
 begin
     foreach t in array array['deposit_policy_versions', 'fx_rate_versions', 'deposit_quotes', 'payment_state_events',
         'usd_ledger_transactions', 'usd_ledger_entries', 'kes_clearing_entries', 'treasury_snapshots',
-        'provider_statement_items', 'statement_totals', 'reconciliation_runs', 'reconciliation_resolutions'] loop
+        'provider_statement_items', 'statement_totals', 'reconciliation_runs', 'reconciliation_resolutions', 'sandbox_msisdns'] loop
         execute format('create trigger %I before update or delete on funding.%I for each row execute function funding.reject_mutation()', t || '_immutable', t);
     end loop;
 end $$;

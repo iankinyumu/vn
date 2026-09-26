@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <meta name="description" content="Daraja sandbox deposit test for allowlisted testers. Test funds only.">
+    <title>Sandbox deposit — SmartProfit</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="../assets/css/glassmorphism.css" rel="stylesheet">
+    <link href="../assets/css/profile.css" rel="stylesheet">
+    <link href="../assets/css/app-shell.css" rel="stylesheet">
+    <link href="../assets/css/mode-tokens.css" rel="stylesheet">
+    <style>
+        .sandbox-banner { border: 1px dashed #f5b942; color: #f5b942; border-radius: 12px; padding: .75rem 1rem; font-weight: 700; letter-spacing: .02em; }
+        .sandbox-quote dl { display: grid; grid-template-columns: max-content 1fr; gap: .35rem 1rem; margin: 0; }
+        .sandbox-quote dt { color: var(--bs-secondary-color, #9aa4b2); font-weight: 500; }
+        .sandbox-quote dd { margin: 0; font-family: 'DM Mono', monospace; }
+        .sandbox-state { display: inline-block; border-radius: 999px; padding: .1rem .6rem; font-size: .8rem; font-weight: 700; }
+        .sandbox-state[data-tone="pending"] { background: #2b3a55; color: #9ec5ff; }
+        .sandbox-state[data-tone="ok"] { background: #1f4630; color: #7ee2a8; }
+        .sandbox-state[data-tone="bad"] { background: #4a2328; color: #ff9aa5; }
+        .sandbox-state[data-tone="review"] { background: #4a3b1c; color: #f5d27a; }
+    </style>
+</head>
+
+<body class="premium-theme app-shell" data-shell-surface="app" data-shell-active="profile">
+    <script src="../assets/js/auth.js"></script>
+    <script>requireAuth()</script>
+
+    <div data-shell-header></div>
+
+    <main class="profile-wrapper">
+        <p class="sandbox-banner" role="note"><i class="fas fa-flask me-2"></i>Daraja Sandbox - test funds only</p>
+        <p data-sandbox-status role="status" aria-live="polite" class="text-secondary">Checking sandbox access…</p>
+
+        <section data-sandbox-unavailable hidden class="settings-card">
+            <h5 class="settings-title"><i class="fas fa-lock"></i> Not available</h5>
+            <p class="text-secondary mb-0">Sandbox deposits are not available on this account.</p>
+        </section>
+
+        <div data-sandbox-available hidden>
+            <section class="settings-card">
+                <h5 class="settings-title"><i class="fas fa-vial"></i> Sandbox test balance</h5>
+                <p class="mb-1"><span class="h4" data-sandbox-balance>—</span> <span class="text-secondary">USD, non-spendable</span></p>
+                <p class="text-secondary small mb-0">This test balance is separate from your Practice and Real trading accounts. It cannot be traded, withdrawn or moved.</p>
+            </section>
+
+            <section class="settings-card">
+                <h5 class="settings-title"><i class="fas fa-mobile-screen"></i> Test deposit</h5>
+                <form data-sandbox-quote-form novalidate>
+                    <div>
+                        <label class="form-label" for="sandboxAmount">Amount (USD)</label>
+                        <div class="input-wrapper"><i class="fas fa-dollar-sign form-icon"></i>
+                            <input type="number" id="sandboxAmount" class="form-input" inputmode="decimal" step="0.01" min="5" max="500" value="5.00" required data-sandbox-amount>
+                        </div>
+                        <p class="text-secondary small mt-1" data-sandbox-limits></p>
+                    </div>
+                    <div>
+                        <label class="form-label" for="sandboxPhone">Sandbox test phone number</label>
+                        <div class="input-wrapper"><i class="fas fa-phone form-icon"></i>
+                            <select id="sandboxPhone" class="form-input" required data-sandbox-phone></select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-premium-primary mt-3" data-sandbox-quote-button>Get quote</button>
+                </form>
+
+                <div class="sandbox-quote mt-4" data-sandbox-quote hidden>
+                    <h6>Quote (locked for five minutes)</h6>
+                    <dl>
+                        <dt>You deposit</dt><dd data-quote-usd></dd>
+                        <dt>M-Pesa amount</dt><dd data-quote-kes></dd>
+                        <dt>Reference rate</dt><dd data-quote-rate></dd>
+                        <dt>Rounding</dt><dd data-quote-rounding></dd>
+                        <dt>Expires</dt><dd data-quote-expiry></dd>
+                    </dl>
+                    <p class="text-secondary small mt-2 mb-0">The M-Pesa amount is the USD amount at the reference rate, rounded up to a whole shilling. The rounding is not a fee.</p>
+                    <button type="button" class="btn btn-premium-primary mt-3" data-sandbox-send>Send sandbox M-Pesa prompt</button>
+                </div>
+
+                <div class="mt-4" data-sandbox-payment hidden>
+                    <h6>Payment</h6>
+                    <p class="mb-1"><span class="sandbox-state" data-payment-state></span></p>
+                    <p class="mb-0" data-payment-message></p>
+                </div>
+            </section>
+
+            <section class="settings-card">
+                <h5 class="settings-title"><i class="fas fa-clock-rotate-left"></i> Sandbox deposits</h5>
+                <div style="overflow-x:auto">
+                    <table class="transaction-table">
+                        <thead><tr><th>Created</th><th>USD</th><th>KES</th><th>Status</th><th>Receipt</th></tr></thead>
+                        <tbody data-sandbox-history><tr><td colspan="5">Loading…</td></tr></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <div data-shell-footer></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/js/shell.js"></script>
+    <script src="../assets/js/sandbox-deposit.js"></script>
+</body>
+
+</html>

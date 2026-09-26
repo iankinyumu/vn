@@ -28,6 +28,7 @@ export const ERROR_CODES = Object.freeze({
     production_payments_disabled: { status: 403, message: 'Deposits are not available yet.' },
     treasury_paused: { status: 503, message: 'Deposits are paused right now. Please try again later.' },
     treasury_unknown: { status: 503, message: 'Deposits are paused right now. Please try again later.' },
+    phone_not_allowed: { status: 400, message: 'Sandbox deposits can only use the Daraja sandbox test number.' },
     deposit_limit_reached: { status: 409, message: 'This deposit would exceed your deposit limit for the last 24 hours.' },
     deposit_policy_unavailable: { status: 503, message: 'Deposits are paused right now. Please try again later.' },
     amount_below_minimum: { status: 400, message: 'The minimum deposit is USD 5.00.' },

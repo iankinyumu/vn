@@ -16,7 +16,7 @@ export const FUNDING_ERROR_CODES = Object.freeze([
     'phone_invalid', 'quote_not_found', 'quote_expired', 'quote_used', 'payment_in_progress', 'sandbox_not_enabled',
     'production_payments_disabled', 'treasury_paused', 'treasury_unknown', 'idempotency_key_reused', 'validation_failed',
     'amount_invalid', 'amount_below_minimum', 'amount_above_maximum', 'rate_stale', 'rate_unavailable',
-    'deposit_limit_reached', 'deposit_policy_unavailable',
+    'deposit_limit_reached', 'deposit_policy_unavailable', 'phone_not_allowed',
 ]);
 
 /** Maps a database exception to a stable funding code, or null for an internal fault. */

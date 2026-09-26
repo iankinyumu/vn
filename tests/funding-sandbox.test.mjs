@@ -18,6 +18,8 @@ let T, db;
 before(async () => {
     T = await createRealDatabase({ extra: [...V3_MIGRATIONS, ...FUNDING_MIGRATIONS] });
     db = T.db;
+    // Test fixture: the suite's placeholder number joins the sandbox test MSISDN allowlist.
+    await db.query(`insert into funding.sandbox_msisdns(msisdn, note) values ($1, 'test fixture number')`, [MSISDN]);
 });
 after(async () => { await T?.close(); });
 
@@ -128,6 +130,7 @@ async function recordItem(staff, { receipt = nextReceipt('SIM'), kes, shortcode 
 
 test('sandbox is closed until the owner opens the module and lists the tester; an empty treasury admits nothing', async () => {
     assert.match(await errorOf(as('customer', 'select public.funding_create_deposit_quote(5)')), /sandbox_not_enabled/);
+    assert.deepEqual((await one('customer', 'select public.funding_sandbox_overview() o')).o, { available: false });
     await as('ian', `select public.funding_set_sandbox_module(true, 'Open Daraja sandbox for the owner test run')`);
     assert.match(await errorOf(as('customer', 'select public.funding_create_deposit_quote(5)')), /sandbox_not_enabled/, 'module on, but not a tester');
     assert.match(await errorOf(as('administrator', `select public.funding_set_sandbox_tester($1, true, 'administrators cannot manage funding')`, [identities.customer.id])), /forbidden/);
@@ -135,6 +138,13 @@ test('sandbox is closed until the owner opens the module and lists the tester; a
         await as('ian', `select public.funding_set_sandbox_tester($1, true, 'Sandbox tester for Phase 2 evidence')`, [identities[name].id]);
     }
     await as('ian', `select public.funding_publish_rate(129.62, $1::date, 'https://www.centralbank.go.ke/rates/forex-exchange-rates/', 'CBK mean rate for the test day')`, [nairobiToday()]);
+    const overview = (await one('customer', 'select public.funding_sandbox_overview() o')).o;
+    assert.equal(overview.available, true);
+    assert.equal(overview.label, 'Daraja Sandbox - test funds only');
+    assert.equal(overview.spendable, false);
+    assert.equal(overview.test_balance_usd, 0);
+    assert.deepEqual(overview.test_msisdns, ['254708374149', MSISDN]);
+    assert.deepEqual((await one('administrator', 'select public.funding_sandbox_overview() o')).o, { available: false }, 'not a tester');
     // No treasury snapshot yet: a quote is allowed, a payment is not.
     const q = await quote('customer', 5);
     assert.equal(await errorOf(initiateDeposit({ rpc: serviceRpc, daraja: fakeDaraja(), config: CONFIG, userId: identities.customer.id, quoteId: q.quote_id, phone: PHONE, idempotencyKey: 'no-treasury-1' })), 'treasury_unknown');
@@ -237,6 +247,7 @@ test('USD 5.00 quotes to KES 649 at 129.62 with KES 0.90 in the rounding account
     assert.equal(q.kes_due, 649);
     assert.equal(Number(q.kes_per_usd), 129.62);
     assert.equal(q.environment, 'SANDBOX');
+    assert.equal(q.kes_rounding, 0.9);
     const row = (await db.query('select kes_rounding::text r, extract(epoch from expires_at - created_at)::int ttl from funding.deposit_quotes where id=$1', [q.quote_id])).rows[0];
     assert.equal(row.r, '0.900000');
     assert.equal(row.ttl, 300);
@@ -496,6 +507,9 @@ test('provider rejection is final and moves no money; stale and expired quotes a
     assert.equal(await errorOf(initiateDeposit({ rpc: serviceRpc, daraja, config: CONFIG, userId: identities.customer.id, quoteId: expired, phone: PHONE, idempotencyKey: 'expired-quote-1' })), 'quote_expired');
     assert.equal(await errorOf(initiateDeposit({ rpc: serviceRpc, daraja, config: CONFIG, userId: identities.customer2.id, quoteId: q.quote_id, phone: PHONE, idempotencyKey: 'not-my-quote-1' })), 'quote_not_found');
     assert.equal(await errorOf(initiateDeposit({ rpc: serviceRpc, daraja, config: CONFIG, userId: identities.customer.id, quoteId: q.quote_id, phone: '0812345678', idempotencyKey: 'bad-phone-0001' })), 'phone_invalid');
+    const pushes = daraja.calls.push.length;
+    assert.equal(await errorOf(initiateDeposit({ rpc: serviceRpc, daraja, config: CONFIG, userId: identities.customer.id, quoteId: q.quote_id, phone: '0799999999', idempotencyKey: 'real-phone-0001' })), 'phone_not_allowed', 'sandbox never prompts a number outside the test allowlist');
+    assert.equal(daraja.calls.push.length, pushes);
 
     await as('ian', `select public.funding_publish_rate(130.10, '2026-09-01', 'https://www.centralbank.go.ke/rates/forex-exchange-rates/', 'Old rate to prove staleness fails closed')`);
     assert.match(await errorOf(as('customer', 'select public.funding_create_deposit_quote(5)')), /rate_stale/);

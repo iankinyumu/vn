@@ -271,7 +271,8 @@ create or replace function funding.payment_view(p funding.payments) returns json
 language sql stable set search_path = '' as $$
     select jsonb_build_object('payment_id', p.id, 'environment', p.environment, 'state', p.state,
         'status_message', funding.status_message(p.state, p.environment), 'usd_amount', p.usd_amount, 'kes_due', p.kes_due,
-        'phone_masked', p.phone_masked, 'mpesa_receipt', p.mpesa_receipt, 'created_at', p.created_at, 'finalized_at', p.finalized_at);
+        'phone_masked', p.phone_masked, 'mpesa_receipt', p.mpesa_receipt, 'receipt_verified', p.statement_item_id is not null,
+        'created_at', p.created_at, 'finalized_at', p.finalized_at);
 $$;
 
 -- ---------------------------------------------------------------- customer RPCs
@@ -310,9 +311,30 @@ begin
     values (v_user, 'SANDBOX', pol.version, r.version, r.kes_per_usd, r.rate_date, p_usd_amount, v_kes, v_kes - p_usd_amount * r.kes_per_usd,
             now() + make_interval(secs => pol.quote_ttl_seconds))
     returning * into q;
-    return jsonb_build_object('quote_id', q.id, 'environment', q.environment, 'usd_amount', q.usd_amount, 'kes_due', q.kes_due,
+    return jsonb_build_object('quote_id', q.id, 'environment', q.environment, 'usd_amount', q.usd_amount, 'kes_due', q.kes_due, 'kes_rounding', round(q.kes_rounding, 2),
         'kes_per_usd', q.kes_per_usd, 'rate_date', q.rate_date, 'rate_source', r.source, 'rate_version', q.rate_version,
         'expires_at', q.expires_at);
+end;
+$$;
+
+-- What the sandbox deposit page may show this user. A user who is not an enabled
+-- tester (or while the module is off) learns only that deposits are unavailable.
+create or replace function public.funding_sandbox_overview() returns jsonb
+language plpgsql stable security definer set search_path = '' as $$
+declare v_user uuid := auth.uid(); pol funding.deposit_policy_versions; r funding.fx_rate_versions;
+begin
+    if v_user is null then raise exception 'unauthenticated'; end if;
+    if not public.module_enabled('daraja_sandbox') or not exists (select 1 from funding.sandbox_testers where user_id = v_user and enabled) then
+        return jsonb_build_object('available', false);
+    end if;
+    pol := funding.policy(); r := funding.current_rate();
+    return jsonb_build_object('available', true, 'environment', 'SANDBOX', 'label', 'Daraja Sandbox - test funds only',
+        'test_balance_usd', (select coalesce(sum(amount), 0) from funding.usd_ledger_entries where account_code = 'CUSTOMER_TEST_BALANCE' and user_id = v_user),
+        'spendable', false, 'min_usd', pol.min_usd, 'max_usd_per_deposit', pol.max_usd_per_deposit,
+        'max_usd_rolling_24h', pol.max_usd_rolling_24h, 'max_deposits_rolling_24h', pol.max_deposits_rolling_24h,
+        'quote_ttl_seconds', pol.quote_ttl_seconds, 'kes_per_usd', r.kes_per_usd, 'rate_date', r.rate_date,
+        'rate_stale', funding.rate_is_stale(r.rate_date, pol.rate_max_age_hours),
+        'test_msisdns', coalesce((select jsonb_agg(msisdn order by msisdn) from funding.sandbox_msisdns), '[]'::jsonb));
 end;
 $$;
 
@@ -351,6 +373,7 @@ begin
     select * into q from funding.deposit_quotes where id = p_quote and user_id = p_user;
     if not found then raise exception 'quote_not_found'; end if;
     perform funding.assert_environment_open(q.environment, p_user);
+    if q.environment = 'SANDBOX' and not exists (select 1 from funding.sandbox_msisdns where msisdn = p_phone) then raise exception 'phone_not_allowed'; end if;
     if q.expires_at <= now() then raise exception 'quote_expired'; end if;
     if exists (select 1 from funding.payments where quote_id = q.id) then raise exception 'quote_used'; end if;
     if exists (select 1 from funding.payments where user_id = p_user and state in ('INITIATING', 'PENDING', 'UNKNOWN', 'VERIFYING')) then
