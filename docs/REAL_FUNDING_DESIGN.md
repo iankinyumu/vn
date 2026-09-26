@@ -2,13 +2,26 @@
 
 **Plan:** `docs/CLAUDE_REAL_MODE_DARAJA_SANDBOX_AUDIT_PLAN.md`. **Baseline:** `docs/REAL_MODE_PHASE0_BASELINE.md`.
 **Performer:** Claude. **Reviewer:** Owner (pending). The design is unreviewed and does not authorize production payments or Real trading.
-**Revision:** updated for the Phase 2 supervisor review (`docs/REAL_MODE_PHASE2_SUPERVISOR_REVIEW.md`, findings R1–R5): callback binding (§5), limits (§3), projected coverage and funded suspense (§7), net KES reconciliation (§8), statement evidence and wrapper contracts (§9).
+**Revision:** updated for the Phase 2 supervisor reviews (`docs/REAL_MODE_PHASE2_SUPERVISOR_REVIEW.md`, findings R1–R5, R7 and R8): callback binding (§5), limits (§3), projected coverage and funded suspense (§7), net KES reconciliation (§8), statement evidence and wrapper contracts (§9).
 
 The decisions this design implements were fixed in the plan and are not reopened here: USD ledger with KES cash settlement, STK Push first, Supabase Edge Function callback, and the existing digit contracts.
 
 ## 1. Provider reference
 
-The contract follows Safaricom Daraja 3.0 **M-Pesa Express** (STK Push, and STK Push Query) and **Authorization** (OAuth client credentials). The portal (<https://developer.safaricom.co.ke/>) is client-rendered and could not be fetched and pinned on 2026-09-25, so **the documentation revision is UNVERIFIED**. The Owner must compare the contract below with the portal and record the page and date in §12 before Phase 2 sandbox evidence is accepted.
+The contract follows Safaricom Daraja 3.0 **M-Pesa Express** (STK Push, and STK Push Query) and **Authorization** (OAuth client credentials).
+
+**Pinned 2026-09-26 01:29 UTC** from the official portal <https://developer.safaricom.co.ke/>. The portal renders client-side from its own GraphQL endpoint `https://developer.safaricom.co.ke/api/graphql`; the documentation was read through the portal's own queries `getApis` and `populateApi(apiName)`:
+
+| Document | SHA-256 of the portal response |
+| --- | --- |
+| API catalogue (`getApis`), which gives the endpoint URLs below | `ac589ceeff2b39f875b00893026e395cce4d334c2212d24d59825f32e7beeaa7` |
+| `Authorization` | `db4871b25f89f79768c4fa57b50eb6f452fd2602b713eee83051f72cb0de9fbb` |
+| `MpesaExpressSimulate` (STK Push request, response, callback, errors) | `9d8dd86f9a3c4c835c4bd6c31ef0e5a22320564e6f02209a38b7428fd57781d1` |
+| `MpesaExpressQuery` (STK Push Query request and response) | `6d53a372b84787bb5fd943f9c95716c79182634cada901f7fbd54046f1db0aa6` |
+
+Every request, response and callback field the adapter (`supabase/functions/_shared/daraja.mjs`) sends or reads appears in those documents with the same name. Specific points checked: `Password = base64(Shortcode + Passkey + Timestamp)`; `AccountReference` at most 12 characters; `TransactionDesc` at most 13 characters (the only optional field); `TransactionType` `CustomerPayBillOnline` or `CustomerBuyGoodsOnline`; STK Query returns `ResponseCode`, `ResponseDescription`, `MerchantRequestID`, `CheckoutRequestID`, `ResultCode` and `ResultDesc`, and no receipt, amount or phone. The official request sample uses the sandbox test shortcode `174379`, and its sample `Password` decodes to that shortcode, the published sandbox test passkey, and a timestamp; the sandbox configuration uses those published test values.
+
+**Deviation noted:** the error code `500.001.1001` is documented with more than one meaning ("Merchant does not exist" and "Unable to lock subscriber, a transaction is already in process"). The adapter treats it on STK Query as "still processing". That is fail-safe, because it never credits and the payment goes to `MANUAL_REVIEW` after 24 h, but a misconfigured shortcode would show up as a stuck payment rather than an immediate error. The live sandbox drill (runbook §2) adds conformance evidence from real responses.
 
 | Call | Sandbox | Production (not used) |
 | --- | --- | --- |
@@ -68,6 +81,7 @@ Staff (owner, aal2, fresh TOTP) ──▶ Postgres RPC: rates, treasury snapshot
 
 Rules:
 
+0. **Three kinds of provider fact.** *Callback claims* (receipt, amount, phone and result in the callback body) are recorded in `funding.provider_events` and are never authoritative. *Queried checkout status* (STK Query of the bound checkout) decides whether money was paid for that checkout. *Statement-verified identity* (a bound provider statement item) is the only source of `payments.mpesa_receipt`. An automatic credit therefore stays `receipt_pending` until a statement item binds its receipt through `BIND_RECEIPT` (§9), and reconciliation reports every such credit as `receipt_unverified`.
 1. **Automatic credit** happens only in `funding_svc_record_status`, and only when: the queried checkout is the payment's bound checkout; the query says `ResultCode 0`; the payment is `PENDING`/`VERIFYING`; any callback amount equals `kes_due`; and, re-checked in the same transaction, the customer limits (§3) and the projected treasury coverage (§7) hold. A callback success alone never credits. A query success with no callback still credits, because the amount was fixed by the push itself and the checkout came from our own push. `receipt_pending` is then set for statement reconciliation.
 2. **Manual credit** happens only through an approved `RESOLVE_CONFIRMED` that cites a binding provider statement item (§9), with the same limit and coverage re-check. If that check fails, the approval is refused and the payment stays in review.
 2. **Idempotency.** The ledger key is `deposit-<payment id>`. Initiation is idempotent per `(user, idempotency_key)`. Provider events are unique on `dedupe_key = sha256(source|checkout id|result code|receipt)`, so a replay is stored once and counted.
@@ -83,6 +97,8 @@ Rules:
 - **A known token, payment with a bound checkout, different CheckoutRequestID** gives verdict `CONFLICT` and `MANUAL_REVIEW`. The claimed checkout is never queried.
 - **A known token, payment with no bound checkout** (`UNKNOWN`, `INITIATING` whose response has not arrived or never will, `EXPIRED`, `REJECTED`) gives verdict `UNBOUND`. The claimed id is kept in `callback_checkout_request_id`, the payment goes to `MANUAL_REVIEW` (`callback_without_initiation_checkout`), nothing is queried, and nothing is credited automatically. This closes the attack in which a leaked token is paired with another customer's successful checkout id: STK Push Query of that id would succeed, but it proves only that someone paid. Such a payment can be credited only by a two-person `RESOLVE_CONFIRMED` citing a provider statement line that binds to it (§9). A callback that beats a slow initiation response lands in the same place; the later response records the bound checkout but does not reopen automatic crediting.
 - **Verification:** a well-formed callback for the bound checkout triggers STK Push Query of the bound checkout. The query result, not the callback, decides the state.
+- **Callback receipt, amount and phone are claims.** They are stored on the provider event only. A leaked token with the correct bound checkout and the expected amount can still send a fabricated `MpesaReceiptNumber`. The credit then posts, because the checkout really succeeded, but the fabricated receipt never becomes the payment's receipt, the payment stays `receipt_pending`, and reconciliation stays open (`receipt_unverified`) until a statement line binds the real receipt. A claimed receipt that is already claimed by, or verified for, another payment is a `CONFLICT` and sends the payment to review.
+- **Sandbox numbers only.** In sandbox, `funding_svc_begin_payment` pushes only to MSISDNs in `funding.sandbox_msisdns` (seeded with the Daraja sandbox test number), so a real customer's phone never receives a sandbox prompt.
 - **Minimization:** stored fields are CheckoutRequestID, MerchantRequestID, ResultCode, ResultDesc (truncated), amount, receipt, and a masked phone number (`2547•••••123`). The raw body is not stored, only its sha256. The phone number sent to Daraja is kept masked, with a sha256 hash for matching.
 - **Retention:** provider events are kept for 7 years, the finance-record default. The Owner must confirm this against legal advice. Staff read them through `funding.read`, and customers see only their own payment status.
 
@@ -166,8 +182,10 @@ Every financial decision (`REVERSE`, `RESOLVE_CONFIRMED`, `RESOLVE_FAILED`) is a
 - same environment, exact KES (`kes_amount = kes_due`), and same shortcode;
 - the account reference and/or phone on the line match the payment;
 - the transaction time is between 10 minutes before and 24 hours after the payment was created (the business date follows from it);
-- the callback receipt, if one was bound, equals the line's receipt;
+- no statement item is already bound to this payment;
 - the item and its receipt are not already used by another payment.
+
+The callback's claimed receipt plays no part. `BIND_RECEIPT(payment, statement_item)` applies the same checks and the same three-person rule to a `CONFIRMED` payment whose receipt is still pending: it sets `statement_item_id`, `mpesa_receipt` and `receipt_pending = false` and moves no money.
 
 The requester, the approver, and whoever recorded the statement item must be three different people (`independent_reviewer_required`). On approval the item and receipt are tied to the payment, the KES receipt is booked on the statement's business date, and the credit goes through the same limit and coverage re-check as an automatic credit.
 
@@ -198,6 +216,7 @@ The requester, the approver, and whoever recorded the statement item must be thr
 | Spoofed callback without a token | Ignored. Nothing is written |
 | Spoofed callback with a leaked token (the token travels in a URL query string and is assumed observable in logs) | The token only correlates. Only the checkout id from our own synchronous STK Push response is ever queried. A callback cannot set or replace it, and an unbound callback goes to `MANUAL_REVIEW` without a query. A successful STK Query proves only the queried checkout's status, so it is used only for that bound checkout |
 | Tampered amount, account or phone | Binding to the locked quote. The browser never supplies money fields. The pushed amount, phone and account reference come from the database |
+| Fabricated receipt in a token-bearing callback | The receipt is a claim only. `mpesa_receipt` comes only from a bound statement item via three-person `RESOLVE_CONFIRMED` or `BIND_RECEIPT`; until then the credit is `receipt_pending` and reconciliation shows `receipt_unverified` |
 | Staff crediting without money received | `RESOLVE_CONFIRMED` needs an immutable statement line that binds exact KES, shortcode, reference/phone, time window and receipt, and three distinct people (recorder, requester, approver). Two-person approval alone is not treated as proof of payment |
 | Unbacked liability | Projected coverage at admission and again at credit, under a lock. Failures hold paid money in suspense instead of creating a balance |
 | Repudiation by staff | `admin_audit_events` on every staff RPC, including statement items and totals with their evidence digests. Reversals need two people |
@@ -208,12 +227,12 @@ The requester, the approver, and whoever recorded the statement item must be thr
 
 ## 12. Open items (not design questions for Claude)
 
-- The Owner must confirm the pinned Daraja doc revision (§1). The KES 250,000 cap is pinned to Safaricom's press release (§1).
+- The Daraja contract (§1) and the KES 250,000 cap are pinned. A production release must re-check the contract against the production go-live documentation.
 - A refund path for funded-suspense money that must be returned (Phase 3).
 - Legal and regulatory review of the product and jurisdiction (a release evidence item).
 - The retention period (§5).
 - The production counterpart account and the deposit posting migration (Phase 3).
 - The treasury pause hook in `engine_buy_contract` (Phase 3).
 - F1 gate replacement (Phase 3).
-- Customer funding UI and disclosure copy, to follow once the sandbox flow is accepted.
+- Production customer funding UI and disclosure copy. The sandbox page (`pages/sandbox-deposit.html`, testers only, "Daraja Sandbox - test funds only") exists; it is not a production deposit interface.
 - The CBK rate is published manually by the owner each business day. Automated CBK fetching is out of scope for v1.

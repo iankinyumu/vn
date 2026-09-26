@@ -4,12 +4,14 @@
 
 This runbook covers **sandbox only**. Nothing in it enables production payments, Real accounts or Real trading. A sandbox credit lands in a separate, non-spendable USD test ledger (`funding.usd_ledger_entries`), never in a trading wallet.
 
-## 1. Owner setup
+## 1. Authorized executor setup
 
 Never paste a secret value into chat, a commit, a ticket or a screenshot.
 
+The Owner confirms the Daraja sandbox credentials are stored locally in the ignored file `.env.redis.local` and authorizes Claude to complete the sandbox setup without another approval. Treat that file as a local sandbox input only. Read only the named `DARAJA_SANDBOX_*` variables required below. Do not print values, source unrelated variables, upload the file, commit it, or copy the whole file into Supabase. Hosted Edge Functions do not receive local environment files. Write each required value individually to the Supabase secret store and verify presence by variable name only.
+
 1. **Apply the migrations** `20260926100000_funding_foundation.sql` and `20260926110000_funding_rpc.sql` through the normal reviewed deployment. They add the `daraja_sandbox` and `daraja_production` modules, both off.
-2. **Set the Edge Function secrets** in the dashboard or with `supabase secrets set`. Type the values yourself.
+2. **Set the Edge Function secrets** in the dashboard or with `supabase secrets set`. Claude is authorized to transfer the named sandbox values directly without displaying them.
 
    | Name | Value |
    | --- | --- |
@@ -69,5 +71,8 @@ Use only the Daraja sandbox test MSISDN. For each case, record the time, the pay
 - **Resolving a payment as failed** (`RESOLVE_FAILED`) is refused once the provider has confirmed the money (`payment_funds_received`).
 - **Funded suspense** (`funded_suspense_treasury_paused`, `_treasury_unknown` or `_deposit_limit_reached`): the customer paid, the KES is booked, and no USD was credited. Restore coverage (a fresh snapshot) and resolve with `RESOLVE_CONFIRMED` as above; the approval re-checks coverage and limits. There is no refund path yet: escalate to the Owner.
 - **Unbound callbacks** (`callback_without_initiation_checkout`): never trust the callback's checkout id or receipt. Resolve only from the statement.
+- **Unverified receipts** (`receipt_pending`, reconciliation `receipt_unverified`): every automatic credit starts here, because a callback receipt is only a claim and STK Query returns no receipt. Bind the real receipt from the statement with the same three people: recorder `funding_record_statement_item`, requester `funding_request_action(<payment>, 'BIND_RECEIPT', '<reason>', <statement item id>)`, approver `funding_approve_action`. Binding moves no money. Never copy a receipt from a callback or the customer into a statement line.
+- **Sandbox test numbers:** sandbox prompts go only to MSISDNs in `funding.sandbox_msisdns` (seeded with the Daraja sandbox test number). Adding a number is a reviewed migration, and a real customer number must never be added.
+- **Tester page:** `sandbox-deposit.html` on the site ("Daraja Sandbox - test funds only") is usable only by enabled testers while `daraja_sandbox` is on; others see "not available".
 - **Emergency stop:** `funding_set_sandbox_module(false, '<reason>')`. Open payments still finalize through the sweep.
 - **Rollback:** turn the module off and remove the Daraja secrets. The funding tables are append-only and are kept.
