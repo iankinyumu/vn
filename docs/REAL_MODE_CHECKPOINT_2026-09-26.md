@@ -146,8 +146,8 @@ Findings are ranked by Claude's view of their importance. Items marked **(self)*
 | C | Case 7: daily reconciliation with a `SANDBOX_SIMULATED` statement | Can run now. Needs an owner session to record the statement total (there is no console UI yet) |
 | D | Case 10: callback with a wrong checkout id | Only through the test harness. Already covered in the suite |
 | E | Decide `DARAJA_SANDBOX_READY` / `KES_USD_QUOTE_READY` | Owner/supervisor, after A-C |
-| F | Publish a fresh rate before 2026-09-28 21:00 UTC and refresh the treasury snapshot | Owner, in Staff console → Funding |
-| G | Automatic rate source: a scheduled job from a commercial FX API, as a proposal or with auto-publish inside a band. That is a non-CBK source, so it needs a policy change | Owner decision |
+| F | Rate freshness is now automatic on CBK business days. Refresh the treasury snapshot every 24 hours | Owner, in Staff console → Funding |
+| G | ~~Automatic rate source~~ **Done (`9d105f1`, report §14):** an hourly CBK homepage import. It auto-publishes within 1.5%, holds larger moves for owner approval, and records failures. Audit risk: it depends on the homepage layout (a parser break shows as `FAILED` in the console) | Monitor |
 | H | Full `npm test` on adequate hardware, for `CODE_READY` | Hardware |
 | I | Phase 3: F1 Real gate, refund path for funded suspense, legacy crypto function deletion (after the caller check), production Daraja design | Plan |
 
@@ -168,6 +168,15 @@ Findings are ranked by Claude's view of their importance. Items marked **(self)*
    - F1;
    - the first live success as one Owner-approved, minimum-amount deposit into the business's own paybill;
    - its reconciliation against the statement.
+
+## 8a. Update after this checkpoint
+
+- `9d105f1`: automatic CBK import. It adds migration `20260927100000_funding_rate_sync.sql`, a `rate_sync` action on `funding-reconcile`, pg_cron job `funding-rate-sync-hourly`, and approve/reject in the console.
+- Deployed under the Owner's standing instruction to deploy without waiting for a go-ahead (report §14).
+- **Audit points:**
+  - the 1.5% band is a constant in SQL;
+  - automatic publications have `published_by` null and an `operator` audit row;
+  - the homepage scrape is a single point of failure, visible as `FAILED` in the console.
 
 ## 9. Audit checklist (suggested)
 

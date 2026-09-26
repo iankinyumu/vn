@@ -198,3 +198,18 @@ Payment `ff3e26a0-d34a-41da-a4c6-fe1496b335c3` (USD 5 / KES 649) was pushed to t
 **On the Owner's phone:** the handset showed an M-Pesa "insufficient funds" message for KES 649. A Daraja sandbox STK Push to a real number therefore runs against the holder's **real M-Pesa wallet**. Had the balance been enough and the PIN entered, real KES 649 would most likely have been paid to Safaricom's shared sandbox paybill `174379`. The project does not control that paybill, cannot reconcile it, and cannot refund from it. This breaks the rule "never send real money".
 
 **Decision:** no further prompts to real numbers. Cases 1 (success) and 2 (cancel) cannot be completed live in the sandbox without real money leaving a wallet. The success and cancel paths stay covered only by the scripted-double suite. A live success test belongs to the production phase, with the business's own shortcode and an Owner-approved minimum amount. The Owner decides whether to switch off the registered number; it is only used when chosen on the Real sandbox page. `DARAJA_SANDBOX_READY` remains **not set** pending the Owner's decision on accepting the sandbox evidence without a live success.
+
+## 14. Owner console Funding tab and automatic CBK rate import deployed (2026-09-26)
+
+The Owner gave a standing instruction to apply migrations and deploy without waiting for a go-ahead.
+
+| Step | Result |
+| --- | --- |
+| Migration `20260927100000_funding_rate_sync.sql` | Applied to `cdaxvkpmgqjfukbtrzys`; the dry run showed it as the only pending migration |
+| `funding-reconcile` | Redeployed with the `rate_sync` action (`cbk-rate.mjs` bundled). All three entry points pass `deno check` (Deno 2.9.6) |
+| Live check | `rate_sync` triggered once through pg_net with the Vault cron secret. HTTP 200, `{"outcome":"UNCHANGED","observation_id":1}`: CBK's homepage shows 129.62 posted 2026-09-25, which is rate version 1 |
+| Scheduler | pg_cron `funding-rate-sync-hourly` (`15 * * * *`), job 7, active |
+| Site | Vercel `dpl_9o8ViqRqUciBVEWkkYbjR9yA6aVd`. Live `admin.html` and `admin-operations.js` match the build (Funding tab with manual publish, treasury snapshot and the automatic-import panel) |
+| Tests | Parser 3/3, rate-sync real PostgreSQL 4/4, Edge handlers 13/13, console 22/22, funding sandbox with secrets and copy 34/34 |
+
+**Expected next:** when CBK posts the 28 September rate, the hourly job publishes it if it is within 1.5% of 129.62. Otherwise it is held for Owner approval in Staff console → Funding.
