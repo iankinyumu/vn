@@ -181,3 +181,12 @@ The test balance stays USD 0.00 with 0 ledger entries. The earlier `REJECTED` pa
 **Page issue found:** a submit before `sandbox-deposit.js` attaches its handler makes the browser do a native GET submit, which reloads the page with `?`. No request reaches the server. The page script should disable the form until `start()` finishes. This is a small follow-up and not a money path.
 
 **Decision needed for case 1/2:** a success needs a phone that can enter a PIN. Daraja sandbox accepts a tester's own Safaricom number, but the scope here allows only the official test MSISDN, and `funding.sandbox_msisdns` is changed only by a reviewed migration. Otherwise, a `CONFIRMED` payment can only be produced through the scripted double already covered in `tests/funding-sandbox.test.mjs`. `DARAJA_SANDBOX_READY` and `KES_USD_QUOTE_READY` remain **not set** until the Owner decides.
+
+## 12. Tester numbers and Real-mode placement deployed on 2026-09-26
+
+- **Migration:** with the Owner's approval, `20260926120000_funding_tester_msisdns.sql` was applied to `cdaxvkpmgqjfukbtrzys`. A read-only check confirmed the following. `funding.sandbox_tester_msisdns` exists. `funding_set_my_sandbox_msisdn` is executable by `authenticated` and not by `anon`. `funding_svc_begin_payment` checks the tester's own numbers and is still not executable by `authenticated`.
+- **Site:** with the Owner's approval, the site was deployed to Vercel production (`dpl_6hcrzhBJjSdL5ti28yjCxT4qaB8V`, aliased to `smartprofitbinaryv2.vercel.app`) from `6dfbd41`. The live `sandbox-deposit.html`, `sandbox-deposit.js`, `account-switcher.js` and `shell.js` are byte-identical to the local build.
+- **Live check as the tester:** the dashboard switcher shows `Practice`, selected, and `Real — Sandbox (test funds)`. Choosing Real opens the Real-mode sandbox page, whose banner reads "Real mode · Daraja Sandbox - test funds only". The page shows the "Your test phone" section.
+- **Tests:** funding real-PostgreSQL 25/25, sandbox page browser 5/5, other UI and copy suites 43/43, engine account stats 3/3 (run alone).
+
+Next: the Owner adds their number under "Your test phone". Then drill cases 1, 2, 8 and 9 run against it.
