@@ -1,8 +1,8 @@
-/* Single source of the customer shell: header, navigation, footer, mode ribbon
-   and the restriction-banner mount point. Every customer page declares
-   `data-shell-surface` on <body>, sets `data-shell-active` for the current nav
-   item and exposes the two mount points below; nothing else defines nav markup,
-   so the surfaces can never drift apart again. */
+/* Single source of the customer shell: the public header and footer, the
+   signed-in side panel and top bar, and the restriction-banner mount point.
+   Every customer page declares `data-shell-surface` on <body>, sets
+   `data-shell-active` for the current nav item and exposes the two mount points
+   below; nothing else defines nav markup, so the surfaces can never drift apart. */
 (function () {
     'use strict';
 
@@ -22,24 +22,18 @@
         { href: 'profile.html', label: 'Profile', icon: 'fa-user-circle', key: 'profile' }
     ]);
 
-    const FOOTER_COLUMNS = Object.freeze({
-        public: [
-            { title: 'Explore', links: [{ href: 'about.html', label: 'About' }, { href: 'blog.html', label: 'Guides' }, { href: 'contact.html', label: 'Contact' }, { href: 'fairness.html', label: 'Fairness' }] },
-            { title: 'Account', links: [{ href: 'faq.html', label: 'FAQ' }, { href: 'login.html', label: 'Sign in' }, { href: 'register.html', label: 'Create account' }] }
-        ],
-        app: [
-            { title: 'Workspace', links: [{ href: 'dashboard.html', label: 'Dashboard' }, { href: 'trade.html', label: 'Trade' }, { href: 'profile.html', label: 'Profile' }] },
-            { title: 'Learn', links: [{ href: 'blog.html', label: 'Guides' }, { href: 'fairness.html', label: 'Fairness' }, { href: 'faq.html', label: 'FAQ' }, { href: 'contact.html', label: 'Contact' }] }
-        ]
-    });
+    const FOOTER_COLUMNS = Object.freeze([
+        { title: 'Explore', links: [{ href: 'about.html', label: 'About' }, { href: 'blog.html', label: 'Guides' }, { href: 'contact.html', label: 'Contact' }, { href: 'fairness.html', label: 'Fairness' }] },
+        { title: 'Account', links: [{ href: 'faq.html', label: 'FAQ' }, { href: 'login.html', label: 'Sign in' }, { href: 'register.html', label: 'Create account' }] }
+    ]);
 
     const TAGLINE = 'Digit contracts on self-generated indices. Practice only, with virtual funds.';
     const FOOTER_NOTE = '© 2026 SmartProfit. Practice mode only; virtual funds have no cash value.';
     // A page in Real mode declares data-shell-mode="real-sandbox" on <body>. Today the
     // only Real surface is the Daraja sandbox. Its credits are test-only, but a
     // prompt to a tester's own phone charges real M-Pesa money.
-    const REAL_SANDBOX_TAGLINE = 'Real mode: Daraja Sandbox testing. Credits are test-only; Real trading is not open.';
     const REAL_SANDBOX_NOTE = '© 2026 SmartProfit. Real mode is in Daraja Sandbox testing: credits are test-only, but a prompt to your own phone charges real M-Pesa money. Practice mode stays strictly virtual.';
+    const RAIL_KEY = 'smartprofit:rail-expanded';
 
     let mounted = false;
 
@@ -47,6 +41,12 @@
         const node = document.createElement(tag);
         if (className) node.className = className;
         if (text !== undefined) node.textContent = text;
+        return node;
+    }
+
+    function icon(name) {
+        const node = element('i', `fas ${name}`);
+        node.setAttribute('aria-hidden', 'true');
         return node;
     }
 
@@ -58,9 +58,9 @@
             anchor.classList.add('active');
             anchor.setAttribute('aria-current', 'page');
         }
-        const icon = element('i', `fas ${link.icon} me-1`);
-        icon.setAttribute('aria-hidden', 'true');
-        anchor.append(icon, document.createTextNode(link.label));
+        const glyph = icon(link.icon);
+        glyph.classList.add('me-1');
+        anchor.append(glyph, document.createTextNode(link.label));
         item.append(anchor);
         return item;
     }
@@ -76,9 +76,9 @@
         if (signedIn) {
             const button = element('button', 'btn btn-outline-danger btn-sm rounded-pill px-3');
             button.type = 'button';
-            const icon = element('i', 'fas fa-right-from-bracket me-1');
-            icon.setAttribute('aria-hidden', 'true');
-            button.append(icon, document.createTextNode('Log out'));
+            const glyph = icon('fa-right-from-bracket');
+            glyph.classList.add('me-1');
+            button.append(glyph, document.createTextNode('Log out'));
             button.addEventListener('click', () => { if (typeof window.logout === 'function') window.logout(); });
             item.append(button);
         } else {
@@ -92,12 +92,12 @@
         return signedIn;
     }
 
-    function buildHeader(surface, activeKey) {
+    function buildHeader(activeKey) {
         const header = element('header', 'premium-header');
         const nav = element('nav', 'navbar navbar-expand-xl');
         const container = element('div', 'container-fluid px-4');
         const brand = element('a', 'navbar-brand premium-logo');
-        brand.href = surface === 'app' ? 'dashboard.html' : 'index.html';
+        brand.href = 'index.html';
         brand.setAttribute('aria-label', 'SmartProfit home');
         const logoText = element('div', 'logo-text');
         logoText.append(element('span', 'logo-primary', 'Smart'), element('span', 'logo-secondary', 'Profit'));
@@ -113,16 +113,7 @@
         const collapse = element('div', 'collapse navbar-collapse');
         collapse.id = 'smartProfitNav';
         const list = element('ul', 'navbar-nav ms-auto align-items-center gap-1');
-        const links = surface === 'app' ? APP_LINKS : PUBLIC_LINKS;
-        list.append(...links.map((link) => navItem(link, activeKey)));
-        if (surface === 'app') {
-            const switcherItem = element('li', 'nav-item ms-2');
-            const switcher = element('select', 'account-switcher form-select form-select-sm');
-            switcher.dataset.accountSwitcher = '';
-            switcher.setAttribute('aria-label', 'Active account');
-            switcherItem.append(switcher);
-            list.append(switcherItem);
-        }
+        list.append(...PUBLIC_LINKS.map((link) => navItem(link, activeKey)));
         const sessionItem = element('li', 'nav-item ms-2');
         sessionItem.dataset.shellSession = '';
         list.append(sessionItem);
@@ -133,14 +124,14 @@
         return header;
     }
 
-    function buildFooter(surface, realSandbox) {
+    function buildFooter() {
         const footer = element('footer', 'premium-footer');
         const container = element('div', 'container-fluid px-4');
         const row = element('div', 'row g-3');
         const brandColumn = element('div', 'col-md-6');
-        brandColumn.append(element('div', 'footer-brand-small', 'SmartProfit'), element('p', 'footer-desc', realSandbox ? REAL_SANDBOX_TAGLINE : TAGLINE));
+        brandColumn.append(element('div', 'footer-brand-small', 'SmartProfit'), element('p', 'footer-desc', TAGLINE));
         row.append(brandColumn);
-        FOOTER_COLUMNS[surface].forEach((column) => {
+        FOOTER_COLUMNS.forEach((column) => {
             const cell = element('div', 'col-md-3');
             cell.append(element('h6', null, column.title));
             const list = element('ul');
@@ -155,8 +146,129 @@
             row.append(cell);
         });
         container.append(row, element('hr', 'footer-divider'));
-        container.append(element('p', 'text-center footer-bottom-text', realSandbox ? REAL_SANDBOX_NOTE : FOOTER_NOTE));
+        container.append(element('p', 'text-center footer-bottom-text', FOOTER_NOTE));
         footer.append(container);
+        return footer;
+    }
+
+    /* Signed-in pages: a thin side panel holds the brand, navigation and log out.
+       It expands in place on wide screens and slides in as a drawer on phones.
+       The top bar carries only the mode switch and the funding actions. */
+    const railPreference = () => { try { return localStorage.getItem(RAIL_KEY) === '1'; } catch (_) { return false; } };
+    const saveRailPreference = (value) => { try { localStorage.setItem(RAIL_KEY, value ? '1' : '0'); } catch (_) { /* The preference is a convenience only. */ } };
+
+    function buildRail(activeKey) {
+        const rail = element('aside', 'app-rail');
+        rail.id = 'appRail';
+        rail.dataset.appRail = '';
+        const brand = element('a', 'app-rail-brand');
+        brand.href = 'dashboard.html';
+        brand.setAttribute('aria-label', 'SmartProfit home');
+        const mark = element('span', 'app-rail-mark');
+        mark.setAttribute('aria-hidden', 'true');
+        mark.append(element('span', 'logo-primary', 'S'), element('span', 'logo-secondary', 'P'));
+        const word = element('span', 'app-rail-word');
+        word.setAttribute('aria-hidden', 'true');
+        word.append(element('span', 'logo-primary', 'Smart'), element('span', 'logo-secondary', 'Profit'));
+        brand.append(mark, word);
+        const nav = element('nav', 'app-rail-nav');
+        nav.setAttribute('aria-label', 'Main');
+        const list = element('ul');
+        APP_LINKS.forEach((link) => {
+            const item = element('li');
+            const anchor = element('a', 'app-rail-link');
+            anchor.href = link.href;
+            anchor.title = link.label;
+            if (link.key === activeKey) { anchor.classList.add('active'); anchor.setAttribute('aria-current', 'page'); }
+            anchor.append(icon(link.icon), element('span', 'app-rail-text', link.label));
+            item.append(anchor);
+            list.append(item);
+        });
+        nav.append(list);
+        const foot = element('div', 'app-rail-foot');
+        const logout = element('button', 'app-rail-link app-rail-logout');
+        logout.type = 'button';
+        logout.title = 'Log out';
+        logout.append(icon('fa-right-from-bracket'), element('span', 'app-rail-text', 'Log out'));
+        logout.addEventListener('click', () => { if (typeof window.logout === 'function') window.logout(); });
+        const expand = element('button', 'app-rail-link app-rail-expand');
+        expand.type = 'button';
+        expand.dataset.railExpand = '';
+        expand.setAttribute('aria-controls', 'appRail');
+        expand.append(icon('fa-angles-right'), element('span', 'app-rail-text', 'Expand'));
+        foot.append(logout, expand);
+        rail.append(brand, nav, foot);
+        return rail;
+    }
+
+    function buildTopbar() {
+        const bar = element('header', 'app-topbar');
+        const menu = element('button', 'app-topbar-menu');
+        menu.type = 'button';
+        menu.dataset.railOpen = '';
+        menu.setAttribute('aria-label', 'Open menu');
+        menu.setAttribute('aria-controls', 'appRail');
+        menu.setAttribute('aria-expanded', 'false');
+        menu.append(icon('fa-bars'));
+        const switcher = element('div');
+        switcher.dataset.accountSwitcher = '';
+        const actions = element('div', 'app-topbar-actions');
+        const deposit = element('button', 'app-fund-btn app-fund-deposit');
+        deposit.type = 'button';
+        deposit.dataset.fundingOpen = 'deposit';
+        deposit.append(icon('fa-plus'), document.createTextNode('Deposit'));
+        const withdraw = element('button', 'app-fund-btn app-fund-withdraw');
+        withdraw.type = 'button';
+        withdraw.dataset.fundingOpen = 'withdraw';
+        withdraw.append(icon('fa-arrow-up'), document.createTextNode('Withdraw'));
+        actions.append(deposit, withdraw);
+        bar.append(menu, switcher, actions);
+        return bar;
+    }
+
+    function wireRail(rail, topbar) {
+        const backdrop = element('div', 'app-rail-backdrop');
+        backdrop.hidden = true;
+        const opener = topbar.querySelector('[data-rail-open]');
+        const expand = rail.querySelector('[data-rail-expand]');
+        const drawer = window.matchMedia ? window.matchMedia('(max-width: 991.98px)') : { matches: false };
+        const setExpanded = (value) => {
+            document.body.classList.toggle('rail-expanded', value);
+            expand.setAttribute('aria-expanded', String(value));
+            expand.querySelector('.app-rail-text').textContent = value ? 'Collapse' : 'Expand';
+            expand.title = value ? 'Collapse menu' : 'Expand menu';
+        };
+        const closeDrawer = (focus) => {
+            if (!document.body.classList.contains('rail-open')) return;
+            document.body.classList.remove('rail-open');
+            backdrop.hidden = true;
+            opener.setAttribute('aria-expanded', 'false');
+            if (focus) opener.focus();
+        };
+        const openDrawer = () => {
+            document.body.classList.add('rail-open');
+            backdrop.hidden = false;
+            opener.setAttribute('aria-expanded', 'true');
+            rail.querySelector('.app-rail-link')?.focus();
+        };
+        opener.addEventListener('click', () => (document.body.classList.contains('rail-open') ? closeDrawer(true) : openDrawer()));
+        backdrop.addEventListener('click', () => closeDrawer(true));
+        rail.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeDrawer(true); });
+        expand.addEventListener('click', () => {
+            if (drawer.matches) { closeDrawer(true); return; }
+            const next = !document.body.classList.contains('rail-expanded');
+            setExpanded(next);
+            saveRailPreference(next);
+        });
+        drawer.addEventListener?.('change', () => closeDrawer(false));
+        setExpanded(railPreference());
+        return backdrop;
+    }
+
+    // Signed-in pages carry one line of legal text; navigation lives in the side panel.
+    function buildAppFooter(realSandbox) {
+        const footer = element('footer', 'app-footer');
+        footer.append(element('p', null, realSandbox ? REAL_SANDBOX_NOTE : FOOTER_NOTE));
         return footer;
     }
 
@@ -180,14 +292,17 @@
         const active = options.active || document.body.dataset.shellActive || '';
         const headerMount = document.querySelector('[data-shell-header]');
         const footerMount = document.querySelector('[data-shell-footer]');
-        if (headerMount) {
-            headerMount.replaceChildren();
-            const header = buildHeader(surface, active);
-            headerMount.append(header);
-            if (surface === 'app') headerMount.append(buildRestrictionBanner());
+        if (headerMount && surface === 'app') {
+            const rail = buildRail(active);
+            const topbar = buildTopbar();
+            headerMount.replaceChildren(rail, wireRail(rail, topbar), topbar, buildRestrictionBanner());
+            document.body.classList.add('has-rail');
+        } else if (headerMount) {
+            const header = buildHeader(active);
+            headerMount.replaceChildren(header);
             fillSessionAction(header);
         }
-        if (footerMount) footerMount.replaceChildren(buildFooter(surface, document.body.dataset.shellMode === 'real-sandbox'));
+        if (footerMount) footerMount.replaceChildren(surface === 'app' ? buildAppFooter(document.body.dataset.shellMode === 'real-sandbox') : buildFooter());
         if (surface === 'app' && !document.body.classList.contains('app-shell')) document.body.classList.add('app-shell');
         if (surface === 'public' && !document.body.classList.contains('public-shell')) document.body.classList.add('public-shell');
         mounted = true;

@@ -149,7 +149,8 @@ test('a new Practice account sees real zeros and an explained empty history, not
         assert.match($('[data-contract-rows]').textContent, /No contracts yet\. Contracts you buy on the Trade page appear here\./);
         assert.match($('[data-open-contracts]').textContent, /No open contracts\./);
         assert.equal($('[data-dashboard-status]').textContent, '');
-        assert.equal($('[data-account-switcher]').value, 'practice-id');
+        assert.equal($('[data-account-switcher] [data-mode-label]').textContent, 'Practice');
+        assert.equal($('[data-account-switcher] [aria-checked="true"]').dataset.accountId, 'practice-id');
     } finally { page.dom.window.close(); }
 });
 
@@ -160,8 +161,8 @@ test('a failed Practice enrollment says so and still shows the indices', async (
         await page.settle(() => /Practice account could not be opened/.test($('[data-dashboard-status]').textContent) && /SmartProfit Index 10/.test($('[data-index-rows]').textContent));
         assert.match($('[data-dashboard-status]').textContent, /^Your Practice account could not be opened\. Reload the page; if this continues, contact support\.$/);
         assert.equal($('[data-practice-balance]').textContent, 'Unavailable');
-        assert.equal($('[data-account-switcher]').disabled, true);
-        assert.match($('[data-account-switcher]').textContent, /Account unavailable/);
+        assert.equal($('[data-account-switcher] .mode-switch-toggle').disabled, true);
+        assert.match($('[data-account-switcher]').textContent, /Unavailable/);
         const logged = page.errors.find(([label]) => label === '[smartprofit] startup failed');
         assert.deepEqual({ step: logged[1].step, status: logged[1].status, code: logged[1].code }, { step: 'enroll_practice_account', status: 404, code: '42883' });
     } finally { page.dom.window.close(); }
