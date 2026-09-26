@@ -111,7 +111,9 @@ The live evidence is in report §§9-13, with payment ids, UTC times and provide
 - The own-number feature is still deployed, and its UI copy still claims "Sandbox prompts move no real money", which is **false**.
 - No number is enabled, so no prompt can go to a real phone unless a tester re-registers one.
 
-**Recommended remediation (not yet done; awaiting the Owner):**
+**Owner decision (2026-09-26, after this checkpoint was first written):** keep the feature, and state plainly that real money moves. Done in the follow-up commit: the false copy was removed; the "Your test phone" section carries a real-money notice; a warning with the exact KES amount appears beside the send button whenever an own number is selected; and the Real-mode footer says a prompt to your own phone charges real M-Pesa money. A browser test asserts that the page never claims "no real money". Items 1 in section 6 and A in section 7 are now the Owner's accepted risk, not open remediation.
+
+**Claude's original recommendation (superseded by the Owner decision):**
 
 - Remove the feature with a reviewed migration: drop the own-number path from `funding_svc_begin_payment`, disable and retire the RPC, and remove the UI section and its copy.
 - If removal is refused, at minimum correct the copy immediately and add an explicit real-money warning.

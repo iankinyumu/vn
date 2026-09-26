@@ -131,6 +131,7 @@ test('sandbox deposit: quote shows locked KES, rate, rounding and expiry; the pr
     assert.equal(await page.locator('[data-quote-rounding]').textContent(), 'KES 0.9');
     assert.match(await page.locator('[data-quote-rate]').textContent(), /KES 129\.62 per USD \(CBK, 2026-09-25\)/);
     assert.match(await page.locator('[data-quote-expiry]').textContent(), /^in [45]:\d\d$/);
+    assert.equal(await page.locator('[data-sandbox-real-warning]').isVisible(), false, 'no real-money warning for the test number');
     await shot(page, 'sandbox-deposit-quote');
 
     await page.click('[data-sandbox-send]');
@@ -193,6 +194,13 @@ test('sandbox deposit: a tester adds and removes their own number; the forms nev
 
     await page.click('[data-sandbox-quote-button]');
     await page.locator('[data-sandbox-quote]').waitFor({ state: 'visible' });
+    assert.equal(await page.locator('[data-sandbox-real-warning]').textContent(),
+        'Real money: approving this prompt charges KES 649 from the real M-Pesa balance of 2547*****678. It goes to Safaricom\'s sandbox paybill 174379 and cannot be refunded by SmartProfit.');
+    await page.selectOption('[data-sandbox-phone]', '254708374149');
+    assert.equal(await page.locator('[data-sandbox-real-warning]').isVisible(), false, 'switching to the test number hides it');
+    await page.selectOption('[data-sandbox-phone]', '254712345678');
+    assert.equal(await page.locator('[data-sandbox-real-warning]').isVisible(), true);
+    assert.match(await page.locator('[data-sandbox-own-list]').locator('xpath=..').textContent(), /Real money:.*real M-Pesa balance is charged/s);
     await page.click('[data-sandbox-send]');
     await page.locator('[data-sandbox-payment]').waitFor({ state: 'visible' });
     assert.equal(posted[0].body.phone, '254712345678');
@@ -216,7 +224,8 @@ test('sandbox deposit: the page is Real mode; the switcher shows Real sandbox an
     assert.equal(await page.locator('[data-account-switcher]').inputValue(), 'real-sandbox');
     assert.match(await page.locator('.sandbox-banner').textContent(), /^Real mode · Daraja Sandbox - test funds only$/);
     const footer = await page.locator('footer').textContent();
-    assert.match(footer, /Real mode is in Daraja Sandbox testing: no real money moves\. Practice mode stays strictly virtual\./);
+    assert.match(footer, /Real mode is in Daraja Sandbox testing: credits are test-only, but a prompt to your own phone charges real M-Pesa money\. Practice mode stays strictly virtual\./);
+    assert.ok(!/no real money/i.test(await page.content()), 'the page never claims that no real money moves');
     assert.ok(!/Practice mode only/.test(footer));
     assert.equal(await page.evaluate(() => { try { return window.smartProfitAccount.get().mode; } catch (_) { return null; } }), null, 'no trading account is activated');
     await shot(page, 'real-mode-sandbox');

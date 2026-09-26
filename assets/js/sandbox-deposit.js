@@ -144,6 +144,15 @@
         find('[data-sandbox-quote]').hidden = true;
     }
 
+    // A prompt to the tester's own number runs on the live M-Pesa network: say so
+    // with the exact amount before the prompt can be sent.
+    function showRealMoneyWarning() {
+        const warning = find('[data-sandbox-real-warning]');
+        const own = (overview?.my_msisdns || []).includes(find('[data-sandbox-phone]').value);
+        warning.hidden = !(quote && own);
+        if (!warning.hidden) warning.textContent = `Real money: approving this prompt charges ${kes(quote.kes_due)} from the real M-Pesa balance of ${mask(find('[data-sandbox-phone]').value)}. It goes to Safaricom's sandbox paybill 174379 and cannot be refunded by SmartProfit.`;
+    }
+
     function showQuote(q) {
         quote = q;
         find('[data-sandbox-quote]').hidden = false;
@@ -151,6 +160,7 @@
         text('[data-quote-kes]', kes(q.kes_due));
         text('[data-quote-rate]', `KES ${Number(q.kes_per_usd).toFixed(2)} per USD (${q.rate_source || 'CBK'}, ${q.rate_date})`);
         text('[data-quote-rounding]', kes(q.kes_rounding));
+        showRealMoneyWarning();
         const send = find('[data-sandbox-send]');
         send.disabled = false;
         const tick = () => {
@@ -245,6 +255,7 @@
         status.textContent = overview.rate_stale ? ERRORS.rate_stale : '';
         text('[data-sandbox-limits]', `From USD ${usd(overview.min_usd)} to USD ${usd(overview.max_usd_per_deposit)} per deposit; at most USD ${usd(overview.max_usd_rolling_24h)} and ${overview.max_deposits_rolling_24h} deposits in 24 hours.`);
         renderPhones();
+        find('[data-sandbox-phone]').addEventListener('change', showRealMoneyWarning);
         find('[data-sandbox-quote-form]').addEventListener('submit', (event) => requestQuote(event).catch((error) => { console.error(error); status.textContent = 'A quote could not be created. Please try again.'; }));
         find('[data-sandbox-own-form]').addEventListener('submit', (event) => addOwnPhone(event).catch((error) => { console.error(error); status.textContent = 'The number could not be saved. Please try again.'; }));
         find('[data-sandbox-quote-button]').disabled = false;

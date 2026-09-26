@@ -19,6 +19,7 @@
         .sandbox-quote dl { display: grid; grid-template-columns: max-content 1fr; gap: .35rem 1rem; margin: 0; }
         .sandbox-quote dt { color: var(--bs-secondary-color, #9aa4b2); font-weight: 500; }
         .sandbox-quote dd { margin: 0; font-family: 'DM Mono', monospace; }
+        .sandbox-real-money { border: 1px solid #ff9aa5; background: #4a2328; color: #ffd0d5; border-radius: 10px; padding: .6rem .8rem; }
         .sandbox-state { display: inline-block; border-radius: 999px; padding: .1rem .6rem; font-size: .8rem; font-weight: 700; }
         .sandbox-state[data-tone="pending"] { background: #2b3a55; color: #9ec5ff; }
         .sandbox-state[data-tone="ok"] { background: #1f4630; color: #7ee2a8; }
@@ -78,6 +79,7 @@
                         <dt>Expires</dt><dd data-quote-expiry></dd>
                     </dl>
                     <p class="text-secondary small mt-2 mb-0">The M-Pesa amount is the USD amount at the reference rate, rounded up to a whole shilling. The rounding is not a fee.</p>
+                    <p class="sandbox-real-money small mt-3 mb-0" role="alert" data-sandbox-real-warning hidden></p>
                     <button type="button" class="btn btn-premium-primary mt-3" data-sandbox-send>Send sandbox M-Pesa prompt</button>
                 </div>
 
@@ -90,7 +92,8 @@
 
             <section class="settings-card">
                 <h5 class="settings-title"><i class="fas fa-sim-card"></i> Your test phone</h5>
-                <p class="text-secondary small">The Daraja sandbox test number never answers a prompt. To approve or decline a sandbox prompt yourself, add a Safaricom number you hold. It is used only for your own sandbox deposits, and you can remove it at any time. Sandbox prompts move no real money.</p>
+                <p class="text-secondary small">The Daraja sandbox test number never answers a prompt. To approve or decline a sandbox prompt yourself, add a Safaricom number you hold. It is used only for your own sandbox deposits, and you can remove it at any time.</p>
+                <p class="sandbox-real-money small" role="note"><i class="fas fa-triangle-exclamation me-1"></i><strong>Real money:</strong> a prompt to your own number goes through the live M-Pesa network. If you approve it with your PIN, your real M-Pesa balance is charged. The money goes to Safaricom's sandbox paybill 174379, which SmartProfit does not control and cannot refund. Only the USD credit on this page is a test balance.</p>
                 <form data-sandbox-own-form novalidate>
                     <label class="form-label" for="sandboxOwnPhone">Safaricom number</label>
                     <div class="input-wrapper"><i class="fas fa-phone form-icon"></i>

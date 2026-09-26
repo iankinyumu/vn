@@ -36,9 +36,10 @@
     const TAGLINE = 'Digit contracts on self-generated indices. Practice only, with virtual funds.';
     const FOOTER_NOTE = '© 2026 SmartProfit. Practice mode only; virtual funds have no cash value.';
     // A page in Real mode declares data-shell-mode="real-sandbox" on <body>. Today the
-    // only Real surface is the Daraja sandbox, which moves test funds only.
-    const REAL_SANDBOX_TAGLINE = 'Real mode: Daraja Sandbox testing. Test funds only; Real trading is not open.';
-    const REAL_SANDBOX_NOTE = '© 2026 SmartProfit. Real mode is in Daraja Sandbox testing: no real money moves. Practice mode stays strictly virtual.';
+    // only Real surface is the Daraja sandbox. Its credits are test-only, but a
+    // prompt to a tester's own phone charges real M-Pesa money.
+    const REAL_SANDBOX_TAGLINE = 'Real mode: Daraja Sandbox testing. Credits are test-only; Real trading is not open.';
+    const REAL_SANDBOX_NOTE = '© 2026 SmartProfit. Real mode is in Daraja Sandbox testing: credits are test-only, but a prompt to your own phone charges real M-Pesa money. Practice mode stays strictly virtual.';
 
     let mounted = false;
 
