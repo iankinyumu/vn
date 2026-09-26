@@ -190,3 +190,11 @@ The test balance stays USD 0.00 with 0 ledger entries. The earlier `REJECTED` pa
 - **Tests:** funding real-PostgreSQL 25/25, sandbox page browser 5/5, other UI and copy suites 43/43, engine account stats 3/3 (run alone).
 
 Next: the Owner adds their number under "Your test phone". Then drill cases 1, 2, 8 and 9 run against it.
+
+## 13. Own-number prompt reached real M-Pesa (2026-09-26 04:44 UTC). Stopped
+
+Payment `ff3e26a0-d34a-41da-a4c6-fe1496b335c3` (USD 5 / KES 649) was pushed to the Owner's registered number `2547*****385`. Daraja accepted the push. At 04:45:08 it reported `1037` "DS timeout user cannot be reached", and the payment ended `FAILED` with no credit.
+
+**On the Owner's phone:** the handset showed an M-Pesa "insufficient funds" message for KES 649. A Daraja sandbox STK Push to a real number therefore runs against the holder's **real M-Pesa wallet**. Had the balance been enough and the PIN entered, real KES 649 would most likely have been paid to Safaricom's shared sandbox paybill `174379`. The project does not control that paybill, cannot reconcile it, and cannot refund from it. This breaks the rule "never send real money".
+
+**Decision:** no further prompts to real numbers. Cases 1 (success) and 2 (cancel) cannot be completed live in the sandbox without real money leaving a wallet. The success and cancel paths stay covered only by the scripted-double suite. A live success test belongs to the production phase, with the business's own shortcode and an Owner-approved minimum amount. The Owner decides whether to switch off the registered number; it is only used when chosen on the Real sandbox page. `DARAJA_SANDBOX_READY` remains **not set** pending the Owner's decision on accepting the sandbox evidence without a live success.
