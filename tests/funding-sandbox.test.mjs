@@ -1,14 +1,17 @@
 // Real-mode funding, Daraja sandbox (docs/REAL_FUNDING_DESIGN.md), on real
 // PostgreSQL. The Edge Function flow (supabase/functions/_shared/funding-flow.mjs)
 // runs against the migrations with a scripted Daraja double: no network call is
-// made and no provider identifier here is real.
+// made and no provider identifier here is real. The tests share one database and
+// run in order.
 import assert from 'node:assert/strict';
 import { after, before, test } from 'node:test';
 import { handleCallback, initiateDeposit, reconcileOpenPayments, sha256Hex } from '../supabase/functions/_shared/funding-flow.mjs';
 import { FUNDING_MIGRATIONS, V3_MIGRATIONS, asUser, createRealDatabase, identities } from './helpers/pg-real.mjs';
 
-const CONFIG = Object.freeze({ environment: 'SANDBOX', callbackBase: 'https://abcdefghijklmnopqrst.supabase.co/functions/v1' });
+const SHORTCODE = '174379';
+const CONFIG = Object.freeze({ environment: 'SANDBOX', shortcode: SHORTCODE, callbackBase: 'https://abcdefghijklmnopqrst.supabase.co/functions/v1' });
 const PHONE = '0712345678';
+const MSISDN = '254712345678';
 const errorOf = async (promise) => { try { await promise; return null; } catch (error) { return error.name === 'FundingError' ? error.code : error.message; } };
 
 let T, db;
@@ -30,17 +33,27 @@ async function serviceRpc(name, args) {
     } finally { await db.exec('reset role'); }
 }
 
+/** A further sandbox customer: an auth user on the tester list. */
+async function addCustomer(name, n) {
+    identities[name] = { id: `00000000-0000-4000-8000-0000000001${String(n).padStart(2, '0')}`, email: `${name}@example.test` };
+    await db.query('insert into auth.users values($1,$2,now(),$3)', [identities[name].id, identities[name].email, JSON.stringify({ display_name: name })]);
+    await as('ian', `select public.funding_set_sandbox_tester($1, true, 'Sandbox tester for funding evidence')`, [identities[name].id]);
+}
+
+let checkoutSeq = 0;
+let receiptSeq = 0;
+const nextReceipt = (prefix = 'GEN') => `${prefix}${String(++receiptSeq).padStart(7, '0')}`;
+
 /** Scripted Daraja: each call takes the next scripted answer (or the default). */
 function fakeDaraja({ push = [], query = [] } = {}) {
     const calls = { push: [], query: [] };
-    let n = 0;
     return {
         calls,
         environment: 'SANDBOX',
         async stkPush(request) {
             calls.push.push(request);
             const next = push.shift() ?? 'ACCEPTED';
-            if (next === 'ACCEPTED') { n += 1; return { outcome: 'ACCEPTED', merchantRequestId: `MR-${n}`, checkoutRequestId: `ws_CO_TEST_${Date.now()}_${n}`, responseCode: '0', responseDescription: 'Success. Request accepted for processing' }; }
+            if (next === 'ACCEPTED') { checkoutSeq += 1; return { outcome: 'ACCEPTED', merchantRequestId: `MR-${checkoutSeq}`, checkoutRequestId: `ws_CO_TEST_${checkoutSeq}`, responseCode: '0', responseDescription: 'Success. Request accepted for processing' }; }
             if (next === 'REJECTED') return { outcome: 'REJECTED', responseCode: '400.002.02', responseDescription: 'Bad Request - Invalid PhoneNumber' };
             return { outcome: 'AMBIGUOUS', responseCode: 'network', responseDescription: 'TimeoutError' };
         },
@@ -54,15 +67,18 @@ function fakeDaraja({ push = [], query = [] } = {}) {
     };
 }
 
-function callbackBody({ checkout, code = 0, amount, receipt, phone = '254712345678' }) {
+function callbackBody({ checkout, code = 0, amount, receipt, phone = MSISDN }) {
     const items = code === 0 ? [{ Name: 'Amount', Value: amount }, { Name: 'MpesaReceiptNumber', Value: receipt }, { Name: 'TransactionDate', Value: 20260925120000 }, { Name: 'PhoneNumber', Value: Number(phone) }] : undefined;
     return JSON.stringify({ Body: { stkCallback: { MerchantRequestID: 'MR', CheckoutRequestID: checkout, ResultCode: code, ResultDesc: code === 0 ? 'The service request is processed successfully.' : 'Request cancelled by user', ...(items ? { CallbackMetadata: { Item: items } } : {}) } } });
 }
 
-const nairobiToday = () => new Date(Date.now() + 3 * 3600 * 1000).toISOString().slice(0, 10);
+const nairobiDay = (offsetDays = 0) => new Date(Date.now() + 3 * 3600 * 1000 + offsetDays * 86400 * 1000).toISOString().slice(0, 10);
+const nairobiToday = () => nairobiDay(0);
 const quote = async (name, usd) => (await one(name, 'select public.funding_create_deposit_quote($1) q', [usd])).q;
 const payment = async (id) => (await db.query('select * from funding.payments where id=$1', [id])).rows[0];
 const testBalance = async (name) => Number((await db.query(`select coalesce(sum(amount),0) b from funding.usd_ledger_entries where account_code='CUSTOMER_TEST_BALANCE' and user_id=$1`, [identities[name].id])).rows[0].b);
+const kesReceipt = async (id) => (await db.query(`select kes_amount::text a, business_date::text d from funding.kes_clearing_entries where payment_id=$1 and kind='RECEIPT'`, [id])).rows[0] ?? null;
+const scalar = async (sql, params) => Object.values((await db.query(sql, params)).rows[0])[0];
 
 /** Runs one deposit to PENDING and returns the payment id, checkout id and callback token. */
 async function startDeposit(name, usd, daraja, key = `key-${Math.random().toString(16).slice(2)}`) {
@@ -70,10 +86,47 @@ async function startDeposit(name, usd, daraja, key = `key-${Math.random().toStri
     const token = `tok${Math.random().toString(16).slice(2)}${Math.random().toString(16).slice(2)}`;
     const view = await initiateDeposit({ rpc: serviceRpc, daraja, config: CONFIG, userId: identities[name].id, quoteId: q.quote_id, phone: PHONE, idempotencyKey: key, token });
     const row = await payment(view.payment_id);
-    return { q, view, token, key, id: view.payment_id, checkout: row.checkout_request_id };
+    return { q, view, token, key, id: view.payment_id, checkout: row.checkout_request_id, row };
 }
 
-test('sandbox is closed until the owner opens the module and lists the tester', async () => {
+/** A deposit that runs to CONFIRMED (callback plus provider status). */
+async function confirmedDeposit(name, usd) {
+    const daraja = fakeDaraja();
+    const d = await startDeposit(name, usd, daraja);
+    const kes = Math.ceil(Math.round(usd * 100) * 129.62 / 100 - 1e-9);
+    await handleCallback({ rpc: serviceRpc, daraja, bodyText: callbackBody({ checkout: d.checkout, amount: kes, receipt: nextReceipt('LIM') }), token: d.token });
+    return { ...d, row: await payment(d.id) };
+}
+
+/** Publishes a new deposit policy version (policy changes ship as reviewed migrations; here the test does it directly). */
+async function publishPolicy(overrides) {
+    const base = (await db.query('select * from funding.deposit_policy_versions order by version desc limit 1')).rows[0];
+    const p = { ...base, ...overrides, version: base.version + 1 };
+    await db.query(`insert into funding.deposit_policy_versions(version, min_usd, max_usd_per_deposit, max_usd_rolling_24h, max_deposits_rolling_24h, max_kes,
+        quote_ttl_seconds, rate_max_age_hours, spread_bp, stress_bp, alert_coverage_bp, pause_coverage_bp, incident_coverage_bp, treasury_max_age_hours)
+        values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+    [p.version, p.min_usd, p.max_usd_per_deposit, p.max_usd_rolling_24h, p.max_deposits_rolling_24h, p.max_kes, p.quote_ttl_seconds,
+        p.rate_max_age_hours, p.spread_bp, p.stress_bp, p.alert_coverage_bp, p.pause_coverage_bp, p.incident_coverage_bp, p.treasury_max_age_hours]);
+}
+
+/** Runs `fn` in a transaction that is always rolled back. */
+async function rolledBack(fn) {
+    await db.exec('begin');
+    try { return await fn(); } finally { await db.exec('rollback'); }
+}
+
+const snapshot = (reserve, note) => as('ian', `select public.funding_record_treasury_snapshot('SANDBOX', $1, $2)`, [reserve, note]);
+
+async function recordItem(staff, { receipt = nextReceipt('SIM'), kes, shortcode = SHORTCODE, at = new Date(), accountReference = null, msisdn = null,
+    kind = 'SANDBOX_SIMULATED', environment = 'SANDBOX' }) {
+    const sha = await sha256Hex(`simulated statement line ${receipt}`);
+    return (await one(staff, `select public.funding_record_statement_item($1, $2, $3, $4, $5, $6, $7, $8, 'sandbox simulated statement', $9, 'Sandbox statement line for evidence') id`,
+        [environment, receipt, kes, shortcode, at.toISOString(), accountReference, msisdn, kind, sha])).id;
+}
+
+// ------------------------------------------------------------------ opening
+
+test('sandbox is closed until the owner opens the module and lists the tester; an empty treasury admits nothing', async () => {
     assert.match(await errorOf(as('customer', 'select public.funding_create_deposit_quote(5)')), /sandbox_not_enabled/);
     await as('ian', `select public.funding_set_sandbox_module(true, 'Open Daraja sandbox for the owner test run')`);
     assert.match(await errorOf(as('customer', 'select public.funding_create_deposit_quote(5)')), /sandbox_not_enabled/, 'module on, but not a tester');
@@ -85,8 +138,99 @@ test('sandbox is closed until the owner opens the module and lists the tester', 
     // No treasury snapshot yet: a quote is allowed, a payment is not.
     const q = await quote('customer', 5);
     assert.equal(await errorOf(initiateDeposit({ rpc: serviceRpc, daraja: fakeDaraja(), config: CONFIG, userId: identities.customer.id, quoteId: q.quote_id, phone: PHONE, idempotencyKey: 'no-treasury-1' })), 'treasury_unknown');
-    await as('ian', `select public.funding_record_treasury_snapshot('SANDBOX', 10000000, 'Sandbox test float, not real cash')`);
+    // A fresh snapshot of KES 0 with no liability reads as OK today, but the first
+    // deposit would create an uncovered liability: projected coverage refuses it.
+    await snapshot(0, 'Empty sandbox treasury before any float');
+    assert.equal((await one('ian', `select public.funding_staff_overview('SANDBOX') o`)).o.treasury.status, 'OK');
+    const daraja = fakeDaraja();
+    assert.equal(await errorOf(initiateDeposit({ rpc: serviceRpc, daraja, config: CONFIG, userId: identities.customer.id, quoteId: q.quote_id, phone: PHONE, idempotencyKey: 'zero-reserve-1' })), 'treasury_paused');
+    assert.equal(daraja.calls.push.length, 0);
+    assert.equal(await scalar('select count(*)::int from funding.payments'), 0);
+    await snapshot(10000000, 'Sandbox test float, not real cash');
 });
+
+// ------------------------------------------------------------------ limits (policy v1, as shipped)
+
+test('policy v1 limits hold server-side: USD 5 minimum, USD 500 per deposit, USD 1,000 and three deposits per rolling 24 hours, KES 250,000 ceiling', async () => {
+    const pol = (await db.query('select * from funding.deposit_policy_versions')).rows;
+    assert.equal(pol.length, 1);
+    assert.deepEqual([pol[0].min_usd, pol[0].max_usd_per_deposit, pol[0].max_usd_rolling_24h, pol[0].max_deposits_rolling_24h, pol[0].max_kes], ['5.00', '500.00', '1000.00', 3, 250000]);
+    const rate = (await one('customer', 'select public.funding_reference_rate() r')).r;
+    assert.deepEqual([rate.min_usd, rate.max_usd_per_deposit, rate.max_usd_rolling_24h, rate.max_deposits_rolling_24h], [5, 500, 1000, 3]);
+    await addCustomer('limitsCount', 1);
+    await addCustomer('limitsAmount', 2);
+
+    // Per deposit, at quote time.
+    assert.match(await errorOf(as('limitsCount', 'select public.funding_create_deposit_quote(4.99)')), /amount_below_minimum/);
+    assert.match(await errorOf(as('limitsCount', 'select public.funding_create_deposit_quote(500.01)')), /amount_above_maximum/);
+    assert.equal((await quote('limitsCount', 500)).kes_due, 64810);
+
+    // Per deposit, at payment time, even for a quote row that bypassed the quote RPC.
+    for (const [usd, code] of [[4, 'amount_below_minimum'], [600, 'amount_above_maximum']]) {
+        const kes = Math.ceil(usd * 129.62);
+        const forged = (await db.query(`insert into funding.deposit_quotes(user_id, environment, policy_version, rate_version, kes_per_usd, rate_date, usd_amount, kes_due, kes_rounding, expires_at)
+            select $1::uuid, 'SANDBOX', 1, version, kes_per_usd, rate_date, $2::numeric, $3::integer, $3::integer - $2::numeric * kes_per_usd, now() + interval '5 minutes'
+              from funding.fx_rate_versions order by version desc limit 1 returning id`,
+        [identities.limitsCount.id, usd, kes])).rows[0].id;
+        assert.equal(await errorOf(initiateDeposit({ rpc: serviceRpc, daraja: fakeDaraja(), config: CONFIG, userId: identities.limitsCount.id, quoteId: forged, phone: PHONE, idempotencyKey: `forged-${usd}-quote` })), code);
+    }
+
+    // The provider ceiling is a second, independent hard limit.
+    assert.equal(await scalar(`select funding.limit_refusal($1, 'SANDBOX', 400, 250001, false)`, [identities.limitsCount.id]), 'amount_above_maximum');
+    assert.match(await errorOf(publishPolicy({ max_kes: 250001 })), /check constraint/);
+
+    // Three successful deposits per rolling 24 hours.
+    const first = await confirmedDeposit('limitsCount', 5);
+    for (let i = 0; i < 2; i += 1) assert.equal((await confirmedDeposit('limitsCount', 5)).row.state, 'CONFIRMED');
+    assert.equal(first.row.state, 'CONFIRMED');
+    assert.match(await errorOf(as('limitsCount', 'select public.funding_create_deposit_quote(5)')), /deposit_limit_reached/);
+    // Rolling: once the first credit is more than 24 hours old it no longer counts.
+    await db.exec('set session_replication_role = replica');
+    try {
+        await db.query(`update funding.usd_ledger_transactions set created_at = now() - interval '25 hours' where payment_id=$1`, [first.id]);
+    } finally { await db.exec('set session_replication_role = origin'); }
+    assert.equal((await quote('limitsCount', 5)).usd_amount, 5);
+
+    // USD 1,000 per rolling 24 hours, checked at quote and again when the quote is used.
+    assert.equal((await confirmedDeposit('limitsAmount', 500)).row.state, 'CONFIRMED');
+    const second = await quote('limitsAmount', 500);
+    const third = await quote('limitsAmount', 5);
+    const daraja = fakeDaraja();
+    await initiateDeposit({ rpc: serviceRpc, daraja, config: CONFIG, userId: identities.limitsAmount.id, quoteId: second.quote_id, phone: PHONE, idempotencyKey: 'amount-limit-2' });
+    const p2 = (await db.query(`select * from funding.payments where quote_id=$1`, [second.quote_id])).rows[0];
+    await serviceRpc('funding_svc_record_status', { p_payment: p2.id, p_checkout_request_id: p2.checkout_request_id, p_outcome: 'RESULT', p_result_code: '0', p_result_desc: 'ok' });
+    assert.equal((await payment(p2.id)).state, 'CONFIRMED');
+    assert.equal(await testBalance('limitsAmount'), 1000);
+    assert.equal(await errorOf(initiateDeposit({ rpc: serviceRpc, daraja, config: CONFIG, userId: identities.limitsAmount.id, quoteId: third.quote_id, phone: PHONE, idempotencyKey: 'amount-limit-3' })), 'deposit_limit_reached');
+    assert.match(await errorOf(as('limitsAmount', 'select public.funding_create_deposit_quote(5)')), /deposit_limit_reached/);
+
+    // Limits are re-checked in the crediting transaction: a stricter policy
+    // published while a payment is open holds the paid money in suspense.
+    const held = await startDeposit('limitsCount', 5, fakeDaraja());
+    await publishPolicy({ max_deposits_rolling_24h: 2 });
+    await serviceRpc('funding_svc_record_status', { p_payment: held.id, p_checkout_request_id: held.checkout, p_outcome: 'RESULT', p_result_code: '0', p_result_desc: 'ok' });
+    const row = await payment(held.id);
+    assert.equal(row.state, 'MANUAL_REVIEW');
+    assert.equal(row.attention_reason, 'funded_suspense_deposit_limit_reached');
+    assert.ok(row.provider_confirmed_at, 'the money is recorded as received');
+    assert.equal(row.credit_transaction_id, null);
+    assert.equal((await kesReceipt(held.id)).a, '649.000000', 'the KES is booked as received');
+    assert.equal(await testBalance('limitsCount'), 15, 'the three earlier credits, none for the held payment');
+
+    // Limits fail closed without a policy.
+    await rolledBack(async () => {
+        await db.exec('set local session_replication_role = replica');
+        await db.query('delete from funding.deposit_policy_versions');
+        await db.exec('set local session_replication_role = origin');
+        assert.match(await errorOf(db.query('select funding.policy()')), /deposit_policy_unavailable/);
+    });
+
+    // The remaining cases exercise the state machine, not the limits: a test
+    // policy keeps the per-deposit limit and relaxes the rolling ones.
+    await publishPolicy({ max_usd_rolling_24h: 100000, max_deposits_rolling_24h: 100 });
+});
+
+// ------------------------------------------------------------------ state machine
 
 test('USD 5.00 quotes to KES 649 at 129.62 with KES 0.90 in the rounding account; bad amounts are refused', async () => {
     const q = await quote('customer', 5);
@@ -106,7 +250,8 @@ test('happy path: push, callback, provider status confirms, USD credited once; r
     const daraja = fakeDaraja();
     const d = await startDeposit('customer', 5, daraja);
     assert.equal(d.view.state, 'PENDING');
-    assert.deepEqual(daraja.calls.push.map((c) => [c.amount, c.phone]), [[649, '254712345678']]);
+    assert.equal(d.row.shortcode, SHORTCODE);
+    assert.deepEqual(daraja.calls.push.map((c) => [c.amount, c.phone]), [[649, MSISDN]]);
     assert.match(daraja.calls.push[0].callbackUrl, /^https:\/\/abcdefghijklmnopqrst\.supabase\.co\/functions\/v1\/daraja-callback\?t=/);
     assert.equal(await testBalance('customer'), 0, 'no credit before the callback and status');
 
@@ -116,6 +261,7 @@ test('happy path: push, callback, provider status confirms, USD credited once; r
     assert.equal(row.state, 'CONFIRMED');
     assert.equal(row.mpesa_receipt, 'TST0000001');
     assert.equal(row.receipt_pending, false);
+    assert.ok(row.provider_confirmed_at);
     assert.equal(await testBalance('customer'), 5);
     const kes = (await db.query(`select kind, kes_amount::text a from funding.kes_clearing_entries where payment_id=$1 order by kind`, [d.id])).rows;
     assert.deepEqual(kes.map((k) => [k.kind, k.a]), [['RECEIPT', '649.000000'], ['ROUNDING', '0.900000']]);
@@ -222,20 +368,72 @@ test('altered amount, checkout conflict and callback/status disagreement go to m
     assert.equal(await testBalance('customer'), balance);
 });
 
-test('ambiguous initiation: no retry push; a token-bound callback plus provider status resolves it', async () => {
-    const daraja = fakeDaraja({ push: ['AMBIGUOUS'] });
+// ------------------------------------------------------------------ R1: callbacks never bind a checkout
+
+let unboundPayment; // the ambiguous 7.5 USD payment, resolved later with statement evidence
+let racePayment;
+
+test('a leaked token with another customer\'s successful checkout id never credits an ambiguous initiation', async () => {
+    const victimCheckout = (await db.query(`select checkout_request_id from funding.payments where user_id=$1 and state='CONFIRMED' order by created_at limit 1`, [identities.customer2.id])).rows[0].checkout_request_id;
+    assert.ok(victimCheckout);
+    const daraja = fakeDaraja({ push: ['AMBIGUOUS'] }); // the double would answer ResultCode 0 for any query
     const d = await startDeposit('customer', 7.5, daraja);
+    unboundPayment = d.id;
     assert.equal(d.view.state, 'UNKNOWN');
     assert.equal(d.checkout, null);
     const next = await quote('customer', 5);
     assert.equal(await errorOf(initiateDeposit({ rpc: serviceRpc, daraja, config: CONFIG, userId: identities.customer.id, quoteId: next.quote_id, phone: PHONE, idempotencyKey: 'after-unknown-1' })), 'payment_in_progress');
-    assert.equal(daraja.calls.push.length, 1);
+    assert.equal(daraja.calls.push.length, 1, 'an ambiguous push is never retried');
+
     const before = await testBalance('customer');
-    await handleCallback({ rpc: serviceRpc, daraja, bodyText: callbackBody({ checkout: 'ws_CO_LATE_1', amount: 973, receipt: 'TST0000005' }), token: d.token });
+    const body = callbackBody({ checkout: victimCheckout, amount: 973, receipt: 'TST0000005' }); // ceil(7.5 × 129.62) = 973
+    assert.equal((await handleCallback({ rpc: serviceRpc, daraja, bodyText: body, token: d.token })).status, 200);
+    await handleCallback({ rpc: serviceRpc, daraja, bodyText: body, token: d.token });
     const row = await payment(d.id);
-    assert.equal(row.state, 'CONFIRMED');
-    assert.equal(row.checkout_request_id, 'ws_CO_LATE_1');
-    assert.equal(await testBalance('customer'), before + 7.5); // ceil(7.5 × 129.62) = 973
+    assert.equal(row.state, 'MANUAL_REVIEW');
+    assert.equal(row.attention_reason, 'callback_without_initiation_checkout');
+    assert.equal(row.checkout_request_id, null, 'a callback never supplies the verified checkout id');
+    assert.equal(row.callback_checkout_request_id, victimCheckout);
+    assert.equal(row.mpesa_receipt, null);
+    assert.equal(row.provider_confirmed_at, null);
+    assert.deepEqual(daraja.calls.query, [], 'the claimed checkout is never queried');
+    assert.equal(await testBalance('customer'), before);
+    const events = (await db.query(`select verdict, duplicate_count from funding.provider_events where payment_id=$1 and source='CALLBACK'`, [d.id])).rows;
+    assert.deepEqual(events, [{ verdict: 'UNBOUND', duplicate_count: 1 }]);
+    // Neither the sweep nor a direct status record can reach it.
+    await db.query(`update funding.payments set updated_at = now() - interval '2 minutes' where id=$1`, [d.id]);
+    assert.equal((await serviceRpc('funding_svc_open_payments', { p_min_age_seconds: 0, p_limit: 200 })).some((p) => p.payment_id === d.id), false);
+    assert.match(await errorOf(serviceRpc('funding_svc_record_status', { p_payment: d.id, p_checkout_request_id: victimCheckout, p_outcome: 'RESULT', p_result_code: '0', p_result_desc: 'x' })), /checkout_mismatch/);
+    assert.equal(await testBalance('customer'), before);
+});
+
+test('a leaked token on a pending payment cannot redirect verification to another checkout', async () => {
+    const victimCheckout = (await db.query(`select checkout_request_id from funding.payments where user_id=$1 and state='CONFIRMED' order by created_at limit 1`, [identities.customer2.id])).rows[0].checkout_request_id;
+    const daraja = fakeDaraja();
+    const d = await startDeposit('customer2', 5, daraja);
+    const before = await testBalance('customer2');
+    await handleCallback({ rpc: serviceRpc, daraja, bodyText: callbackBody({ checkout: victimCheckout, amount: 649, receipt: nextReceipt() }), token: d.token });
+    const row = await payment(d.id);
+    assert.equal(row.state, 'MANUAL_REVIEW');
+    assert.equal(row.attention_reason, 'callback_checkout_conflict');
+    assert.equal(row.checkout_request_id, d.checkout);
+    assert.deepEqual(daraja.calls.query, []);
+    assert.equal(await testBalance('customer2'), before);
+});
+
+test('a callback that beats the initiation response goes to review; the later initiation does not credit it', async () => {
+    const q = await quote('customer2', 7.5);
+    const token = 'race-token-race-token-race-token';
+    const begun = await serviceRpc('funding_svc_begin_payment', { p_user: identities.customer2.id, p_quote: q.quote_id, p_phone: MSISDN, p_idempotency_key: 'race-0001', p_callback_token_hash: await sha256Hex(token), p_shortcode: SHORTCODE });
+    racePayment = begun.payment_id;
+    const daraja = fakeDaraja();
+    await handleCallback({ rpc: serviceRpc, daraja, bodyText: callbackBody({ checkout: 'ws_CO_RACE_1', amount: 973, receipt: nextReceipt() }), token });
+    assert.equal((await payment(racePayment)).state, 'MANUAL_REVIEW');
+    await serviceRpc('funding_svc_record_initiation', { p_payment: racePayment, p_outcome: 'ACCEPTED', p_merchant_request_id: 'MR-R', p_checkout_request_id: 'ws_CO_RACE_1', p_response_code: '0', p_response_desc: 'ok' });
+    const view = await serviceRpc('funding_svc_record_status', { p_payment: racePayment, p_checkout_request_id: 'ws_CO_RACE_1', p_outcome: 'RESULT', p_result_code: '0', p_result_desc: 'ok' });
+    assert.equal(view.state, 'MANUAL_REVIEW', 'review needs statement evidence');
+    assert.equal((await payment(racePayment)).credit_transaction_id, null);
+    assert.deepEqual(daraja.calls.query, []);
 });
 
 test('late and conflicting provider facts after a final state never change money', async () => {
@@ -255,10 +453,11 @@ test('late and conflicting provider facts after a final state never change money
     assert.match(await errorOf(serviceRpc('funding_svc_record_status', { p_payment: d.id, p_checkout_request_id: 'ws_CO_WRONG', p_outcome: 'RESULT', p_result_code: '0', p_result_desc: 'x' })), /checkout_mismatch/);
 });
 
-test('time rules: abandoned initiation becomes UNKNOWN, UNKNOWN expires at 24h, unresolved provider goes to review', async () => {
+test('time rules: abandoned initiation becomes UNKNOWN, UNKNOWN expires at 24h, a later callback only opens review', async () => {
     // The Edge Function died after begin_payment: no initiation was ever recorded.
     const q = await quote('customer', 5);
-    const begun = await serviceRpc('funding_svc_begin_payment', { p_user: identities.customer.id, p_quote: q.quote_id, p_phone: '254712345678', p_idempotency_key: 'abandoned-0001', p_callback_token_hash: await sha256Hex('abandoned-token-abandoned-token') });
+    const token = 'abandoned-token-abandoned-token';
+    const begun = await serviceRpc('funding_svc_begin_payment', { p_user: identities.customer.id, p_quote: q.quote_id, p_phone: MSISDN, p_idempotency_key: 'abandoned-0001', p_callback_token_hash: await sha256Hex(token), p_shortcode: SHORTCODE });
     assert.equal(begun.state, 'INITIATING');
     await db.query(`update funding.payments set created_at = now() - interval '3 minutes' where id=$1`, [begun.payment_id]);
     assert.deepEqual(await serviceRpc('funding_svc_expire_stale', {}), { to_unknown: 1, expired: 0 });
@@ -266,11 +465,17 @@ test('time rules: abandoned initiation becomes UNKNOWN, UNKNOWN expires at 24h, 
     await db.query(`update funding.payments set created_at = now() - interval '25 hours' where id=$1`, [begun.payment_id]);
     assert.deepEqual(await serviceRpc('funding_svc_expire_stale', {}), { to_unknown: 0, expired: 1 });
     assert.equal((await payment(begun.payment_id)).state, 'EXPIRED');
+    const daraja = fakeDaraja();
+    const before = await testBalance('customer');
+    await handleCallback({ rpc: serviceRpc, daraja, bodyText: callbackBody({ checkout: 'ws_CO_LATE_2', amount: 649, receipt: nextReceipt() }), token });
+    assert.equal((await payment(begun.payment_id)).state, 'MANUAL_REVIEW');
+    assert.deepEqual(daraja.calls.query, []);
+    assert.equal(await testBalance('customer'), before);
 
-    const daraja = fakeDaraja({ query: ['ERROR'] });
-    const d = await startDeposit('customer', 5, daraja);
+    const errors = fakeDaraja({ query: ['ERROR'] });
+    const d = await startDeposit('customer', 5, errors);
     await db.query(`update funding.payments set created_at = now() - interval '25 hours', updated_at = now() - interval '2 minutes' where id=$1`, [d.id]);
-    await reconcileOpenPayments({ rpc: serviceRpc, daraja });
+    await reconcileOpenPayments({ rpc: serviceRpc, daraja: errors });
     const row = await payment(d.id);
     assert.equal(row.state, 'MANUAL_REVIEW');
     assert.equal(row.attention_reason, 'provider_unresolved_24h');
@@ -299,24 +504,185 @@ test('provider rejection is final and moves no money; stale and expired quotes a
     assert.equal(Number((await db.query('select kes_per_usd from funding.deposit_quotes where id=$1', [q.quote_id])).rows[0].kes_per_usd), 129.62);
 });
 
-test('treasury coverage below 110% pauses new payments; alert band still allows them', async () => {
+// ------------------------------------------------------------------ R2: treasury
+
+test('treasury coverage below 110% pauses new payments; statuses follow the snapshot', async () => {
     const status = async () => (await one('ian', `select public.funding_staff_overview('SANDBOX') o`)).o.treasury;
     const liability = Number((await status()).liability_usd);
     assert.ok(liability > 0);
     const stressed = liability * 129.62 * 1.1;
-    await as('ian', `select public.funding_record_treasury_snapshot('SANDBOX', $1, 'Coverage at 105 percent of stressed liability')`, [Math.floor(stressed * 1.05)]);
+    await snapshot(Math.floor(stressed * 1.05), 'Coverage at 105 percent of stressed liability');
     assert.equal((await status()).status, 'PAUSED');
     const q = await quote('customer2', 5);
     assert.equal(await errorOf(initiateDeposit({ rpc: serviceRpc, daraja: fakeDaraja(), config: CONFIG, userId: identities.customer2.id, quoteId: q.quote_id, phone: PHONE, idempotencyKey: 'treasury-pause-1' })), 'treasury_paused');
-    await as('ian', `select public.funding_record_treasury_snapshot('SANDBOX', $1, 'Coverage at 95 percent of stressed liability')`, [Math.floor(stressed * 0.95)]);
+    await snapshot(Math.floor(stressed * 0.95), 'Coverage at 95 percent of stressed liability');
     assert.equal((await status()).status, 'INCIDENT');
-    await as('ian', `select public.funding_record_treasury_snapshot('SANDBOX', $1, 'Coverage at 115 percent of stressed liability')`, [Math.ceil(stressed * 1.15)]);
+    await snapshot(Math.ceil(stressed * 1.15), 'Coverage at 115 percent of stressed liability');
     assert.equal((await status()).status, 'ALERT');
-    await as('ian', `select public.funding_record_treasury_snapshot('SANDBOX', 10000000, 'Sandbox test float restored')`);
+    await snapshot(10000000, 'Sandbox test float restored');
     assert.equal((await status()).status, 'OK');
 });
 
-test('reversal and manual resolution need two different owners; reconciliation matches the ledger', async () => {
+/** Reserve (KES) at which admitting `usd` more lands exactly `factor` × the stressed projection. */
+const reserveFor = async (usd, factor, rate = 129.62) => Number(await scalar(
+    `select ceil((funding.liability_usd('SANDBOX') + funding.open_deposit_usd('SANDBOX') + $1) * $2 * 1.1 * $3)`, [usd, rate, factor]));
+
+test('projected coverage: one deposit that would cross the pause threshold is refused while current coverage is healthy', async () => {
+    await addCustomer('treasuryA', 11);
+    await addCustomer('treasuryB', 12);
+    await snapshot(await reserveFor(5, 1.09), 'Projected coverage 109 percent after one more deposit');
+    assert.match((await one('ian', `select public.funding_staff_overview('SANDBOX') o`)).o.treasury.status, /^(OK|ALERT)$/, 'current coverage alone would admit it');
+    const q = await quote('treasuryA', 5);
+    const daraja = fakeDaraja();
+    assert.equal(await errorOf(initiateDeposit({ rpc: serviceRpc, daraja, config: CONFIG, userId: identities.treasuryA.id, quoteId: q.quote_id, phone: PHONE, idempotencyKey: 'cross-0001' })), 'treasury_paused');
+    assert.equal(daraja.calls.push.length, 0);
+});
+
+test('projected coverage: concurrent deposits cannot both use the same headroom', async () => {
+    await snapshot(await reserveFor(5, 1.1) + 2, 'Headroom for exactly one more USD 5 deposit');
+    const qa = await quote('treasuryA', 5);
+    const qb = await quote('treasuryB', 5);
+    const other = await T.connect();
+    try {
+        await other.query('begin');
+        await other.query('set local role service_role');
+        const first = (await other.query(`select public.funding_svc_begin_payment($1, $2, $3, 'concurrent-a-1', $4, $5) r`,
+            [identities.treasuryA.id, qa.quote_id, MSISDN, await sha256Hex('concurrent-token-a-concurrent'), SHORTCODE])).rows[0].r;
+        assert.equal(first.state, 'INITIATING');
+        // B starts while A's admission is uncommitted and waits on the treasury lock.
+        const second = errorOf(serviceRpc('funding_svc_begin_payment', { p_user: identities.treasuryB.id, p_quote: qb.quote_id, p_phone: MSISDN,
+            p_idempotency_key: 'concurrent-b-1', p_callback_token_hash: await sha256Hex('concurrent-token-b-concurrent'), p_shortcode: SHORTCODE }));
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        await other.query('commit');
+        assert.match(await second, /treasury_paused/);
+        // A proceeds normally and is credited: its credit fits the reserve.
+        await serviceRpc('funding_svc_record_initiation', { p_payment: first.payment_id, p_outcome: 'ACCEPTED', p_merchant_request_id: 'MR-A', p_checkout_request_id: 'ws_CO_CONCURRENT_A', p_response_code: '0', p_response_desc: 'ok' });
+        const view = await serviceRpc('funding_svc_record_status', { p_payment: first.payment_id, p_checkout_request_id: 'ws_CO_CONCURRENT_A', p_outcome: 'RESULT', p_result_code: '0', p_result_desc: 'ok' });
+        assert.equal(view.state, 'CONFIRMED');
+    } finally {
+        await other.query('rollback').catch(() => {});
+        await other.end();
+    }
+    assert.equal(await testBalance('treasuryA'), 5);
+    assert.equal(await testBalance('treasuryB'), 0);
+});
+
+let suspensePayment;
+
+test('projected coverage is re-checked at credit: a rate rise after the quote holds the paid money in funded suspense', async () => {
+    await snapshot(await reserveFor(5, 1.21), 'Admits one deposit at the quoted rate');
+    const daraja = fakeDaraja();
+    const d = await startDeposit('treasuryB', 5, daraja);
+    assert.equal(d.view.state, 'PENDING');
+    await as('ian', `select public.funding_publish_rate(200.00, $1::date, 'https://www.centralbank.go.ke/rates/forex-exchange-rates/', 'Sharp rate rise between quote and credit')`, [nairobiToday()]);
+    const receipt = nextReceipt('SUS');
+    await handleCallback({ rpc: serviceRpc, daraja, bodyText: callbackBody({ checkout: d.checkout, amount: 649, receipt }), token: d.token });
+    const row = await payment(d.id);
+    suspensePayment = { id: d.id, receipt };
+    assert.equal(row.state, 'MANUAL_REVIEW');
+    assert.equal(row.attention_reason, 'funded_suspense_treasury_paused');
+    assert.ok(row.provider_confirmed_at);
+    assert.equal(row.mpesa_receipt, receipt);
+    assert.equal((await kesReceipt(d.id)).a, '649.000000', 'the customer money is recorded, not lost');
+    assert.equal(await testBalance('treasuryB'), 0, 'no unbacked balance');
+    assert.match(await errorOf(as('owner', `select public.funding_request_action($1, 'RESOLVE_FAILED', 'Trying to fail a paid payment')`, [d.id])), /payment_funds_received/);
+    await as('ian', `select public.funding_publish_rate(129.62, $1::date, 'https://www.centralbank.go.ke/rates/forex-exchange-rates/', 'Restore the current CBK rate')`, [nairobiToday()]);
+});
+
+test('stale treasury snapshots refuse admission and hold a paid credit', async () => {
+    await snapshot(10000000, 'Sandbox test float restored');
+    const daraja = fakeDaraja();
+    const d = await startDeposit('treasuryA', 5, daraja);
+    const q = await quote('treasuryB', 5);
+    await rolledBack(async () => {
+        await db.exec('set local session_replication_role = replica');
+        await db.query(`update funding.treasury_snapshots set recorded_at = recorded_at - interval '25 hours'`);
+        await db.exec('set local session_replication_role = origin');
+        await handleCallback({ rpc: serviceRpc, daraja, bodyText: callbackBody({ checkout: d.checkout, amount: 649, receipt: nextReceipt() }), token: d.token });
+        const row = await payment(d.id);
+        assert.equal(row.state, 'MANUAL_REVIEW');
+        assert.equal(row.attention_reason, 'funded_suspense_treasury_unknown');
+        assert.equal(row.credit_transaction_id, null);
+        // Last in the transaction: the refusal aborts it.
+        assert.match(await errorOf(db.query(`select public.funding_svc_begin_payment($1, $2, $3, 'stale-treasury-1', $4, $5)`,
+            [identities.treasuryB.id, q.quote_id, MSISDN, await sha256Hex('stale-token-stale-token-stale'), SHORTCODE])), /treasury_unknown/);
+    });
+    assert.equal((await payment(d.id)).state, 'PENDING', 'rolled back');
+    await handleCallback({ rpc: serviceRpc, daraja, bodyText: callbackBody({ checkout: d.checkout, amount: 649, receipt: nextReceipt() }), token: d.token });
+    assert.equal((await payment(d.id)).state, 'CONFIRMED');
+});
+
+// ------------------------------------------------------------------ R3: manual confirmation needs provider evidence
+
+test('manual confirmation needs a binding provider statement item and three different people', async () => {
+    const p = await payment(unboundPayment);
+    assert.equal(p.state, 'MANUAL_REVIEW');
+    assert.equal(p.kes_due, 973);
+    const before = await testBalance('customer');
+    assert.match(await errorOf(as('owner', `select public.funding_request_action($1, 'RESOLVE_CONFIRMED', 'Customer says the money left their phone')`, [p.id])), /statement_evidence_required/);
+
+    const created = new Date(p.created_at);
+    const bad = {
+        kes_amount: await recordItem('ian', { kes: 972, accountReference: p.account_reference, msisdn: MSISDN }),
+        shortcode: await recordItem('ian', { kes: 973, shortcode: '600000', accountReference: p.account_reference }),
+        account_reference: await recordItem('ian', { kes: 973, accountReference: 'SPWRONG0001' }),
+        phone: await recordItem('ian', { kes: 973, msisdn: '254799999999' }),
+        transaction_time: await recordItem('ian', { kes: 973, accountReference: p.account_reference, at: new Date(created.getTime() - 3600 * 1000) }),
+    };
+    for (const [reason, item] of Object.entries(bad)) {
+        assert.match(await errorOf(as('owner', `select public.funding_request_action($1, 'RESOLVE_CONFIRMED', 'Statement line checked by owner', $2)`, [p.id, item])),
+            new RegExp(`statement_evidence_invalid: ${reason}`), reason);
+    }
+
+    // The ambiguous race payment is resolved first with a phone-only line.
+    const phoneOnly = await recordItem('ian', { kes: 973, msisdn: MSISDN });
+    const race = (await one('owner', `select public.funding_request_action($1, 'RESOLVE_CONFIRMED', 'Statement shows the race payment', $2) id`, [racePayment, phoneOnly])).id;
+    await as('owner2', `select public.funding_approve_action($1, 'Second owner checked the statement line')`, [race]);
+    assert.equal((await payment(racePayment)).state, 'CONFIRMED');
+    // A statement line binds to one payment only.
+    assert.match(await errorOf(as('owner', `select public.funding_request_action($1, 'RESOLVE_CONFIRMED', 'Reusing a statement line', $2)`, [p.id, phoneOnly])), /statement_evidence_invalid: already_used/);
+
+    const receipt = nextReceipt('SIM');
+    const good = await recordItem('ian', { receipt, kes: 973, accountReference: p.account_reference, msisdn: MSISDN });
+    assert.match(await errorOf(recordItem('ian', { receipt, kes: 973, accountReference: p.account_reference })), /statement_item_duplicate/);
+    assert.match(await errorOf(as('ian', `select public.funding_request_action($1, 'RESOLVE_CONFIRMED', 'I recorded the line myself', $2)`, [p.id, good])), /independent_reviewer_required/);
+    const action = (await one('owner', `select public.funding_request_action($1, 'RESOLVE_CONFIRMED', 'Statement line matches amount, reference and phone', $2) id`, [p.id, good])).id;
+    assert.match(await errorOf(as('owner', `select public.funding_approve_action($1, 'Approving my own request')`, [action])), /second_approver_required/);
+    assert.match(await errorOf(as('ian', `select public.funding_approve_action($1, 'The statement recorder approving')`, [action])), /independent_reviewer_required/);
+    await as('owner2', `select public.funding_approve_action($1, 'Independent second owner approves')`, [action]);
+    const row = await payment(p.id);
+    assert.equal(row.state, 'CONFIRMED');
+    assert.equal(row.statement_item_id, String(good));
+    assert.equal(row.mpesa_receipt, receipt);
+    assert.equal(row.receipt_pending, false);
+    assert.equal(await testBalance('customer'), before + 7.5);
+    assert.deepEqual(await kesReceipt(p.id), { a: '973.000000', d: (await db.query('select business_date::text d from funding.provider_statement_items where id=$1', [good])).rows[0].d });
+
+    // The funded-suspense payment: its callback receipt must match the line, and
+    // the credit still needs coverage (restored earlier in this suite).
+    assert.match(await errorOf(as('owner', `select public.funding_request_action($1, 'RESOLVE_CONFIRMED', 'Wrong line for the held payment', $2)`,
+        [suspensePayment.id, await recordItem('ian', { kes: 649, msisdn: MSISDN })])), /statement_evidence_invalid: receipt/);
+    const heldItem = await recordItem('ian', { receipt: suspensePayment.receipt, kes: 649, msisdn: MSISDN });
+    const heldAction = (await one('owner', `select public.funding_request_action($1, 'RESOLVE_CONFIRMED', 'Held payment is on the statement', $2) id`, [suspensePayment.id, heldItem])).id;
+    await snapshot(0, 'Reserve drained to prove approval rechecks coverage');
+    assert.match(await errorOf(as('owner2', `select public.funding_approve_action($1, 'Approve while the treasury is empty')`, [heldAction])), /treasury_paused/);
+    assert.equal((await payment(suspensePayment.id)).state, 'MANUAL_REVIEW', 'the refused approval changed nothing');
+    await snapshot(10000000, 'Sandbox test float restored');
+    await as('owner2', `select public.funding_approve_action($1, 'Approve after the float is restored')`, [heldAction]);
+    assert.equal((await payment(suspensePayment.id)).state, 'CONFIRMED');
+    assert.equal(await testBalance('treasuryB'), 5);
+    assert.equal(await scalar(`select count(*)::int from funding.kes_clearing_entries where payment_id=$1 and kind='RECEIPT'`, [suspensePayment.id]), 1, 'KES booked once');
+
+    // Evidence rules.
+    assert.match(await errorOf(recordItem('ian', { kes: 649, msisdn: MSISDN, environment: 'PRODUCTION' })), /validation_failed/, 'production needs a downloaded statement');
+    assert.match(await errorOf(recordItem('ian', { kes: 649 })), /validation_failed/, 'a line needs an account reference or phone');
+    assert.match(await errorOf(recordItem('administrator', { kes: 649, msisdn: MSISDN })), /forbidden/);
+    assert.match(await errorOf(db.query(`update funding.provider_statement_items set kes_amount = 1`)), /funding_record_immutable/);
+});
+
+// ------------------------------------------------------------------ R4 and staff
+
+test('reversal needs two owners; reconciliation rolls the KES statement forward and keeps differences open', async () => {
     const confirmed = (await db.query(`select id, usd_amount from funding.payments where user_id=$1 and state='CONFIRMED' order by created_at limit 1`, [identities.customer.id])).rows[0];
     const before = await testBalance('customer');
     const request = (await one('ian', `select public.funding_request_action($1, 'REVERSE', 'Customer dispute in sandbox drill') id`, [confirmed.id])).id;
@@ -326,15 +692,56 @@ test('reversal and manual resolution need two different owners; reconciliation m
     assert.equal((await payment(confirmed.id)).state, 'REVERSED');
     assert.equal(await testBalance('customer'), before - Number(confirmed.usd_amount));
 
-    const review = (await db.query(`select id from funding.payments where state='MANUAL_REVIEW' order by created_at limit 1`)).rows[0].id;
+    const review = (await db.query(`select id from funding.payments where state='MANUAL_REVIEW' and provider_confirmed_at is null order by created_at limit 1`)).rows[0].id;
     const resolve = (await one('owner', `select public.funding_request_action($1, 'RESOLVE_FAILED', 'Statement shows no receipt for this payment') id`, [review])).id;
     await as('ian', `select public.funding_approve_action($1, 'Checked against the sandbox statement')`, [resolve]);
     assert.equal((await payment(review)).state, 'FAILED');
 
-    const run = await serviceRpc('funding_svc_reconcile', { p_environment: 'SANDBOX', p_business_date: nairobiToday() });
-    assert.deepEqual(run.differences.filter((d) => !['needs_attention'].includes(d.kind)), [], JSON.stringify(run.differences));
+    const day = nairobiToday();
+    const kinds = (run) => [...new Set(run.differences.map((d) => d.kind))].sort();
+    let run = await serviceRpc('funding_svc_reconcile', { p_environment: 'SANDBOX', p_business_date: day });
+    assert.ok(kinds(run).includes('statement_missing'), 'no statement is a difference, not a match');
+    assert.equal(run.status, 'DIFFERENCES');
+
+    const gross = Number(await scalar(`select coalesce(sum(kes_amount),0) from funding.kes_clearing_entries where kind='RECEIPT' and business_date=$1`, [day]));
+    const reversals = -Number(await scalar(`select coalesce(sum(kes_amount),0) from funding.kes_clearing_entries where kind='REVERSAL' and business_date=$1`, [day]));
+    assert.ok(gross > 0 && reversals > 0);
+    const opening = 50000;
+    const fees = 25;
+    const settlement = 1000;
+    const closing = opening + gross - reversals - fees - settlement;
+    const statement = async (businessDate, values, staff = 'owner') => as(staff, `select public.funding_record_statement_total('SANDBOX', $1::date, $2, $3, $4, $5, $6, $7, 'SANDBOX_SIMULATED', 'sandbox simulated statement', $8, 'Sandbox statement summary for the day')`,
+        [businessDate, values.opening, values.gross, values.reversals, values.fees, values.settlement, values.closing, await sha256Hex(`statement ${businessDate} ${values.closing}`)]);
+    await statement(nairobiDay(-1), { opening: 49000, gross: 1000, reversals: 0, fees: 0, settlement: 0, closing: opening });
+    await statement(day, { opening, gross, reversals, fees, settlement, closing });
+
+    run = await serviceRpc('funding_svc_reconcile', { p_environment: 'SANDBOX', p_business_date: day });
+    assert.deepEqual(kinds(run).filter((k) => !['needs_attention', 'statement_item_unmatched'].includes(k)), [], JSON.stringify(run.differences));
+    const unmatched = run.differences.filter((d) => d.kind === 'statement_item_unmatched').map((d) => d.receipt);
+    assert.ok(unmatched.length >= 4, 'the rejected evidence lines stay open as statement lines without a payment');
     assert.equal(Number(run.summary.customer_balance_usd), Number(run.summary.confirmed_usd));
-    assert.equal(run.summary.receipt_pending, 1);
+    assert.equal(run.summary.statement.simulated, true);
+    assert.equal(run.summary.statement.evidence_kind, 'SANDBOX_SIMULATED');
+    assert.equal(Number(run.summary.statement.fees), fees);
+    assert.equal(Number(run.summary.statement.net_settlement), settlement);
+    assert.ok(Number(run.summary.kes.funded_suspense) > 0, 'the limits-held payment is still owed');
+
+    // A statement that does not roll forward, or opens away from yesterday's close, is a difference.
+    await statement(day, { opening: opening + 1, gross, reversals, fees, settlement, closing });
+    run = await serviceRpc('funding_svc_reconcile', { p_environment: 'SANDBOX', p_business_date: day });
+    assert.ok(kinds(run).includes('statement_rollforward_mismatch'));
+    assert.ok(kinds(run).includes('statement_opening_mismatch'));
+    await statement(day, { opening, gross: gross + 649, reversals, fees, settlement, closing: closing + 649 });
+    run = await serviceRpc('funding_svc_reconcile', { p_environment: 'SANDBOX', p_business_date: day });
+    assert.ok(kinds(run).includes('statement_gross_mismatch'));
+    assert.equal(run.summary.statement.simulated, true);
+
+    // Differences stay open until someone who recorded none of the day's evidence resolves them.
+    assert.match(await errorOf(as('owner', `select public.funding_resolve_reconciliation($1, 'Recorder resolving own statement')`, [run.run_id])), /second_approver_required/);
+    assert.match(await errorOf(as('ian', `select public.funding_resolve_reconciliation($1, 'Item recorder resolving the day')`, [run.run_id])), /second_approver_required/);
+    await as('owner2', `select public.funding_resolve_reconciliation($1, 'Independent owner explains the sandbox differences')`, [run.run_id]);
+    assert.match(await errorOf(as('owner', `select public.funding_record_statement_total('PRODUCTION', $1::date, 0, 0, 0, 0, 0, 0, 'SANDBOX_SIMULATED', 'x-ref', $2, 'Simulated figures for production')`,
+        [day, await sha256Hex('x')])), /validation_failed/);
 });
 
 test('callers cannot reach service RPCs or funding tables, and records are immutable', async () => {
@@ -349,10 +756,13 @@ test('callers cannot reach service RPCs or funding tables, and records are immut
     await db.exec('set role service_role');
     try {
         assert.match(await errorOf(db.query(`select * from funding.usd_ledger_entries`)), /permission denied/);
+        assert.match(await errorOf(db.query(`select * from funding.provider_statement_items`)), /permission denied/);
     } finally { await db.exec('reset role'); }
     assert.match(await errorOf(db.query(`update funding.usd_ledger_entries set amount = amount * 2`)), /funding_record_immutable/);
     assert.match(await errorOf(db.query(`delete from funding.payments`)), /funding_record_immutable/);
     assert.match(await errorOf(db.query(`update funding.fx_rate_versions set kes_per_usd = 1`)), /funding_record_immutable/);
+    assert.match(await errorOf(db.query(`update funding.deposit_policy_versions set max_usd_per_deposit = 1000000`)), /funding_record_immutable/);
+    assert.match(await errorOf(db.query(`update funding.statement_totals set kes_fees = 0`)), /funding_record_immutable/);
     const grants = (await db.query(`select count(*)::int n from pg_proc p join pg_namespace n on n.oid=p.pronamespace
         where (n.nspname='funding' or (n.nspname='public' and p.proname like 'funding\\_svc\\_%'))
           and (has_function_privilege('anon', p.oid, 'execute') or has_function_privilege('authenticated', p.oid, 'execute'))`)).rows[0].n;

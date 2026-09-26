@@ -16,6 +16,7 @@ export const FUNDING_ERROR_CODES = Object.freeze([
     'phone_invalid', 'quote_not_found', 'quote_expired', 'quote_used', 'payment_in_progress', 'sandbox_not_enabled',
     'production_payments_disabled', 'treasury_paused', 'treasury_unknown', 'idempotency_key_reused', 'validation_failed',
     'amount_invalid', 'amount_below_minimum', 'amount_above_maximum', 'rate_stale', 'rate_unavailable',
+    'deposit_limit_reached', 'deposit_policy_unavailable',
 ]);
 
 /** Maps a database exception to a stable funding code, or null for an internal fault. */
@@ -46,6 +47,7 @@ export async function initiateDeposit({ rpc, daraja, config, userId, quoteId, ph
     try {
         begun = await rpc('funding_svc_begin_payment', {
             p_user: userId, p_quote: quoteId, p_phone: msisdn, p_idempotency_key: idempotencyKey, p_callback_token_hash: await sha256Hex(token),
+            p_shortcode: config.shortcode,
         });
     } catch (error) {
         const code = fundingCodeOf(error);
