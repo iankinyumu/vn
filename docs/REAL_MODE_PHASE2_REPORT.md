@@ -160,3 +160,24 @@ Claude drove `sandbox-deposit.html` in Chrome, signed in as the enabled tester (
 **Owner action:** in the Daraja portal, add M-Pesa Express Sandbox to the app. If that is not possible, create a sandbox app with it and replace `DARAJA_CONSUMER_KEY`/`SECRET` in `.env.redis.local`. Claude then re-maps the keys to `DARAJA_SANDBOX_CONSUMER_*` and reruns cases 1, 2, 5, 6 and 7–9. No redeploy is needed: the functions read secrets at start.
 
 **Observed safety:** the rejected initiation failed closed. It was a terminal `REJECTED` with no checkout ID, no push, no ledger entry, and an honest customer message. `DARAJA_SANDBOX_READY` and `KES_USD_QUOTE_READY` remain **not set**.
+
+## 11. Live sandbox drill on 2026-09-26 (03:53–04:00 UTC), after the Owner enabled M-Pesa Express
+
+The Owner added M-Pesa Express and M-Pesa Sandbox to the Daraja app, keeping the same keys. The deployed `DARAJA_SANDBOX_CONSUMER_*` secret digests match the local key digests, so no secret was changed. A single probe then passed the token check: a dummy STK Query got a checkout-ID error, not `404.001.03`. Claude drove `sandbox-deposit.html` in Chrome as the tester and read the results from the linked database.
+
+| # | Case | Evidence | Result |
+| --- | --- | --- | --- |
+| 5 | Timeout / no answer | Payment `5519fc34-7d5d-4a5e-a8bc-b7c2a8b4c1c6`, USD 5 / KES 649. Initiated 03:55:59 with STK Push `0` "accepted for processing" and a checkout ID bound from the synchronous response. Signed `CALLBACK` `1037` at 03:56:26, then `STATUS_QUERY` `1037` at 03:56:27, all verdict `APPLIED` | `FAILED` / `provider_result_1037`, no credit. **Pass** |
+| 5 (repeat) | Second USD 5 push | Payment `10a0925b-8aff-433f-a7f6-cf501102dc86` created 03:57:45, finalized 03:58:14 with `1037` | `FAILED`, no credit. **Pass** |
+| 6 | Repeat request | Re-POST of `funding-deposit` with payment 5519fc34's quote and idempotency key at 03:57:15 | HTTP 200 with the same `payment_id`, one `INITIATION` event, no second push. **Pass** |
+| 4 | Forged callback | Section 9 | **Pass** |
+| 9 (bounds) | Quote USD 500.01 and 4.99 | `funding_create_deposit_quote` as the tester | `amount_above_maximum` and `amount_below_minimum`. **Pass** |
+| 1 | Valid deposit | Not reachable | Daraja's simulator answered `1037` for the official test MSISDN `2547*****149` on both pushes. No success result arrived |
+| 2 | Cancelled on phone | Not reachable | Same reason: nobody can approve or decline on the test number |
+| 7, 8, 9 (24 h) | Reconciliation, reversal, rolling limits | Not run | Reversal and the rolling limits need a `CONFIRMED` payment. The reconciliation run is still possible with a simulated statement |
+
+The test balance stays USD 0.00 with 0 ledger entries. The earlier `REJECTED` payment `94d6d00f-…` (section 10) remains as history.
+
+**Page issue found:** a submit before `sandbox-deposit.js` attaches its handler makes the browser do a native GET submit, which reloads the page with `?`. No request reaches the server. The page script should disable the form until `start()` finishes. This is a small follow-up and not a money path.
+
+**Decision needed for case 1/2:** a success needs a phone that can enter a PIN. Daraja sandbox accepts a tester's own Safaricom number, but the scope here allows only the official test MSISDN, and `funding.sandbox_msisdns` is changed only by a reviewed migration. Otherwise, a `CONFIRMED` payment can only be produced through the scripted double already covered in `tests/funding-sandbox.test.mjs`. `DARAJA_SANDBOX_READY` and `KES_USD_QUOTE_READY` remain **not set** until the Owner decides.
