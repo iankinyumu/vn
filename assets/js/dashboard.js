@@ -1,5 +1,4 @@
 (function () {
-    const resetMessages = Object.freeze({ account_not_available: 'This account cannot reset Practice funds.', open_contracts_exist: 'Practice funds can be reset after all open contracts settle.', reset_not_available: 'Your Practice balance is not eligible for reset.', reset_rate_limited: 'Practice funds can be reset once every 24 hours.' });
     // Index prices and the chart refresh on this cadence while the tab is visible; the trade page carries the live feed.
     const MARKET_REFRESH_MS = 10000;
     const CHART_TICKS = 120;
@@ -137,8 +136,6 @@
         for (const selector of ['[data-practice-balance]', '[data-net-result]', '[data-wins]', '[data-losses]', '[data-win-rate]', '[data-voids]', '[data-settled-count]']) text(selector, '—');
         find('[data-contract-rows]')?.replaceChildren(noteRow(5, 'Loading contracts…'));
         find('[data-open-contracts]')?.replaceChildren(noteRow(5, 'Loading open contracts…'));
-        const reset = find('[data-reset]');
-        if (reset) reset.hidden = true;
     }
 
     async function renderAccount(client, config) {
@@ -181,9 +178,6 @@
             find('[data-open-contracts]')?.replaceChildren(...(rows.length ? rows.map((contract) => cellRow([contract.index_code, contractType(contract), Number(contract.stake).toFixed(2), Number(contract.payout).toFixed(2), `${contract.entry_tick_no} → ${contract.settle_tick_no}`])) : [noteRow(5, 'No open contracts.')]));
         } else { find('[data-open-contracts]')?.replaceChildren(noteRow(5, 'Open contracts could not be loaded.')); failed.push(['open contracts', open.reason]); }
 
-        const accountConfig = (config.accounts || []).find((item) => item.id === account.accountId);
-        const canReset = summary.status === 'fulfilled' && stats.status === 'fulfilled' && account.mode === 'DEMO' && Number(stats.value.open) === 0 && Number(summary.value.available) < Number(accountConfig?.limits?.min_stake);
-        find('[data-reset]').hidden = !canReset;
         failed.forEach(([part, reason]) => console.error(`[smartprofit] ${part} could not be loaded`, { code: reason?.code ?? null, message: reason?.message ?? String(reason) }));
         status(failed.length ? `Some account data could not be loaded: ${failed.map(([part]) => part).join(', ')}. Market data below is unaffected; reload to try again.` : '');
     }
@@ -204,11 +198,12 @@
             return;
         }
         const render = () => { clearAccountView(); return renderAccount(client, accountConfig || config).catch((error) => { console.error(error); status('Your account data could not be loaded. Reload to try again.'); }); };
-        find('[data-reset]').addEventListener('click', async () => { const { error } = await client.rpc('reset_practice_balance', { p_account_id: window.smartProfitAccount.get().accountId }); status(error ? (resetMessages[errorCode(error)] || 'Practice funds could not be reset.') : 'Practice balance reset.'); if (!error) await render(); });
         document.addEventListener('smartprofit:account-changed', render);
+        // A practice reset from the mode menu changes the balance and the results shown here.
+        document.addEventListener('smartprofit:balance-changed', render);
         await render();
         await window.refreshRestrictionBanner?.().catch?.(console.error);
         await marketLoaded;
     }
-    window.addEventListener('DOMContentLoaded', () => start().catch((error) => { console.error(error); status('The dashboard could not load. Reload the page to try again.'); })); window.smartProfitDashboard = { resetMessages };
+    window.addEventListener('DOMContentLoaded', () => start().catch((error) => { console.error(error); status('The dashboard could not load. Reload the page to try again.'); }));
 })();

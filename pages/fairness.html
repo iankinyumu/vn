@@ -24,15 +24,13 @@
 
     <main class="fairness-main">
         <div class="fairness-intro">
-            <p class="fairness-eyebrow">Independent check</p>
             <h1>Verify fairness</h1>
-            <p>Recompute published outcomes from revealed epoch seeds. New ticks include their generated price in the check; older ticks use their original digit rule. The range starts with the latest 20 ticks.</p>
+            <p>Recompute published outcomes from revealed seeds.</p>
         </div>
 
         <section class="fairness-panel" aria-labelledby="fairness-form-heading">
             <div class="fairness-panel-heading">
                 <div>
-                    <p class="fairness-eyebrow">Digit proof</p>
                     <h2 id="fairness-form-heading">Choose a tick range</h2>
                 </div>
                 <span class="fairness-range-note">Up to 5,000 ticks</span>
@@ -62,7 +60,6 @@
         <section class="fairness-panel" aria-labelledby="fairness-v3-heading" data-fairness-v3 hidden>
             <div class="fairness-panel-heading">
                 <div>
-                    <p class="fairness-eyebrow">Version 3 proof</p>
                     <h2 id="fairness-v3-heading">Check signed, timestamped history</h2>
                 </div>
                 <span class="fairness-range-note">Up to 5,000 ticks</span>
@@ -91,7 +88,7 @@
             </div>
         </section>
 
-        <p class="fairness-help">A revealed seed can reproduce past outcomes. It cannot predict the next digit or prove how the seed was chosen. <a href="guide-fairness.html">How verification works</a></p>
+        <p class="fairness-help">Past outcomes only: a seed cannot predict the next digit. <a href="guide-fairness.html">How verification works</a></p>
     </main>
 
     <div data-shell-footer></div>

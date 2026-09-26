@@ -42,8 +42,7 @@
                     <div class="premium-glass-card welcome-section">
                         <div class="row align-items-center">
                             <div class="col-lg-8">
-                                <h1 class="welcome-title">Practice <span class="text-gradient-animated">Dashboard</span></h1>
-                                <p class="welcome-subtitle">Follow the SmartProfit digit indices, review your results and pick up where you left off. Practice funds are virtual.</p>
+                                <h1 class="welcome-title">Dashboard</h1>
                             </div>
                             <div class="col-lg-4 text-end d-none d-lg-block">
                                 <div class="live-indicator"><span class="pulse-dot"></span><span class="live-text" data-market-state>Live indices</span></div>
@@ -57,27 +56,25 @@
 
             <div class="row g-3 mb-2">
                 <div class="col-12">
-                    <p class="text-secondary mb-2" style="font-size:0.85rem;letter-spacing:.04em;text-transform:uppercase;">Your Practice account</p>
+                    <p class="text-secondary mb-2" style="font-size:0.85rem;letter-spacing:.04em;text-transform:uppercase;">Account</p>
                 </div>
                 <div class="col-6 col-xl-3">
                     <div class="premium-glass-card balance-card">
-                        <div class="balance-label">Practice balance</div>
+                        <div class="balance-label">Balance</div>
                         <div class="balance-value" data-practice-balance>—</div>
-                        <div class="balance-sub">Virtual funds, ledger-backed</div>
                     </div>
                 </div>
                 <div class="col-6 col-xl-3">
                     <div class="premium-glass-card balance-card">
                         <div class="balance-label">Net result · all time</div>
                         <div class="balance-value" data-net-result>—</div>
-                        <div class="balance-sub">Winnings minus lost stakes</div>
                     </div>
                 </div>
                 <div class="col-6 col-xl-3">
                     <div class="premium-glass-card balance-card">
                         <div class="balance-label">Wins · all time</div>
                         <div class="balance-value" data-wins>—</div>
-                        <div class="balance-sub">Losses · all time: <span data-losses>—</span></div>
+                        <div class="balance-sub">Losses: <span data-losses>—</span></div>
                     </div>
                 </div>
                 <div class="col-6 col-xl-3">
@@ -174,7 +171,6 @@
                         <div data-latest-ticks>
                             <div class="ob-mini-row"><span class="text-secondary">Loading…</span><span></span></div>
                         </div>
-                        <p class="small text-secondary mt-3 mb-0">Each final digit is equally likely. Past digits do not predict the next one.</p>
                     </div>
                 </div>
             </div>
@@ -207,46 +203,12 @@
                     <div class="premium-glass-card">
                         <div class="card-header-clean d-flex justify-content-between align-items-center flex-wrap gap-2">
                             <h5 class="mb-0"><i class="fas fa-clock-rotate-left me-2"></i>Latest 20 contracts</h5>
-                            <button data-reset class="btn btn-timeframe" hidden>Reset practice balance</button>
                         </div>
                         <div class="table-responsive">
                             <table class="transaction-table mb-0">
                                 <thead><tr><th>Index</th><th>Type</th><th>State</th><th>Stake</th><th>Payout</th></tr></thead>
                                 <tbody data-contract-rows></tbody>
                             </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row g-3 mb-4">
-                <div class="col-12">
-                    <h5 class="section-title"><i class="fas fa-graduation-cap me-2"></i>Learn how it works</h5>
-                </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="premium-glass-card news-card learn-card">
-                        <div class="news-body"><span class="badge bg-purple">Contracts</span>
-                            <h6>How digit contracts settle</h6>
-                            <p>A contract settles on the last digit of the index's exit tick. Even pays when that digit is 0, 2, 4, 6 or 8.</p>
-                            <div class="news-meta"><span></span><a href="faq.html">Read the FAQ <i class="fas fa-arrow-right"></i></a></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="premium-glass-card news-card learn-card">
-                        <div class="news-body"><span class="badge bg-blue">Payouts</span>
-                            <h6>How payouts are priced</h6>
-                            <p>Every quote shows the payout, the profit and the win probability before you buy. The house margin is built into the payout.</p>
-                            <div class="news-meta"><span></span><a href="faq.html">See the margin <i class="fas fa-arrow-right"></i></a></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="premium-glass-card news-card learn-card">
-                        <div class="news-body"><span class="badge bg-green">Fairness</span>
-                            <h6>Verify past digits yourself</h6>
-                            <p>Each day's seed is committed in advance and revealed afterwards, so you can recompute every digit in your browser.</p>
-                            <div class="news-meta"><span></span><a href="fairness.html">Open the verifier <i class="fas fa-arrow-right"></i></a></div>
                         </div>
                     </div>
                 </div>
