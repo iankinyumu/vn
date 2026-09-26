@@ -1,9 +1,9 @@
 # Supervisor review: Real funding Phase 0–2
 
-**Reviewed candidate:** `db118e3` with documentation handoff `0c1c666`  
-**Executor:** Claude  
-**Review status:** SANDBOX EXECUTION AUTHORIZED; REQUIRED FIXES MUST PASS BEFORE THE LIVE DRILL  
-**Deployment decision:** Claude is authorized to fix, verify, commit, deploy, configure, and exercise the complete Daraja sandbox flow without returning for intermediate Owner decisions. Production payments, spendable Real balances, Real accounts, and Real trading remain closed.
+**Reviewed candidate:** `f9fb1e6` on `vn/feat/restore-customer-ui`
+**Executor:** Claude
+**Review status:** SANDBOX DEPLOYMENT AND LIVE TESTING APPROVED
+**Deployment decision:** Deploy candidate `f9fb1e6` now and continue through the live Daraja sandbox drill without another Owner decision. Production payments, spendable Real balances, Real accounts, and Real trading remain closed.
 
 This review covers repository source and Claude's reports. It does not approve production payments, Real accounts, or Real trading. No live Daraja request was made during this review.
 
@@ -20,6 +20,21 @@ The Owner directs Claude to complete the sandbox integration now. Claude does no
 - committing and pushing all task-related source and documentation changes and leaving no task-related uncommitted or untracked files.
 
 Claude must never commit `.env.redis.local`, print secret values, upload the whole environment file, configure a production Daraja credential or endpoint, use a real customer MSISDN, send real money, enable a spendable Real balance, or open the Real trading gate. These are scope boundaries rather than approval pauses.
+
+### Explicit permission grant for the executor session
+
+The Owner grants Claude full external-action permission within this sandbox scope. This explicitly authorizes the permission prompts for:
+
+- `supabase db push` against linked project `cdaxvkpmgqjfukbtrzys`, limited to the two pending funding migrations `20260926100000` and `20260926110000`;
+- `supabase secrets set` for the named sandbox variables and a newly generated cron secret, with values kept out of command output and reports;
+- `supabase functions deploy` for `funding-deposit`, `daraja-callback`, and `funding-reconcile`;
+- linked database writes needed to configure the one Owner tester, sandbox treasury snapshot, current sandbox FX rate, sandbox scheduler, and `daraja_sandbox` module;
+- Vercel preview and production deployment of the sandbox-gated UI for linked project `smartprofitbinaryv2`;
+- live calls to Safaricom's Daraja sandbox endpoints using only the official sandbox shortcode and test MSISDN;
+- `git push` of the resulting reviewed commits; and
+- read-only Supabase, Vercel, Daraja sandbox, GitHub, browser, log, and deployment inspections needed to verify the result.
+
+This authorization should be supplied directly in every required escalation request. If the execution platform's automatic policy still rejects an action, Claude must identify the rejected command and policy reason. It must not reinterpret a policy rejection as missing Owner authorization. Broad production Daraja access, real-money transfers, destructive database resets, and Real trading activation are outside this grant.
 
 ## Second-pass review of `db118e3` and `0c1c666`
 
@@ -39,11 +54,11 @@ The supervisor's focused rerun on 2026-09-26 passed all 21 adapter and Edge hand
 | R4 KES cash reconciliation | Accepted in source; production still needs real provider and bank evidence |
 | R5 Edge Function runtime checks | Accepted from executor evidence and the supervisor's 21 passing non-database tests |
 
-### R7 - High before sandbox deployment: callback receipt is still treated as authoritative
+### R7 - Closed in `5125fb9`: callback receipt remains a claim
 
 The callback is explicitly untrusted, but a successful callback currently writes its claimed `MpesaReceiptNumber` into `funding.payments.mpesa_receipt`. If the later STK Query returns success, `receipt_pending` becomes false merely because that callback-supplied value exists. The implemented STK Query response does not independently verify the receipt. A leaked callback token paired with the correct checkout ID and expected amount can therefore attach a fabricated receipt to a legitimate payment. The USD credit corresponds to a successful checkout, but the stored receipt and later reconciliation identity can be corrupted.
 
-**Required change:**
+**Accepted implementation:**
 
 - Keep callback receipt, phone and amount as immutable provider-event claims. Do not promote a callback receipt to the authoritative payment receipt merely because STK Query succeeds.
 - An automatic status-confirmed credit may remain non-spendable in sandbox, but it must remain `receipt_pending` until a provider statement or another documented authoritative provider response binds the actual receipt to the payment.
@@ -51,12 +66,14 @@ The callback is explicitly untrusted, but a successful callback currently writes
 - Add a negative test in which a leaked token sends the correct authoritative checkout ID and expected amount with a fabricated receipt. The fabricated receipt must never become authoritative or make reconciliation appear complete.
 - Update the design, threat model, runbook, and Phase 2 report to distinguish callback claims, queried checkout status, and statement-verified transaction identity.
 
-### R8 - Verification and provider-contract gates
+### R8 - Closed for sandbox deployment
 
-Deployment also remains blocked until both items below are complete:
+Both deployment prerequisites have been completed:
 
-1. Rerun the focused real-PostgreSQL funding suite in a clean process state with enough available memory. Record the exact command, PostgreSQL version, commit, start/end time, and result. Do not reinterpret the supervisor's `ENOMEM` run as a product failure or a pass.
-2. Pin the STK Push, callback, OAuth, and STK Query endpoint and field contract to an official Safaricom source and access date. Safaricom's public integration document supports the high-level STK Push and callback flow and says Transaction Status or the M-PESA organization portal is used when a callback is missed, but it does not replace verification of the exact current Daraja 3.0 request and response contract used by this adapter.
+1. The focused funding suite passed 24/24 on real PostgreSQL 18. Funding, Edge handler, adapter, page, copy, and secret checks later passed 56/56; cutover passed 4/4; all three Deno entry points checked successfully.
+2. The current STK Push, callback, OAuth, and STK Query contract was pinned from the official Safaricom portal data with access time and response digests. The ambiguous `500.001.1001` result is handled as non-crediting processing and ultimately manual review.
+
+The later full `npm test` run was stopped by host memory pressure after 72 passes and no failures. This keeps the global `CODE_READY` status pending, but it does not block this isolated, gated, non-spendable sandbox deployment because the directly affected real-PostgreSQL, Edge, Deno, migration, browser, and Daraja adapter checks passed.
 
 ### Accelerated executor sequence — continue automatically
 
@@ -84,7 +101,7 @@ If a required credential name, Daraja product, test MSISDN, authenticated platfo
 3. Safaricom's current provider ceiling is KES 250,000 per transaction. The initial product limit is lower: **USD 500 per deposit, USD 1,000 total successful deposits per rolling 24 hours, and at most three successful deposits per rolling 24 hours per customer.** Enforce these server-side using the locked USD amounts. Keep the KES 250,000 provider limit as a second hard ceiling. Limits are versioned policy and fail closed.
 4. Callback data is an untrusted notification. A successful STK Query proves only the queried checkout's status; in the implemented contract it does not independently bind that checkout to the intended customer, phone, KES amount, or account reference.
 5. The two legacy crypto Edge Functions are approved for decommission only after the runbook's live cron-job and invocation-log checks show no intended callers. Their deletion and verification remain a separate maintenance change.
-6. Phase 2 sandbox deployment can be reconsidered after every Required Change below is implemented and the complete verification matrix passes. Phase 3 Real-gate work may continue in source, but nothing may enable a production payment or spendable Real balance.
+6. Phase 2 sandbox deployment is approved for `f9fb1e6` because R1-R8 and the directly affected verification matrix passed. Phase 3 Real-gate work may continue in source, but nothing may enable a production payment or spendable Real balance.
 
 ## Original findings against `145514b` (historical)
 
@@ -149,24 +166,25 @@ The original R1-R5 verification requirements were:
 6. Updated design, threat model, runbooks and Phase 2 report that no longer claim a stolen callback token cannot lead to credit merely because STK Query succeeds.
 7. Evidence that the product limits are enforced server-side: USD 5 minimum, USD 500 per deposit, USD 1,000 per rolling 24 hours, maximum three successful deposits per rolling 24 hours, and KES 250,000 provider ceiling.
 
-Claude supplied executor evidence for all seven items. The remaining approval conditions are now R7 and R8 above.
+Claude supplied executor evidence for all seven items. R7 and R8 are now closed for the sandbox deployment as recorded above.
 
 ## External actions and approvals
 
 - **Legacy functions:** perform the read-only cron/log caller check first. If it passes, the Owner may explicitly authorize deletion. Do not delete based on repository search alone.
-- **Funding deployment:** not approved in this review. Reconsider only after the updated handoff passes the verification list.
-- **Sandbox secrets:** the Owner confirms the Daraja sandbox key and secret are present in the local ignored file `.env.redis.local`. This records presence only; reviewers and executors must not print, copy into reports, commit, or expose the values. Claude may use them for a controlled live sandbox drill only after R7-R8 are closed and deployment is approved. Hosted Supabase Edge Functions cannot read this local file: when sandbox deployment is approved, the Owner must enter the required `DARAJA_SANDBOX_*`, callback URL and cron-secret values separately in the Supabase project secret store. Never upload the entire local file or unrelated Redis/environment values.
-- **Live sandbox drill:** run only after deployment approval and secret configuration. It is required for `DARAJA_SANDBOX_READY`.
+- **Funding deployment:** approved now for candidate `f9fb1e6`. A linked read-only check on 2026-09-26 confirmed only `20260926100000` and `20260926110000` are pending remotely.
+- **Sandbox secrets:** the local ignored file contains `DARAJA_CONSUMER_KEY` and `DARAJA_CONSUMER_SECRET`. Claude is authorized to map those two values to `DARAJA_SANDBOX_CONSUMER_KEY` and `DARAJA_SANDBOX_CONSUMER_SECRET` in the Supabase secret store without displaying them. Use Safaricom's official sandbox sample shortcode `174379` and its official sample passkey for the sandbox-only variables. Generate the cron secret without displaying it. Never upload the local file or unrelated Redis/environment values.
+- **Tester:** use Owner account `1d180b1b-eff7-4b4f-a571-30d710e1fb32` for the first controlled drill. A signed-in browser session for that account may be created or used without another approval.
+- **Live sandbox drill:** approved immediately after successful migration, secret, function, scheduler, tester, rate, treasury, and UI deployment smoke checks. It is required for `DARAJA_SANDBOX_READY`.
 - **Daraja cap:** KES 250,000 per transaction is supported by Safaricom's published M-Pesa limit and PayBill tariff material. Pin the exact Safaricom source and access date in the design. The product limits above remain lower.
-- **Browser documentation check:** the Safaricom portal could not be opened through the available browser connection during this review. The endpoint/field contract revision remains unpinned and must be checked before deployment; the transaction ceiling itself is confirmed from Safaricom's public materials.
+- **Daraja contract:** pinned by Claude from the official portal data feed on 2026-09-26 with response digests recorded in the design.
 
 ## Status after review
 
 | Status | Decision |
 | --- | --- |
-| `CODE_READY` | Not ready — R7 is open and the supervisor's PostgreSQL rerun was inconclusive due to host memory exhaustion |
+| `CODE_READY` | Not ready — the later global suite was interrupted by host memory pressure; focused sandbox checks passed |
 | `PRACTICE_READY` | Unchanged; engine-v3 operational evidence remains separate |
-| `DARAJA_SANDBOX_READY` | Not ready — no deployed live sandbox drill |
-| `KES_USD_QUOTE_READY` | Not ready — source controls are present, but deployment, a fresh rate/treasury snapshot, and the live sandbox drill remain pending |
+| `DARAJA_SANDBOX_READY` | Pending execution — deployment and live sandbox drill are now approved |
+| `KES_USD_QUOTE_READY` | Pending execution — deploy, create a fresh rate/treasury snapshot, and complete the live quote drill |
 | `DARAJA_PRODUCTION_READY` | Not ready — production intentionally refused and F1 open |
 | `REAL_READY` | Not ready — funded checklist, Real account path and independent evidence incomplete |
