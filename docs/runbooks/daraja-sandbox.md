@@ -81,7 +81,7 @@ Use only the Daraja sandbox test MSISDN. For each case, record the time, the pay
 
 The reference rate keeps itself fresh on CBK business days, with no code change and no manual step while CBK moves normally.
 
-- **What runs:** every hour, pg_cron calls `POST funding-reconcile {"action":"rate_sync"}` with the `X-Funding-Cron-Secret` header. The function reads the "Daily KES Exchange Rates" box on the CBK homepage (`https://www.centralbank.go.ke/`): the US DOLLAR mean and its "Posted On: DD-MM-YYYY" date. It runs even if the Daraja configuration is broken. CBK's machine feeds end in January 2024, so the homepage is the only current source.
+- **What runs:** once a day at 20:00 Nairobi time (17:00 UTC), pg_cron calls `POST funding-reconcile {"action":"rate_sync"}` with the `X-Funding-Cron-Secret` header. The function reads the "Daily KES Exchange Rates" box on the CBK homepage (`https://www.centralbank.go.ke/`): the US DOLLAR mean and its "Posted On: DD-MM-YYYY" date. It runs even if the Daraja configuration is broken. CBK's machine feeds end in January 2024, so the homepage is the only current source.
 - **What the database decides** (`funding_svc_record_rate_observation`, migration `20260927100000`):
 
   | Observation | Outcome | Effect |
@@ -92,14 +92,15 @@ The reference rate keeps itself fresh on CBK business days, with no code change 
   | Rate outside 50–500, or a date in the future or over 14 days old | `INVALID` | Nothing |
   | Page unreadable | `FAILED` | Records the reason, for example `rates_box_missing` or `http_503` |
 
-  Each distinct figure is decided once; hourly repeats only count sightings.
+  Each distinct figure is decided once; repeats only count sightings.
+- **Timing:** a rate stays valid until 72 hours after the end of its date, so Friday's rate lasts until Tuesday 00:00 Nairobi time. The job runs once, at 20:00, when CBK has normally posted the day's rate. If CBK posts Monday's rate after 20:00 Monday, it is picked up at 20:00 Tuesday, so quotes pause from 00:00 to 20:00 Tuesday unless an owner publishes that rate manually. A CBK outage longer than about three days has the same effect.
 - **Owner tasks, in Staff console → Funding:**
   - "Automatic CBK import" shows the last check and anything held. **Approve** publishes the held rate under your name; **Reject** leaves the current rate. Both need an audited reason and a recent authenticator code.
   - If the last check says "could not read the CBK page", CBK has probably changed its homepage. Publish the rate manually in the same tab and report the reason code, so the parser can be updated.
   - Manual **Publish rate** still works at any time.
 - **One-time scheduler setup** (after the migration and the `funding-reconcile` deploy). It uses the existing Vault secret, so no secret appears here:
   ```sql
-  select cron.schedule('funding-rate-sync-hourly', '15 * * * *', $$
+  select cron.schedule('funding-rate-sync-daily', '0 17 * * *', $
     select net.http_post(
       url := 'https://cdaxvkpmgqjfukbtrzys.supabase.co/functions/v1/funding-reconcile',
       headers := jsonb_build_object('Content-Type','application/json','X-Funding-Cron-Secret',(select decrypted_secret from vault.decrypted_secrets where name='funding_cron_secret')),
@@ -107,7 +108,7 @@ The reference rate keeps itself fresh on CBK business days, with no code change 
     );
   $$);
   ```
-  To stop it: `select cron.unschedule('funding-rate-sync-hourly');`. Manual publishing keeps working.
+  To stop it: `select cron.unschedule('funding-rate-sync-daily');`. Manual publishing keeps working.
 
 ## 5. Automatic sandbox treasury snapshot
 

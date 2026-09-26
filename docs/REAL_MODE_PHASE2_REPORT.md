@@ -235,3 +235,5 @@ The Owner gave a standing instruction to apply migrations and deploy without wai
 - Today's refresh ran once by hand at 21:36:58 UTC: snapshot 2 was `CARRIED_FORWARD` from snapshot 1, and coverage is `OK`.
 - The daily job `funding-treasury-carry-daily` (`1 21 * * *`, 00:01 Nairobi time, job 9) makes the next refresh at 2026-09-27 21:01 UTC, inside snapshot 2's 24 hours.
 - Carry-forward tests 5/5.
+
+**Update (Owner: "make the rate check daily too"):** the hourly `funding-rate-sync-hourly` (job 7) was removed after one successful run (`UNCHANGED`, 21:15 UTC). It was replaced by `funding-rate-sync-daily` (`0 17 * * *`, 20:00 Nairobi time, job 10). No code change: the database already decides each figure once. Known gap: a Monday rate posted after 20:00 is only picked up on Tuesday, after the Friday rate has gone stale at Tuesday 00:00. Manual publishing covers that.

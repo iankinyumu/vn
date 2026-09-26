@@ -147,7 +147,7 @@ Findings are ranked by Claude's view of their importance. Items marked **(self)*
 | D | Case 10: callback with a wrong checkout id | Only through the test harness. Already covered in the suite |
 | E | Decide `DARAJA_SANDBOX_READY` / `KES_USD_QUOTE_READY` | Owner/supervisor, after A-C |
 | F | Rate freshness is automatic on CBK business days (§14). The sandbox treasury snapshot is carried forward automatically (`929c9bc`, report §15); the owner re-confirms the figure every 30 days. Production snapshots stay manual and evidence-based | Owner, monthly |
-| G | ~~Automatic rate source~~ **Done (`9d105f1`, report §14):** an hourly CBK homepage import. It auto-publishes within 1.5%, holds larger moves for owner approval, and records failures. Audit risk: it depends on the homepage layout (a parser break shows as `FAILED` in the console) | Monitor |
+| G | ~~Automatic rate source~~ **Done (`9d105f1`, report §14):** a once-daily CBK homepage import (20:00 Nairobi time, job 10). It auto-publishes within 1.5%, holds larger moves for owner approval, and records failures. Audit risk: it depends on the homepage layout (a parser break shows as `FAILED` in the console) | Monitor |
 | H | Full `npm test` on adequate hardware, for `CODE_READY` | Hardware |
 | I | Phase 3: F1 Real gate, refund path for funded suspense, legacy crypto function deletion (after the caller check), production Daraja design | Plan |
 
