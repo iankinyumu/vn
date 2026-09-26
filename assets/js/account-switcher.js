@@ -58,13 +58,26 @@
     function accountFields(account) {
         return { accountId: account.id, mode: account.execution_mode, currency: account.currency };
     }
+    // Daraja sandbox testing lives in Real mode only. For an owner-enabled sandbox
+    // tester the switcher offers a Real sandbox entry that opens the Real sandbox
+    // page; it never selects a trading account, so Practice stays strictly
+    // virtual and Real trading stays closed. Everyone else learns nothing.
+    const REAL_SANDBOX = 'real-sandbox';
+    const REAL_SANDBOX_PAGE = 'sandbox-deposit.html';
+    async function realSandboxAvailable(client) {
+        try {
+            const { data, error } = await client.rpc('funding_sandbox_overview');
+            return !error && data?.available === true;
+        } catch (_) { return false; }
+    }
+
     function markUnavailable(select) {
         if (!select) return;
         select.replaceChildren(new Option('Account unavailable', ''));
         select.disabled = true;
     }
 
-    async function init() {
+    async function init({ realSandbox = false } = {}) {
         const select = document.querySelector('[data-account-switcher]');
         try {
             const { client, config } = await loadEngineConfig();
@@ -85,9 +98,13 @@
                     option.disabled = account.execution_mode === 'REAL' && !config.real_enabled;
                     select.add(option);
                 });
+                const sandbox = realSandbox || await realSandboxAvailable(client);
+                if (sandbox) select.add(new Option('Real — Sandbox (test funds)', REAL_SANDBOX));
                 // Sessions start in Practice; the picker must show it whatever order the accounts arrive in.
-                select.value = practice.id;
+                select.value = realSandbox ? REAL_SANDBOX : practice.id;
                 select.addEventListener('change', () => {
+                    if (select.value === REAL_SANDBOX) { window.location.assign(REAL_SANDBOX_PAGE); return; }
+                    if (realSandbox) { window.location.assign('dashboard.html'); return; }
                     const selected = accounts.find((account) => account.id === select.value);
                     if (!selected || selected.status !== 'ACTIVE') return;
                     window.smartProfitAccountKeys?.clearAccountScoped();
@@ -96,7 +113,8 @@
                     choose(selected);
                 });
             }
-            choose(practice);
+            // The Real sandbox page never activates a trading account.
+            if (!realSandbox) choose(practice);
             return { client, config, accounts };
         } catch (error) {
             const failure = error instanceof StartupError ? error : new StartupError('client', error);

@@ -232,6 +232,9 @@
         if (typeof window.getSupabaseClient !== 'function') return;
         client = await window.getSupabaseClient();
         await refresh();
+        // For a tester the header switcher shows this page as Real mode, with
+        // Practice one choice away; anyone else gets the ordinary switcher.
+        window.initAccountSwitcher?.({ realSandbox: overview?.available === true }).catch(() => {});
         const status = find('[data-sandbox-status]');
         if (!overview?.available) {
             find('[data-sandbox-unavailable]').hidden = false;

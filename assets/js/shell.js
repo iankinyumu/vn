@@ -34,6 +34,11 @@
     });
 
     const TAGLINE = 'Digit contracts on self-generated indices. Practice only, with virtual funds.';
+    const FOOTER_NOTE = '© 2026 SmartProfit. Practice mode only; virtual funds have no cash value.';
+    // A page in Real mode declares data-shell-mode="real-sandbox" on <body>. Today the
+    // only Real surface is the Daraja sandbox, which moves test funds only.
+    const REAL_SANDBOX_TAGLINE = 'Real mode: Daraja Sandbox testing. Test funds only; Real trading is not open.';
+    const REAL_SANDBOX_NOTE = '© 2026 SmartProfit. Real mode is in Daraja Sandbox testing: no real money moves. Practice mode stays strictly virtual.';
 
     let mounted = false;
 
@@ -127,12 +132,12 @@
         return header;
     }
 
-    function buildFooter(surface) {
+    function buildFooter(surface, realSandbox) {
         const footer = element('footer', 'premium-footer');
         const container = element('div', 'container-fluid px-4');
         const row = element('div', 'row g-3');
         const brandColumn = element('div', 'col-md-6');
-        brandColumn.append(element('div', 'footer-brand-small', 'SmartProfit'), element('p', 'footer-desc', TAGLINE));
+        brandColumn.append(element('div', 'footer-brand-small', 'SmartProfit'), element('p', 'footer-desc', realSandbox ? REAL_SANDBOX_TAGLINE : TAGLINE));
         row.append(brandColumn);
         FOOTER_COLUMNS[surface].forEach((column) => {
             const cell = element('div', 'col-md-3');
@@ -149,7 +154,7 @@
             row.append(cell);
         });
         container.append(row, element('hr', 'footer-divider'));
-        container.append(element('p', 'text-center footer-bottom-text', '\u00A9 2026 SmartProfit. Practice mode only; virtual funds have no cash value.'));
+        container.append(element('p', 'text-center footer-bottom-text', realSandbox ? REAL_SANDBOX_NOTE : FOOTER_NOTE));
         footer.append(container);
         return footer;
     }
@@ -181,7 +186,7 @@
             if (surface === 'app') headerMount.append(buildRestrictionBanner());
             fillSessionAction(header);
         }
-        if (footerMount) footerMount.replaceChildren(buildFooter(surface));
+        if (footerMount) footerMount.replaceChildren(buildFooter(surface, document.body.dataset.shellMode === 'real-sandbox'));
         if (surface === 'app' && !document.body.classList.contains('app-shell')) document.body.classList.add('app-shell');
         if (surface === 'public' && !document.body.classList.contains('public-shell')) document.body.classList.add('public-shell');
         mounted = true;

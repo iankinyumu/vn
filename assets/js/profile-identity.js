@@ -64,12 +64,6 @@
             status.textContent = 'Display name saved.';
         });
 
-        // The sandbox entry point is shown only to allowlisted testers; others learn nothing.
-        client.rpc('funding_sandbox_overview').then(({ data }) => {
-            const card = find('[data-profile-sandbox]');
-            if (card && data?.available) card.hidden = false;
-        }, () => {});
-
         if (typeof window.initAccountSwitcher === 'function') {
             const { config, accounts } = await window.initAccountSwitcher();
             renderAccounts(accounts, Boolean(config.real_enabled));

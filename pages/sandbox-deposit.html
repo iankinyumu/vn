@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex">
-    <meta name="description" content="Daraja sandbox deposit test for allowlisted testers. Test funds only.">
-    <title>Sandbox deposit — SmartProfit</title>
+    <meta name="description" content="Real mode Daraja sandbox deposit test for allowlisted testers. Test funds only.">
+    <title>Real mode sandbox — SmartProfit</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -27,14 +27,14 @@
     </style>
 </head>
 
-<body class="premium-theme app-shell" data-shell-surface="app" data-shell-active="profile">
+<body class="premium-theme app-shell" data-shell-surface="app" data-shell-active="" data-shell-mode="real-sandbox">
     <script src="../assets/js/auth.js"></script>
     <script>requireAuth()</script>
 
     <div data-shell-header></div>
 
     <main class="profile-wrapper">
-        <p class="sandbox-banner" role="note"><i class="fas fa-flask me-2"></i>Daraja Sandbox - test funds only</p>
+        <p class="sandbox-banner" role="note"><i class="fas fa-flask me-2"></i>Real mode · Daraja Sandbox - test funds only</p>
         <p data-sandbox-status role="status" aria-live="polite" class="text-secondary">Checking sandbox access…</p>
 
         <section data-sandbox-unavailable hidden class="settings-card">
@@ -46,7 +46,7 @@
             <section class="settings-card">
                 <h5 class="settings-title"><i class="fas fa-vial"></i> Sandbox test balance</h5>
                 <p class="mb-1"><span class="h4" data-sandbox-balance>—</span> <span class="text-secondary">USD, non-spendable</span></p>
-                <p class="text-secondary small mb-0">This test balance is separate from your Practice and Real trading accounts. It cannot be traded, withdrawn or moved.</p>
+                <p class="text-secondary small mb-0">This Real mode test balance is separate from your Practice account, which stays strictly virtual. It cannot be traded, withdrawn or moved, and Real trading is not open.</p>
             </section>
 
             <section class="settings-card">
@@ -116,6 +116,9 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <script src="../assets/js/shell.js"></script>
+    <script src="../assets/js/account-context.js"></script>
+    <script src="../assets/js/account-keys.js"></script>
+    <script src="../assets/js/account-switcher.js"></script>
     <script src="../assets/js/sandbox-deposit.js"></script>
 </body>
 

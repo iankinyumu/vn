@@ -18,6 +18,7 @@ const EDGE = ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml' };
 
 let server, base, browser;
+const ACCOUNT_RPCS = ['get_engine_config', 'enroll_practice_account', 'list_my_accounts'];
 
 const TESTER = {
     available: true, environment: 'SANDBOX', label: 'Daraja Sandbox - test funds only', test_balance_usd: 0, spendable: false,
@@ -38,6 +39,9 @@ const initScript = ({ overview = TESTER, expiresInMs = 300000 } = {}) => `
             return { ...${JSON.stringify(overview)}, my_msisdns: [...window.__OWN__], test_balance_usd: window.__PAYMENTS__.some((p) => p.state === 'CONFIRMED') ? 5 : ${JSON.stringify(overview.test_balance_usd ?? 0)} };
         },
         funding_my_payments: () => window.__PAYMENTS__,
+        get_engine_config: { real_enabled: false },
+        enroll_practice_account: 'acc-demo',
+        list_my_accounts: [{ id: 'acc-demo', execution_mode: 'DEMO', currency: 'USD', status: 'ACTIVE' }],
         funding_set_my_sandbox_msisdn: (args) => {
             const msisdn = String(args.p_msisdn).replace(/^0/, '254');
             if (!/^254(7|1)[0-9]{8}$/.test(msisdn)) return { __error: 'phone_invalid' };
@@ -98,7 +102,8 @@ test('sandbox deposit: a user who is not an allowlisted tester sees no form and 
     assert.equal(await page.locator('[data-sandbox-available]').isVisible(), false);
     assert.equal(await page.locator('[data-sandbox-quote-form]').isVisible(), false);
     const calls = await page.evaluate(() => window.__RPC_LOG__.map((c) => c.name));
-    assert.ok(calls.every((name) => name.startsWith('funding_')), `only funding RPCs: ${calls}`);
+    assert.ok(calls.every((name) => name.startsWith('funding_') || ACCOUNT_RPCS.includes(name)), `only funding and account RPCs: ${calls}`);
+    assert.deepEqual(await page.locator('[data-account-switcher] option').allTextContents(), ['Practice'], 'a non-tester is offered no Real sandbox');
     assert.equal(posted.length, 0);
     assert.deepEqual(errors, []);
     await context.close();
@@ -107,7 +112,7 @@ test('sandbox deposit: a user who is not an allowlisted tester sees no form and 
 test('sandbox deposit: quote shows locked KES, rate, rounding and expiry; the prompt goes pending then confirmed in the test balance only', async () => {
     const { page, context, errors, posted } = await openPage();
     await page.locator('[data-sandbox-available]').waitFor({ state: 'visible' });
-    assert.equal((await page.locator('.sandbox-banner').textContent()).trim(), 'Daraja Sandbox - test funds only');
+    assert.equal((await page.locator('.sandbox-banner').textContent()).trim(), 'Real mode · Daraja Sandbox - test funds only');
     assert.equal(await page.locator('[data-sandbox-balance]').textContent(), '0.00');
     assert.match(await page.locator('[data-sandbox-available]').textContent(), /non-spendable/);
     assert.deepEqual(await page.locator('[data-sandbox-phone] option').allTextContents(), ['2547*****149 (sandbox test number, never answers)']);
@@ -142,7 +147,7 @@ test('sandbox deposit: quote shows locked KES, rate, rounding and expiry; the pr
     assert.match(row[0], /5\.00.*KES 649.*Confirmed.*Not yet verified/s);
     await shot(page, 'sandbox-deposit-confirmed');
     const calls = await page.evaluate(() => [...new Set(window.__RPC_LOG__.map((c) => c.name))].sort());
-    assert.deepEqual(calls, ['funding_create_deposit_quote', 'funding_my_payments', 'funding_sandbox_overview'], 'no trading RPC is touched');
+    assert.deepEqual(calls, ['enroll_practice_account', 'funding_create_deposit_quote', 'funding_my_payments', 'funding_sandbox_overview', 'get_engine_config', 'list_my_accounts'], 'no trading RPC is touched');
     assert.deepEqual(errors, []);
     await context.close();
 });
@@ -200,5 +205,22 @@ test('sandbox deposit: a tester adds and removes their own number; the forms nev
     await page.waitForTimeout(300);
     assert.ok(!page.url().includes('?'), 'no native GET submit');
     assert.deepEqual(errors, []);
+    await context.close();
+});
+
+test('sandbox deposit: the page is Real mode; the switcher shows Real sandbox and Practice leads back to the virtual dashboard', async () => {
+    const { page, context, errors } = await openPage();
+    await page.locator('[data-sandbox-available]').waitFor({ state: 'visible' });
+    await page.waitForFunction(() => document.querySelectorAll('[data-account-switcher] option').length === 2);
+    assert.deepEqual(await page.locator('[data-account-switcher] option').allTextContents(), ['Practice', 'Real — Sandbox (test funds)']);
+    assert.equal(await page.locator('[data-account-switcher]').inputValue(), 'real-sandbox');
+    assert.match(await page.locator('.sandbox-banner').textContent(), /^Real mode · Daraja Sandbox - test funds only$/);
+    const footer = await page.locator('footer').textContent();
+    assert.match(footer, /Real mode is in Daraja Sandbox testing: no real money moves\. Practice mode stays strictly virtual\./);
+    assert.ok(!/Practice mode only/.test(footer));
+    assert.equal(await page.evaluate(() => { try { return window.smartProfitAccount.get().mode; } catch (_) { return null; } }), null, 'no trading account is activated');
+    await shot(page, 'real-mode-sandbox');
+    assert.deepEqual(errors, [], 'no page errors before leaving Real mode');
+    await Promise.all([page.waitForURL(/dashboard\.html$/), page.selectOption('[data-account-switcher]', 'acc-demo')]);
     await context.close();
 });
