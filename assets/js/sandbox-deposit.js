@@ -28,6 +28,9 @@
         rate_stale: 'The reference rate is out of date, so quotes are paused.',
         rate_unavailable: 'The reference rate is unavailable, so quotes are paused.',
         sandbox_not_enabled: 'Sandbox deposits are not available on this account.',
+        phone_invalid: 'Enter a Safaricom number such as 0712345678 or 254712345678.',
+        phone_not_allowed: 'This number is not allowed for sandbox prompts.',
+        too_many_numbers: 'You can keep at most two numbers. Remove one first.',
     });
 
     let client = null;
@@ -35,6 +38,44 @@
     let quote = null;
     let expiryTimer = null;
     let pollTimer = null;
+
+    function renderPhones() {
+        const phone = find('[data-sandbox-phone]');
+        const selected = phone.value;
+        const own = overview.my_msisdns || [];
+        phone.replaceChildren(
+            ...own.map((msisdn) => Object.assign(document.createElement('option'), { value: msisdn, textContent: `${mask(msisdn)} (your number)` })),
+            ...(overview.test_msisdns || []).map((msisdn) => Object.assign(document.createElement('option'), { value: msisdn, textContent: `${mask(msisdn)} (sandbox test number, never answers)` })));
+        if ([...phone.options].some((option) => option.value === selected)) phone.value = selected;
+        const list = find('[data-sandbox-own-list]');
+        list.replaceChildren(...own.map((msisdn) => {
+            const item = document.createElement('li');
+            item.className = 'd-flex align-items-center gap-2 mb-1';
+            const label = document.createElement('span');
+            label.textContent = mask(msisdn);
+            const remove = Object.assign(document.createElement('button'), { type: 'button', className: 'btn btn-sm btn-outline-secondary', textContent: 'Remove' });
+            remove.addEventListener('click', () => setOwnPhone(msisdn, false).catch((error) => { console.error(error); }));
+            item.append(label, remove);
+            return item;
+        }));
+    }
+
+    async function setOwnPhone(msisdn, enabled) {
+        const status = find('[data-sandbox-status]');
+        const { data, error } = await client.rpc('funding_set_my_sandbox_msisdn', { p_msisdn: msisdn, p_enabled: enabled });
+        if (error) { status.textContent = ERRORS[codeOf(error)] || 'The number could not be saved. Please try again.'; return false; }
+        status.textContent = enabled ? 'Number added and selected for your next sandbox prompt.' : 'Number removed.';
+        await refresh();
+        renderPhones();
+        if (enabled && data?.msisdn) find('[data-sandbox-phone]').value = data.msisdn;
+        return true;
+    }
+
+    async function addOwnPhone(event) {
+        event.preventDefault();
+        const input = find('[data-sandbox-own-phone]');
+        if (await setOwnPhone(input.value.replace(/[\s+-]/g, ''), true)) input.value = '';
+    }
 
     function codeOf(error) {
         const message = String(error?.message || '');
@@ -200,11 +241,17 @@
         find('[data-sandbox-available]').hidden = false;
         status.textContent = overview.rate_stale ? ERRORS.rate_stale : '';
         text('[data-sandbox-limits]', `From USD ${usd(overview.min_usd)} to USD ${usd(overview.max_usd_per_deposit)} per deposit; at most USD ${usd(overview.max_usd_rolling_24h)} and ${overview.max_deposits_rolling_24h} deposits in 24 hours.`);
-        const phone = find('[data-sandbox-phone]');
-        phone.replaceChildren(...(overview.test_msisdns || []).map((msisdn) => Object.assign(document.createElement('option'), { value: msisdn, textContent: `${mask(msisdn)} (sandbox test number)` })));
+        renderPhones();
         find('[data-sandbox-quote-form]').addEventListener('submit', (event) => requestQuote(event).catch((error) => { console.error(error); status.textContent = 'A quote could not be created. Please try again.'; }));
+        find('[data-sandbox-own-form]').addEventListener('submit', (event) => addOwnPhone(event).catch((error) => { console.error(error); status.textContent = 'The number could not be saved. Please try again.'; }));
+        find('[data-sandbox-quote-button]').disabled = false;
+        find('[data-sandbox-own-add]').disabled = false;
         find('[data-sandbox-send]').addEventListener('click', () => sendPrompt().catch((error) => { console.error(error); status.textContent = 'The sandbox prompt could not be sent. Please try again.'; }));
     }
+
+    // Until start() attaches the real handlers, a submit must never fall through
+    // to the browser's native GET, which would reload the page with a query string.
+    document.addEventListener('submit', (event) => { if (event.target.closest('[data-sandbox-quote-form], [data-sandbox-own-form]')) event.preventDefault(); }, true);
 
     window.addEventListener('DOMContentLoaded', () => start().catch((error) => {
         console.error(error);

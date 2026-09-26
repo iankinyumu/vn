@@ -798,6 +798,48 @@ test('reversal needs two owners; reconciliation rolls the KES statement forward 
         [day, await sha256Hex('x')])), /validation_failed/);
 });
 
+test('a tester\'s own sandbox number is bound to that tester, capped at two, removable and audited without the number', async () => {
+    await addCustomer('ownPhoneA', 21);
+    await addCustomer('ownPhoneB', 22);
+    const OWN = '254722000111';
+    assert.match(await errorOf(as('administrator', `select public.funding_set_my_sandbox_msisdn('0722000111', true)`)), /sandbox_not_enabled/, 'not a tester');
+    assert.match(await errorOf(as('ownPhoneA', `select public.funding_set_my_sandbox_msisdn('12345', true)`)), /phone_invalid/);
+    assert.deepEqual((await one('ownPhoneA', `select public.funding_set_my_sandbox_msisdn(' 0722000111 ', true) r`)).r, { msisdn: OWN, enabled: true });
+    assert.deepEqual((await one('ownPhoneA', 'select public.funding_sandbox_overview() o')).o.my_msisdns, [OWN]);
+    assert.deepEqual((await one('ownPhoneB', 'select public.funding_sandbox_overview() o')).o.my_msisdns, [], 'another tester never sees it');
+    assert.ok(!(await one('ownPhoneB', 'select public.funding_sandbox_overview() o')).o.test_msisdns.includes(OWN));
+
+    // Another tester cannot push to it; its owner can.
+    const other = fakeDaraja();
+    const qb = await quote('ownPhoneB', 5);
+    assert.equal(await errorOf(initiateDeposit({ rpc: serviceRpc, daraja: other, config: CONFIG, userId: identities.ownPhoneB.id, quoteId: qb.quote_id, phone: '0722000111', idempotencyKey: 'own-phone-b-1' })), 'phone_not_allowed');
+    assert.equal(other.calls.push.length, 0);
+    const mine = fakeDaraja({ query: ['PENDING'] });
+    const qa = await quote('ownPhoneA', 5);
+    const view = await initiateDeposit({ rpc: serviceRpc, daraja: mine, config: CONFIG, userId: identities.ownPhoneA.id, quoteId: qa.quote_id, phone: '0722000111', idempotencyKey: 'own-phone-a-1' });
+    assert.equal(view.state, 'PENDING');
+    assert.equal(mine.calls.push[0].phone, OWN);
+
+    // At most two enabled numbers; re-enabling one already listed is not a third.
+    await as('ownPhoneA', `select public.funding_set_my_sandbox_msisdn('254722000112', true)`);
+    assert.match(await errorOf(as('ownPhoneA', `select public.funding_set_my_sandbox_msisdn('254722000113', true)`)), /too_many_numbers/);
+    await as('ownPhoneA', `select public.funding_set_my_sandbox_msisdn($1, true)`, [OWN]);
+
+    // Removed numbers are refused for new payments but kept as history.
+    await as('ownPhoneA', `select public.funding_set_my_sandbox_msisdn($1, false)`, [OWN]);
+    assert.deepEqual((await one('ownPhoneA', 'select public.funding_sandbox_overview() o')).o.my_msisdns, ['254722000112']);
+    await db.query(`update funding.payments set state = 'FAILED', finalized_at = now() where user_id = $1`, [identities.ownPhoneA.id]);
+    const qa2 = await quote('ownPhoneA', 5);
+    assert.equal(await errorOf(initiateDeposit({ rpc: serviceRpc, daraja: fakeDaraja(), config: CONFIG, userId: identities.ownPhoneA.id, quoteId: qa2.quote_id, phone: OWN, idempotencyKey: 'own-phone-a-2' })), 'phone_not_allowed');
+    assert.equal(await scalar('select count(*)::int from funding.sandbox_tester_msisdns where user_id = $1', [identities.ownPhoneA.id]), 2);
+
+    // The audit trail keeps only the masked number.
+    const audit = (await db.query(`select after_state::text a from public.admin_audit_events where action = 'funding.sandbox_tester_msisdn'`)).rows.map((row) => row.a).join(' ');
+    assert.match(audit, /2547\*{5}111/);
+    assert.ok(!audit.includes(OWN));
+    for (const name of ['customer', 'administrator']) assert.match(await errorOf(as(name, 'select * from funding.sandbox_tester_msisdns')), /permission denied/);
+});
+
 test('callers cannot reach service RPCs or funding tables, and records are immutable', async () => {
     for (const name of ['customer', 'administrator']) {
         assert.match(await errorOf(as(name, `select public.funding_svc_expire_stale()`)), /permission denied/);

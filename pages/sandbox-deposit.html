@@ -60,12 +60,12 @@
                         <p class="text-secondary small mt-1" data-sandbox-limits></p>
                     </div>
                     <div>
-                        <label class="form-label" for="sandboxPhone">Sandbox test phone number</label>
+                        <label class="form-label" for="sandboxPhone">Phone number for the sandbox prompt</label>
                         <div class="input-wrapper"><i class="fas fa-phone form-icon"></i>
                             <select id="sandboxPhone" class="form-input" required data-sandbox-phone></select>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-premium-primary mt-3" data-sandbox-quote-button>Get quote</button>
+                    <button type="submit" class="btn btn-premium-primary mt-3" data-sandbox-quote-button disabled>Get quote</button>
                 </form>
 
                 <div class="sandbox-quote mt-4" data-sandbox-quote hidden>
@@ -88,6 +88,18 @@
                 </div>
             </section>
 
+            <section class="settings-card">
+                <h5 class="settings-title"><i class="fas fa-sim-card"></i> Your test phone</h5>
+                <p class="text-secondary small">The Daraja sandbox test number never answers a prompt. To approve or decline a sandbox prompt yourself, add a Safaricom number you hold. It is used only for your own sandbox deposits, and you can remove it at any time. Sandbox prompts move no real money.</p>
+                <form data-sandbox-own-form novalidate>
+                    <label class="form-label" for="sandboxOwnPhone">Safaricom number</label>
+                    <div class="input-wrapper"><i class="fas fa-phone form-icon"></i>
+                        <input type="tel" id="sandboxOwnPhone" class="form-input" inputmode="numeric" autocomplete="tel" placeholder="07XXXXXXXX or 2547XXXXXXXX" data-sandbox-own-phone>
+                    </div>
+                    <button type="submit" class="btn btn-premium-primary mt-3" data-sandbox-own-add disabled>Add my number</button>
+                </form>
+                <ul class="list-unstyled mt-3 mb-0" data-sandbox-own-list></ul>
+            </section>
             <section class="settings-card">
                 <h5 class="settings-title"><i class="fas fa-clock-rotate-left"></i> Sandbox deposits</h5>
                 <div style="overflow-x:auto">

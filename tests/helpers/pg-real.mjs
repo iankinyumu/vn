@@ -13,7 +13,7 @@ import pg from 'pg';
 import { authSchema, claimsFor, identities } from './test-db.mjs';
 
 export { claimsFor, identities };
-export const FUNDING_MIGRATIONS = ['20260926100000_funding_foundation.sql', '20260926110000_funding_rpc.sql'];
+export const FUNDING_MIGRATIONS = ['20260926100000_funding_foundation.sql', '20260926110000_funding_rpc.sql', '20260926120000_funding_tester_msisdns.sql'];
 export const V3_MIGRATIONS = ['20260924100000_engine_v3_reference_functions.sql', '20260924110000_engine_v3_publication.sql', '20260924120000_engine_v3_observed_volatility.sql', '20260925100000_engine_v3_witness_attestation.sql'];
 
 async function sharedMigrationList() {

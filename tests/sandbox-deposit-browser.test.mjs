@@ -29,14 +29,22 @@ const TESTER = {
 // the test balance follows the confirmation.
 const initScript = ({ overview = TESTER, expiresInMs = 300000 } = {}) => `
     window.__PAYMENTS__ = [];
+    window.__OWN__ = [];
     window.__POLLS__ = 0;
     window.__FAKE__ = { rpc: {
         // The page reads the overview and the payments together; the overview call comes first.
         funding_sandbox_overview: () => {
             if (window.__PAYMENTS__.length && ++window.__POLLS__ > 2) window.__PAYMENTS__.forEach((p) => { p.state = 'CONFIRMED'; p.status_message = 'Sandbox payment confirmed. The USD amount was added to your non-spendable sandbox test balance.'; });
-            return { ...${JSON.stringify(overview)}, test_balance_usd: window.__PAYMENTS__.some((p) => p.state === 'CONFIRMED') ? 5 : ${JSON.stringify(overview.test_balance_usd ?? 0)} };
+            return { ...${JSON.stringify(overview)}, my_msisdns: [...window.__OWN__], test_balance_usd: window.__PAYMENTS__.some((p) => p.state === 'CONFIRMED') ? 5 : ${JSON.stringify(overview.test_balance_usd ?? 0)} };
         },
         funding_my_payments: () => window.__PAYMENTS__,
+        funding_set_my_sandbox_msisdn: (args) => {
+            const msisdn = String(args.p_msisdn).replace(/^0/, '254');
+            if (!/^254(7|1)[0-9]{8}$/.test(msisdn)) return { __error: 'phone_invalid' };
+            window.__OWN__ = window.__OWN__.filter((n) => n !== msisdn);
+            if (args.p_enabled) window.__OWN__.push(msisdn);
+            return { msisdn, enabled: args.p_enabled };
+        },
         funding_create_deposit_quote: (args) => {
             const usd = Number(args.p_usd_amount);
             if (usd > 500) return { __error: 'amount_above_maximum' };
@@ -102,7 +110,7 @@ test('sandbox deposit: quote shows locked KES, rate, rounding and expiry; the pr
     assert.equal((await page.locator('.sandbox-banner').textContent()).trim(), 'Daraja Sandbox - test funds only');
     assert.equal(await page.locator('[data-sandbox-balance]').textContent(), '0.00');
     assert.match(await page.locator('[data-sandbox-available]').textContent(), /non-spendable/);
-    assert.deepEqual(await page.locator('[data-sandbox-phone] option').allTextContents(), ['2547*****149 (sandbox test number)']);
+    assert.deepEqual(await page.locator('[data-sandbox-phone] option').allTextContents(), ['2547*****149 (sandbox test number, never answers)']);
     assert.match(await page.locator('[data-sandbox-limits]').textContent(), /USD 5\.00 to USD 500\.00/);
 
     await page.fill('[data-sandbox-amount]', '500.01');
@@ -156,5 +164,41 @@ test('sandbox deposit: an expired quote cannot be sent, and a refused prompt sho
     await page.waitForFunction(() => /reference ABCD1234/.test(document.querySelector('[data-sandbox-status]').textContent));
     assert.match(await page.locator('[data-sandbox-status]').textContent(), /deposit limit/);
     assert.equal(await page.locator('[data-sandbox-payment]').isVisible(), false);
+    await context.close();
+});
+
+test('sandbox deposit: a tester adds and removes their own number; the forms never fall through to a native submit', async () => {
+    const html = readFileSync(join(ROOT, 'pages/sandbox-deposit.html'), 'utf8');
+    assert.match(html, /data-sandbox-quote-button disabled>/, 'the quote button starts disabled');
+    assert.match(html, /data-sandbox-own-add disabled>/, 'the add button starts disabled');
+    const { page, context, errors, posted } = await openPage();
+    await page.locator('[data-sandbox-available]').waitFor({ state: 'visible' });
+    assert.equal(await page.locator('[data-sandbox-quote-button]').isDisabled(), false);
+
+    await page.fill('[data-sandbox-own-phone]', '12345');
+    await page.click('[data-sandbox-own-add]');
+    await page.waitForFunction(() => /Safaricom number such as/.test(document.querySelector('[data-sandbox-status]').textContent));
+    await page.fill('[data-sandbox-own-phone]', '0712 345 678');
+    await page.click('[data-sandbox-own-add]');
+    await page.waitForFunction(() => /Number added/.test(document.querySelector('[data-sandbox-status]').textContent));
+    assert.deepEqual(await page.locator('[data-sandbox-phone] option').allTextContents(), ['2547*****678 (your number)', '2547*****149 (sandbox test number, never answers)']);
+    assert.equal(await page.locator('[data-sandbox-phone]').inputValue(), '254712345678');
+    assert.equal(await page.locator('[data-sandbox-own-phone]').inputValue(), '');
+    assert.equal(await page.locator('[data-sandbox-own-list] li').count(), 1);
+
+    await page.click('[data-sandbox-quote-button]');
+    await page.locator('[data-sandbox-quote]').waitFor({ state: 'visible' });
+    await page.click('[data-sandbox-send]');
+    await page.locator('[data-sandbox-payment]').waitFor({ state: 'visible' });
+    assert.equal(posted[0].body.phone, '254712345678');
+
+    await page.click('[data-sandbox-own-list] button');
+    await page.waitForFunction(() => /Number removed/.test(document.querySelector('[data-sandbox-status]').textContent));
+    assert.deepEqual(await page.locator('[data-sandbox-phone] option').allTextContents(), ['2547*****149 (sandbox test number, never answers)']);
+
+    await page.evaluate(() => { document.querySelector('[data-sandbox-own-form]').requestSubmit(); document.querySelector('[data-sandbox-quote-form]').requestSubmit(); });
+    await page.waitForTimeout(300);
+    assert.ok(!page.url().includes('?'), 'no native GET submit');
+    assert.deepEqual(errors, []);
     await context.close();
 });
