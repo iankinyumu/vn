@@ -237,3 +237,12 @@ The Owner gave a standing instruction to apply migrations and deploy without wai
 - Carry-forward tests 5/5.
 
 **Update (Owner: "make the rate check daily too"):** the hourly `funding-rate-sync-hourly` (job 7) was removed after one successful run (`UNCHANGED`, 21:15 UTC). It was replaced by `funding-rate-sync-daily` (`0 17 * * *`, 20:00 Nairobi time, job 10). No code change: the database already decides each figure once. Known gap: a Monday rate posted after 20:00 is only picked up on Tuesday, after the Friday rate has gone stale at Tuesday 00:00. Manual publishing covers that.
+
+## Customer UI: deposit sheet, side panel and trade page (2026-09-27)
+
+Owner: "strip the other pages too, then deploy".
+
+- Commits `677c027` (side panel, Deposit/Withdraw top bar, mode switch menu, Lipa na M-Pesa deposit sheet; `sandbox-deposit.html` reduced to the Real test balance and deposit history), `6082695` (trade page rebuild), `50872a7` (explanatory copy stripped from dashboard, profile and fairness) and `81342b6` (side panel scrollbar fix).
+- The deposit flow and its server rules are unchanged: same RPCs, one idempotency key per quote, and the real-money warning with the exact KES amount before a prompt to the tester's own number. Deposits credit Real mode only; Practice stays virtual. Withdraw states that withdrawals are not open.
+- Tests: front-end and browser suites pass (account 6/6, dashboard 6/6, trade feed 21/21, funding sheet browser 7/7, trade browser 3/3, engine v3 browser, customer pages, fairness, public copy). The full `npm test` engine suite was not run.
+- Site: Vercel `dpl_DfjCbCiTU7vTJdcQhWFTepTgHwFS` (after `dpl_HYmQC3hFu6CGUCVbXifjHNL4oLw2`), aliased to `smartprofitbinaryv2.vercel.app`. The five changed pages and ten changed scripts and stylesheets are byte-identical to the local build. The live trade page streamed real ticks, and the live deposit sheet loaded the tester overview. No prompt was sent and no trade was placed.
