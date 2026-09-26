@@ -109,3 +109,21 @@ All automated coverage uses a scripted Daraja double on real PostgreSQL. **No li
 | R6 / F1 Real enablement evidence gate | Phase 3 | Unchanged: blocks production payments, Real accounts and Real trading |
 | Refund path for funded suspense | Phase 3 | Design and build a reviewed refund flow |
 | Legacy crypto functions (F2) | Owner | Run the runbook's live cron and log checks, then authorize deletion separately |
+
+## 8. Second-pass review (R7, R8): execution status on 2026-09-26
+
+**Source:** R7 `5125fb9`, sandbox page `16e9add`, docs `279153d`, all pushed to `vn/feat/restore-customer-ui`.
+
+| Item | Status | Evidence |
+| --- | --- | --- |
+| R7 callback receipt is a claim | **Done** | A callback's receipt, amount and phone stay on `funding.provider_events`; `mpesa_receipt` is set only from a bound statement item (three-person `RESOLVE_CONFIRMED` or the new `BIND_RECEIPT`); automatic credits stay `receipt_pending` and reconciliation reports `receipt_unverified`. New test `a leaked token with the right checkout and amount cannot plant a fabricated receipt` |
+| R8.1 focused real-PostgreSQL rerun | **Done** | `node --test --test-concurrency=1 tests/funding-sandbox.test.mjs` at `5125fb9`, PostgreSQL 18 (embedded-postgres 18.4.0-beta.17), 2026-09-26 ~01:25 UTC: 24/24. After the sandbox page changes, funding + Edge handlers + adapter + page/copy/secret checks: 56/56. The supervisor's `ENOMEM` run is neither a pass nor a failure |
+| R8.2 Daraja contract pin | **Done** | Design §1: official portal read through its own GraphQL documentation queries at 2026-09-26 01:29 UTC, response digests recorded, every adapter field present; `500.001.1001` ambiguity noted |
+| Sandbox deposit page | **Done in source** | `pages/sandbox-deposit.html` ("Daraja Sandbox - test funds only"), testers only via `funding_sandbox_overview`; USD 5.00–500.00, locked KES, rate, rounding and five-minute expiry; pending/confirmed/failed/expired/manual-review states; non-spendable test balance only. Sandbox pushes restricted to `funding.sandbox_msisdns` (Daraja sandbox test number). `tests/sandbox-deposit-browser.test.mjs` 3/3 in Edge |
+| Cutover rehearsal, `deno check` | **Done** | `tests/engine-v2-cutover.test.mjs` 4/4 with both funding migrations; `deno check` of all three entry points exit 0 |
+| Full `npm test` on `16e9add` | **Incomplete** | Stopped by the host when memory ran critically low (72 tests had passed, none failed, when last read). Not restarted. No orphaned test process remained afterwards |
+| Migrations, function deploy, secrets, scheduler, Vercel, live drill, simulated reconciliation | **Not done: blocked** | The executor environment's permission policy refused (a) writing the Supabase function secrets and Vault cron secret ("Secret-Store Writes") and (b) `supabase db push` ("Production Deploy"), despite the review's authorization. A dry run confirmed only the two funding migrations are pending. Nothing was changed in project `cdaxvkpmgqjfukbtrzys` or on Vercel. All gates remain closed |
+
+**Prepared, not run:** a secrets script that reads only `DARAJA_CONSUMER_KEY` and `DARAJA_CONSUMER_SECRET` from `.env.redis.local` (the file uses these names, not `DARAJA_SANDBOX_*`), takes the sandbox test shortcode `174379` and passkey from the official portal sample, generates `FUNDING_CRON_SECRET`, writes them to the function secret store and Vault through temporary files that are then deleted, and prints names only. The tester to add is the active owner staff account `1d180b1b-eff7-4b4f-a571-30d710e1fb32`. The live drill also needs a signed-in browser session for that account.
+
+**Statuses:** `CODE_READY` not ready (full suite incomplete). `DARAJA_SANDBOX_READY` and `KES_USD_QUOTE_READY` **not set**: no deployment or live drill. `DARAJA_PRODUCTION_READY` and `REAL_READY` false.
