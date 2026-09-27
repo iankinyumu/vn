@@ -3,7 +3,7 @@
 .trade-page, .trade-page *, .trade-page *::before, .trade-page *::after { box-sizing: border-box; }
 body.trade-page { margin: 0; }
 .visually-hidden { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important; }
-.trade-main { max-width: 1480px; margin: 0 auto; padding: 14px 20px 28px; }
+.trade-main { padding: 12px 16px 24px; }
 .trade-layout { display: grid; grid-template-columns: minmax(0, 1fr) 368px; grid-template-areas: "families families" "market ticket"; gap: 12px; align-items: start; margin: 0; }
 .trade-families { grid-area: families; display: flex; gap: 6px; margin: 0; padding: 0; border: 0; min-width: 0; }
 .trade-families[hidden] { display: none; }
@@ -36,7 +36,16 @@ body.trade-page { margin: 0; }
 .feed-state[data-state="unavailable"]::before { background: var(--down); }
 .chart-frame { position: relative; height: clamp(240px, 40vh, 440px); padding: 10px 0 6px 4px; }
 /* On a desktop the market is the main view: the chart fills the screen below the top bar, tabs, price bar and digit strip; trades sit below the fold. */
-@media (min-width: 1100px) { .chart-frame { height: max(360px, calc(100vh - var(--topbar-h) - 214px)); } .trade-families[hidden] + .trade-market .chart-frame { height: max(360px, calc(100vh - var(--topbar-h) - 166px)); } .trade-activity { margin-top: 20px; } }
+/* On a desktop the market is the main view: the layout fills exactly the screen below the top bar and the chart takes
+   whatever height the price bar and digit strip leave. Open trades and history start below the fold. */
+@media (min-width: 1100px) {
+    .trade-layout { height: calc(100vh - var(--topbar-h) - 12px); height: calc(100dvh - var(--topbar-h) - 12px); grid-template-rows: auto minmax(0, 1fr); align-items: stretch; }
+    .trade-layout:has(> .trade-families[hidden]) { grid-template-areas: "market ticket"; grid-template-rows: minmax(0, 1fr); }
+    .trade-market { display: flex; flex-direction: column; min-height: 0; }
+    .chart-frame { flex: 1 1 auto; height: auto; min-height: 260px; }
+    .trade-ticket { position: static; align-self: start; max-height: 100%; overflow-y: auto; }
+    .trade-activity { margin-top: 24px; }
+}
 .index-chart { display: block; width: 100%; height: 100%; cursor: crosshair; touch-action: pan-y; }
 .market-active { position: absolute; top: 12px; left: 14px; padding: 4px 9px; border: 1px solid var(--mode-accent); border-radius: 4px; background: rgba(8,13,20,.85); color: var(--mode-accent); font: 600 11px 'DM Mono', monospace; white-space: nowrap; }
 .market-active[hidden] { display: none; }
