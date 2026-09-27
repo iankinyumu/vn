@@ -79,12 +79,23 @@ test('trade page on a phone: drawer navigation, one column and the action bar pi
         assert.ok(box.x >= 0 && box.x + box.width <= 390, `${selector} is cut off`);
     }
     await shot(page, 'trade-phone');
+    assert.equal(await page.evaluate(() => document.querySelector('[data-app-rail]').inert), true, 'the closed drawer is out of the Tab order');
+    for (const selector of ['[data-rail-open]', '[data-funding-open="deposit"]']) {
+        const box = await page.locator(selector).boundingBox();
+        if (box) assert.ok(box.height >= 36, `${selector} is too small to press (${box.height}px)`);
+    }
     await page.click('[data-rail-open]');
     await page.waitForFunction(() => document.querySelector('[data-app-rail]').getBoundingClientRect().x === 0);
     assert.equal(await page.evaluate(() => document.activeElement?.classList.contains('app-rail-link')), true, 'focus moves into the drawer');
+    assert.equal(await page.evaluate(() => document.querySelector('[data-app-rail]').inert), false);
+    assert.equal(await page.evaluate(() => document.querySelector('main')?.closest('[inert]') !== null), true, 'the page behind the open drawer is inert');
+    // Shift+Tab from the first item wraps to the last instead of leaving the drawer.
+    await page.keyboard.press('Shift+Tab');
+    assert.equal(await page.evaluate(() => document.querySelector('[data-app-rail]').contains(document.activeElement)), true, 'focus stays in the drawer');
     await page.keyboard.press('Escape');
     await page.waitForFunction(() => document.querySelector('[data-app-rail]').getBoundingClientRect().x < 0);
     assert.equal(await page.evaluate(() => document.activeElement?.dataset.railOpen !== undefined), true, 'focus returns to the menu button');
+    assert.equal(await page.evaluate(() => document.querySelector('[data-app-rail]').inert && !document.querySelector('main')?.closest('[inert]')), true, 'closing restores the page and hides the drawer again');
     assert.deepEqual(errors, []);
     await context.close();
 });

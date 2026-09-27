@@ -1,0 +1,111 @@
+/* Shared design tokens: every colour, type size, space, radius and timing the
+   shell uses, named by role (HIG semantic colours) rather than by hue. Page CSS
+   reads these; the older --app-*, --flat-* and --text-* names alias them.
+   The product is dark only today; a light palette is one more block here once
+   page CSS stops hard-coding colours. */
+:root {
+    color-scheme: dark;
+
+    /* Backgrounds: page, grouped panel, raised surface (menus, sheets), field. */
+    --bg: #080d14;
+    --bg-2: #101721;
+    --bg-3: #141d29;
+    --bg-field: #0b111a;
+
+    /* Labels. --label-2 is 6.0:1 or better on every background above. */
+    --label: #edf1f5;
+    --label-2: #8f9baa;
+    --label-table: #c7d0d9;
+
+    /* Separators are decorative; field borders identify a control, so they meet 3:1 (WCAG 1.4.11). */
+    --separator: rgb(255 255 255 / .09);
+    --separator-strong: rgb(255 255 255 / .18);
+    --field-border: #5e6979;
+
+    /* Fills for interaction states on transparent controls. */
+    --fill-hover: rgb(255 255 255 / .04);
+    --fill-pressed: rgb(255 255 255 / .08);
+    --scrim: rgb(4 7 11 / .6);
+    --scrim-strong: rgb(4 7 11 / .7);
+
+    /* One accent, for primary actions, links and the current location. */
+    --accent: #adff56;
+    --accent-hover: #c5ff89;
+    --accent-pressed: #95e63c;
+    --accent-tint: rgb(173 255 86 / .08);
+    --on-accent: #10160c;
+
+    /* Status. Never the only signal: pair with a sign, label or icon. */
+    --positive: #66d9a5;
+    --negative: #ff8585;
+    --negative-tint: rgb(255 133 133 / .08);
+    --caution: #f2b95b;
+    --info: #80d7ff;
+    --alert-bg: #7f2d2d;
+
+    --focus-ring: var(--accent);
+    --focus-width: 2px;
+
+    /* Two typefaces: one for text, one for numbers and codes. */
+    --font-text: Manrope, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-mono: "DM Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+    /* Type ramp (Apple's default text styles in rem). Nothing smaller than 11px. */
+    --text-caption-2: .6875rem;
+    --text-caption: .75rem;
+    --text-footnote: .8125rem;
+    --text-subhead: .875rem;
+    --text-callout: 1rem;
+    --text-headline: 1.0625rem;
+    --text-title-3: 1.25rem;
+    --text-title-2: 1.375rem;
+    --text-title-1: 1.75rem;
+
+    /* 8px grid with a 4px half step. */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 48px;
+
+    --radius-control: 4px;
+    --radius-card: 6px;
+    --radius-sheet: 12px;
+
+    --target: 44px;
+
+    --ease-out: cubic-bezier(.2, .8, .2, 1);
+    --dur-fast: 150ms;
+    --dur-base: 200ms;
+
+    --shadow-float: 0 14px 36px rgb(0 0 0 / .45);
+}
+
+/* Increase Contrast: stronger secondary text and separators. */
+@media (prefers-contrast: more) {
+    :root {
+        --label-2: #c7d0d9;
+        --separator: rgb(255 255 255 / .24);
+        --separator-strong: rgb(255 255 255 / .4);
+        --field-border: #8f9baa;
+        --fill-hover: rgb(255 255 255 / .1);
+    }
+}
+
+/* A visible focus ring on every interactive element; components may refine it. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: var(--focus-width) solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+/* Reduce Motion: state changes stay, movement goes. */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

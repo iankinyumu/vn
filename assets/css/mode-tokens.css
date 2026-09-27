@@ -1,4 +1,4 @@
-:root { --mode-accent: #80d7ff; --mode-surface: rgba(34, 119, 163, .18); }
-body[data-mode="demo"], .mode-switch[data-mode="demo"] { --mode-accent: #80d7ff; --mode-surface: rgba(34, 119, 163, .18); }
-body[data-mode="real"], .mode-switch[data-mode="real"] { --mode-accent: #f2b95b; --mode-surface: rgba(159, 107, 23, .18); }
-.restriction-banner { background: #7f2d2d; color: #fff; padding: .75rem 1rem; text-align: center; }
+:root { --mode-accent: var(--info); --mode-surface: rgba(34, 119, 163, .18); }
+body[data-mode="demo"], .mode-switch[data-mode="demo"] { --mode-accent: var(--info); --mode-surface: rgba(34, 119, 163, .18); }
+body[data-mode="real"], .mode-switch[data-mode="real"] { --mode-accent: var(--caution); --mode-surface: rgba(159, 107, 23, .18); }
+.restriction-banner { background: var(--alert-bg); color: #fff; padding: .75rem 1rem; text-align: center; }

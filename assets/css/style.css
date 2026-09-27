@@ -4,19 +4,19 @@
 }
 
 .text-success {
-    color: #34d399 !important
+    color: var(--positive) !important
 }
 
 .text-danger {
-    color: #f87171 !important
+    color: var(--negative) !important
 }
 
 .text-warning {
-    color: #fbbf24 !important
+    color: var(--caution) !important
 }
 
 .text-info {
-    color: #38bdf8 !important
+    color: var(--info) !important
 }
 
 .text-primary {

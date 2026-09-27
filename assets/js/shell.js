@@ -80,7 +80,8 @@
             signedIn = false;
         }
         if (signedIn) {
-            const button = element('button', 'btn btn-outline-danger btn-sm rounded-pill px-3');
+            // Logging out loses nothing, so it takes the quiet style rather than the destructive one.
+            const button = element('button', 'btn btn-outline-light btn-sm rounded-pill px-3');
             button.type = 'button';
             const glyph = icon('fa-right-from-bracket');
             glyph.classList.add('me-1');
@@ -247,30 +248,51 @@
             expand.querySelector('.app-rail-text').textContent = value ? 'Collapse' : 'Expand';
             expand.title = value ? 'Collapse menu' : 'Expand menu';
         };
+        // On phones the closed drawer sits off screen; inert keeps it out of the Tab order and
+        // the accessibility tree. While it is open, the page behind it is inert instead.
+        let covered = [];
+        const syncInert = () => { rail.inert = drawer.matches && !document.body.classList.contains('rail-open'); };
         const closeDrawer = (focus) => {
             if (!document.body.classList.contains('rail-open')) return;
             document.body.classList.remove('rail-open');
             backdrop.hidden = true;
             opener.setAttribute('aria-expanded', 'false');
+            covered.forEach((node) => { node.inert = false; });
+            covered = [];
+            syncInert();
             if (focus) opener.focus();
         };
         const openDrawer = () => {
             document.body.classList.add('rail-open');
             backdrop.hidden = false;
             opener.setAttribute('aria-expanded', 'true');
+            syncInert();
+            covered = [...document.body.children].filter((node) => !node.contains(rail) && !node.inert);
+            covered.forEach((node) => { node.inert = true; });
             rail.querySelector('.app-rail-link')?.focus();
         };
+        const focusable = () => [...rail.querySelectorAll('a[href], button:not([disabled])')].filter((node) => node.offsetParent !== null);
         opener.addEventListener('click', () => (document.body.classList.contains('rail-open') ? closeDrawer(true) : openDrawer()));
         backdrop.addEventListener('click', () => closeDrawer(true));
-        rail.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeDrawer(true); });
+        rail.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') { closeDrawer(true); return; }
+            // Keep Tab inside the open drawer, as a modal would.
+            if (event.key !== 'Tab' || !document.body.classList.contains('rail-open')) return;
+            const items = focusable();
+            const first = items[0];
+            const last = items[items.length - 1];
+            if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+            else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+        });
         expand.addEventListener('click', () => {
             if (drawer.matches) { closeDrawer(true); return; }
             const next = !document.body.classList.contains('rail-expanded');
             setExpanded(next);
             saveRailPreference(next);
         });
-        drawer.addEventListener?.('change', () => closeDrawer(false));
+        drawer.addEventListener?.('change', () => { closeDrawer(false); syncInert(); });
         setExpanded(railPreference());
+        syncInert();
         return backdrop;
     }
 
