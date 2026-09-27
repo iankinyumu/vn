@@ -75,7 +75,7 @@ body.trade-page { margin: 0; }
 .digit[data-zone="above"] .digit-ring { background: color-mix(in srgb, var(--positive) 13%, transparent); color: var(--up); }
 .digit[data-zone="below"] .digit-ring { background: color-mix(in srgb, var(--negative) 12%, transparent); color: var(--down); }
 .digit[data-zone="barrier"] .digit-ring { box-shadow: 0 0 0 1.5px var(--app-ink); color: var(--app-ink); }
-.digit.current .digit-ring { transform: scale(1.14); background: var(--app-accent); color: var(--on-accent); font-weight: 700; box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent); }
+.digit.current .digit-ring { transform: scale(1.14); background: var(--accent-fill); color: var(--on-accent); font-weight: 700; box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent); }
 .digit-pointer { position: absolute; top: 3px; left: 0; width: 0; height: 0; margin-left: -6px; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 7px solid var(--app-muted); transition: transform .28s cubic-bezier(.2,.8,.2,1), border-top-color .2s; }
 .digit-pointer[hidden] { display: none; }
 .digit-pointer[data-direction="up"] { border-top-color: var(--up); }

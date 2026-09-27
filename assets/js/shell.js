@@ -99,7 +99,127 @@
         return signedIn;
     }
 
-    function buildHeader(activeKey) {
+    /* Appearance: System (follows the device), Light or Dark, from theme.js. A button opens a
+       menu of three radio items. The menu is a popover, so it sits in the top layer where the
+       side panel's clipping cannot cut it off, and Escape or a click outside closes it. */
+    const APPEARANCE = Object.freeze([
+        { value: 'system', label: 'System', detail: 'Match this device', icon: 'fa-circle-half-stroke' },
+        { value: 'light', label: 'Light', icon: 'fa-sun' },
+        { value: 'dark', label: 'Dark', icon: 'fa-moon' }
+    ]);
+    let appearanceCount = 0;
+
+    function buildAppearance(where) {
+        const store = window.smartProfitAppearance;
+        const id = `appearanceMenu${++appearanceCount}`;
+        const inRail = where === 'rail';
+        const button = element('button', inRail ? 'app-rail-link appearance-toggle' : 'nav-link appearance-toggle appearance-nav');
+        button.type = 'button';
+        button.setAttribute('aria-haspopup', 'menu');
+        button.setAttribute('aria-expanded', 'false');
+        button.setAttribute('aria-controls', id);
+        const glyph = icon('fa-circle-half-stroke');
+        const text = element('span', inRail ? 'app-rail-text' : 'appearance-nav-text', 'Appearance');
+        button.append(glyph, text);
+        const menu = element('div', 'appearance-menu');
+        menu.id = id;
+        menu.setAttribute('role', 'menu');
+        menu.setAttribute('aria-label', 'Appearance');
+        const popover = typeof menu.showPopover === 'function';
+        if (popover) menu.popover = 'auto'; else menu.hidden = true;
+        const items = APPEARANCE.map((choice) => {
+            const item = element('button', 'appearance-item');
+            item.type = 'button';
+            item.setAttribute('role', 'menuitemradio');
+            item.dataset.appearance = choice.value;
+            item.tabIndex = -1;
+            const label = element('span', 'appearance-item-label');
+            label.append(icon(choice.icon), document.createTextNode(choice.label));
+            item.append(label);
+            if (choice.detail) item.append(element('span', 'appearance-item-detail', choice.detail));
+            menu.append(item);
+            return item;
+        });
+        const isOpen = () => (popover ? menu.matches(':popover-open') : !menu.hidden);
+        const sync = () => {
+            const current = store ? store.get() : 'system';
+            const choice = APPEARANCE.find((entry) => entry.value === current) || APPEARANCE[0];
+            glyph.className = `fas ${choice.icon}`;
+            button.setAttribute('aria-label', `Appearance: ${choice.label}`);
+            items.forEach((item) => item.setAttribute('aria-checked', String(item.dataset.appearance === current)));
+        };
+        // The menu is a fixed 240 by about 150px (tokens.css), so it can be placed before it shows.
+        const MENU_W = 240, MENU_H = 160, GAP = 8;
+        const place = () => {
+            const box = button.getBoundingClientRect();
+            const width = document.documentElement.clientWidth, height = window.innerHeight;
+            const rtl = window.getComputedStyle(button).direction === 'rtl';
+            const clampX = (x) => Math.min(Math.max(GAP, x), width - MENU_W - GAP);
+            let left, top;
+            if (inRail && (rtl ? box.left : width - box.right) >= MENU_W + 2 * GAP) {
+                // Beside the side panel, bottom-aligned with the button.
+                left = rtl ? box.left - GAP - MENU_W : box.right + GAP;
+                top = box.bottom - MENU_H;
+            } else if (inRail) {
+                // In the phone drawer there is no room beside it: open above the button.
+                left = rtl ? box.right - 12 - MENU_W : box.left + 12;
+                top = box.top - 6 - MENU_H;
+            } else {
+                // Under the header button, aligned to its end edge; above it if there is no room below.
+                left = rtl ? box.left : box.right - MENU_W;
+                top = box.bottom + 6 + MENU_H <= height - GAP ? box.bottom + 6 : box.top - 6 - MENU_H;
+            }
+            Object.assign(menu.style, { position: 'fixed', margin: '0', right: 'auto', bottom: 'auto', left: `${Math.round(clampX(left))}px`, top: `${Math.round(Math.min(Math.max(GAP, top), height - MENU_H - GAP))}px` });
+        };
+        const focusChecked = () => (items.find((item) => item.getAttribute('aria-checked') === 'true') || items[0]).focus();
+        const open = () => {
+            if (popover) { menu.showPopover(); return; }
+            sync();
+            place();
+            menu.hidden = false;
+            button.setAttribute('aria-expanded', 'true');
+            focusChecked();
+        };
+        const close = (focus) => {
+            if (isOpen()) { if (popover) menu.hidePopover(); else menu.hidden = true; }
+            button.setAttribute('aria-expanded', 'false');
+            if (focus) button.focus();
+        };
+        if (popover) {
+            // The button is the popover's invoker, so pressing it while open closes it rather
+            // than light-dismissing and reopening.
+            button.popoverTargetElement = menu;
+            menu.addEventListener('beforetoggle', (event) => {
+                const opening = event.newState === 'open';
+                if (opening) { sync(); place(); }
+                button.setAttribute('aria-expanded', String(opening));
+            });
+            menu.addEventListener('toggle', (event) => { if (event.newState === 'open') focusChecked(); });
+        } else {
+            button.addEventListener('click', () => (isOpen() ? close(false) : open()));
+            document.addEventListener('pointerdown', (event) => { if (isOpen() && !menu.contains(event.target) && !button.contains(event.target)) close(false); });
+        }
+        button.addEventListener('keydown', (event) => { if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') && !isOpen()) { event.preventDefault(); open(); } });
+        menu.addEventListener('click', (event) => {
+            const item = event.target.closest('.appearance-item');
+            if (!item) return;
+            if (store) store.set(item.dataset.appearance);
+            close(true);
+        });
+        menu.addEventListener('keydown', (event) => {
+            const at = items.indexOf(document.activeElement);
+            const move = { ArrowDown: at + 1, ArrowUp: at - 1, Home: 0, End: items.length - 1 }[event.key];
+            if (move !== undefined) { event.preventDefault(); items[(move + items.length) % items.length].focus(); }
+            else if (event.key === 'Escape') { event.preventDefault(); close(true); }
+            else if (event.key === 'Tab') close(false);
+        });
+        window.addEventListener('smartprofit:appearance', sync);
+        window.addEventListener('resize', () => { if (isOpen()) place(); });
+        sync();
+        return { button, menu };
+    }
+
+    function buildHeader(activeKey, appearanceButton) {
         const header = element('header', 'premium-header');
         const nav = element('nav', 'navbar navbar-expand-xl');
         const container = element('div', 'container-fluid px-4');
@@ -121,6 +241,11 @@
         collapse.id = 'smartProfitNav';
         const list = element('ul', 'navbar-nav ms-auto align-items-center gap-1');
         list.append(...PUBLIC_LINKS.map((link) => navItem(link, activeKey)));
+        if (appearanceButton) {
+            const appearanceItem = element('li', 'nav-item');
+            appearanceItem.append(appearanceButton);
+            list.append(appearanceItem);
+        }
         const sessionItem = element('li', 'nav-item ms-2');
         sessionItem.dataset.shellSession = '';
         list.append(sessionItem);
@@ -164,7 +289,7 @@
     const railPreference = () => { try { return localStorage.getItem(RAIL_KEY) === '1'; } catch (_) { return false; } };
     const saveRailPreference = (value) => { try { localStorage.setItem(RAIL_KEY, value ? '1' : '0'); } catch (_) { /* The preference is a convenience only. */ } };
 
-    function buildRail(activeKey) {
+    function buildRail(activeKey, appearanceButton) {
         const rail = element('aside', 'app-rail');
         rail.id = 'appRail';
         rail.dataset.appRail = '';
@@ -201,6 +326,7 @@
         expand.dataset.railExpand = '';
         expand.setAttribute('aria-controls', 'appRail');
         expand.append(icon('fa-angles-right'), element('span', 'app-rail-text', 'Expand'));
+        if (appearanceButton) foot.append(appearanceButton);
         foot.append(logout, expand);
         rail.append(brand, nav, foot);
         return rail;
@@ -346,14 +472,18 @@
         const active = options.active || document.body.dataset.shellActive || '';
         const headerMount = document.querySelector('[data-shell-header]');
         const footerMount = document.querySelector('[data-shell-footer]');
+        // The appearance menu lives beside the panel or header, inside the mount, so the phone
+        // drawer's inert background never includes it.
         if (headerMount && surface === 'app') {
-            const rail = buildRail(active);
+            const appearance = buildAppearance('rail');
+            const rail = buildRail(active, appearance.button);
             const topbar = buildTopbar();
-            headerMount.replaceChildren(rail, wireRail(rail, topbar), topbar, buildRestrictionBanner());
+            headerMount.replaceChildren(rail, wireRail(rail, topbar), topbar, buildRestrictionBanner(), appearance.menu);
             document.body.classList.add('has-rail');
         } else if (headerMount) {
-            const header = buildHeader(active);
-            headerMount.replaceChildren(header);
+            const appearance = buildAppearance('nav');
+            const header = buildHeader(active, appearance.button);
+            headerMount.replaceChildren(header, appearance.menu);
             fillSessionAction(header);
         }
         if (footerMount) footerMount.replaceChildren(surface === 'app' ? buildAppFooter(document.body.dataset.shellMode === 'real-sandbox') : buildFooter());

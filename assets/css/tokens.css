@@ -30,12 +30,15 @@
     --scrim: rgb(4 7 11 / .6);
     --scrim-strong: rgb(4 7 11 / .7);
 
-    /* One accent, for primary actions, links and the current location. */
-    --accent: #adff56;
-    --accent-hover: #c5ff89;
-    --accent-pressed: #95e63c;
-    --accent-tint: rgb(173 255 86 / .08);
-    --on-accent: #10160c;
+    /* One accent, blue, for links, the current location and primary actions. Green and red
+       stay free to mean win and loss (HIG Color: one meaning per colour).
+       --accent is for text and indicators; --accent-fill sits behind white text. */
+    --accent: #2997ff;
+    --accent-fill: #0071e3;
+    --accent-hover: #0066cc;
+    --accent-pressed: #0058b0;
+    --accent-tint: rgb(41 151 255 / .12);
+    --on-accent: #ffffff;
 
     /* Status. Never the only signal: pair with a sign, label or icon. */
     --positive: #66d9a5;
@@ -112,14 +115,12 @@
 /* Bootstrap's link colour follows the one accent (HIG Color: one accent for links). */
 :root[data-bs-theme] {
     --bs-link-color: var(--accent);
-    --bs-link-color-rgb: 173, 255, 86;
-    --bs-link-hover-color: var(--accent-hover);
-    --bs-link-hover-color-rgb: 197, 255, 137;
+    --bs-link-color-rgb: 41, 151, 255;
+    --bs-link-hover-color: var(--accent);
+    --bs-link-hover-color-rgb: 41, 151, 255;
 }
 
-/* Light appearance: brighter backgrounds and darker foregrounds, not an inversion.
-   The lime accent is 1.2:1 on white, so light uses a deep green of the same hue
-   that holds 6:1 as text and behind white text. */
+/* Light appearance: brighter backgrounds and darker foregrounds, not an inversion. */
 :root[data-bs-theme="light"] {
     color-scheme: light;
     --bg: #f2f4f7;
@@ -137,11 +138,8 @@
     --fill-pressed: rgb(11 16 23 / .09);
     --scrim: rgb(11 16 23 / .32);
     --scrim-strong: rgb(11 16 23 / .45);
-    --accent: #3b6e00;
-    --accent-hover: #325e00;
-    --accent-pressed: #2a4f00;
-    --accent-tint: rgb(59 110 0 / .08);
-    --on-accent: #ffffff;
+    --accent: #0066cc;
+    --accent-tint: rgb(0 102 204 / .08);
     --positive: #0b7a4b;
     --negative: #c42b31;
     --negative-tint: rgb(196 43 49 / .07);
@@ -163,8 +161,8 @@
     --chart-tag: #2b3440;
     --chart-tag-ink: #ffffff;
     --chart-on-trend: #ffffff;
-    --bs-link-color-rgb: 59, 110, 0;
-    --bs-link-hover-color-rgb: 50, 94, 0;
+    --bs-link-color-rgb: 0, 102, 204;
+    --bs-link-hover-color-rgb: 0, 88, 176;
 }
 
 /* Increase Contrast: stronger secondary text and separators. */
@@ -190,6 +188,20 @@
     outline: var(--focus-width) solid var(--focus-ring);
     outline-offset: 2px;
 }
+
+/* Appearance menu (shell.js), shared by the side panel and the public header. It is a
+   popover in the top layer; shell.js positions it next to its button. */
+.appearance-menu { box-sizing: border-box; width: 240px; padding: 6px; border: 1px solid var(--separator); border-radius: var(--radius-card); background: var(--bg-3); color: var(--label); box-shadow: var(--shadow-float); font-family: var(--font-text); }
+.appearance-menu[hidden] { display: none; }
+.appearance-item { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); width: 100%; min-height: var(--target); padding: 8px 12px; border: 0; border-radius: var(--radius-control); background: transparent; color: var(--label); font: 600 var(--text-subhead) var(--font-text); text-align: start; cursor: pointer; }
+.appearance-item-label { display: inline-flex; align-items: center; gap: 10px; }
+.appearance-item-label i { width: 16px; text-align: center; color: var(--label-2); }
+.appearance-item-detail { color: var(--label-2); font-size: var(--text-caption); font-weight: 500; white-space: nowrap; }
+.appearance-item[aria-checked="true"] { box-shadow: inset calc(2px * var(--start-sign)) 0 0 var(--accent); }
+.appearance-item[aria-checked="true"] .appearance-item-label i { color: var(--accent); }
+.appearance-item:focus-visible { background: var(--fill-hover); outline: var(--focus-width) solid var(--focus-ring); outline-offset: -2px; }
+.appearance-item:active { background: var(--fill-pressed); }
+@media (hover: hover) and (pointer: fine) { .appearance-item:hover { background: var(--fill-hover); } }
 
 /* Right-to-left: the layout mirrors through logical properties; these cover what they cannot. */
 [dir="rtl"] { --start-sign: -1; --safe-start: env(safe-area-inset-right, 0px); --safe-end: env(safe-area-inset-left, 0px); }

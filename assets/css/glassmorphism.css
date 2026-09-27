@@ -10,7 +10,7 @@
 --transition:color var(--dur-fast) var(--ease-out),background-color var(--dur-fast) var(--ease-out),border-color var(--dur-fast) var(--ease-out),box-shadow var(--dur-base) var(--ease-out),opacity var(--dur-base) var(--ease-out);
 --text-primary:var(--label);
 --text-secondary:var(--label-2);
---purple-grad:linear-gradient(135deg,var(--accent),var(--accent));
+--purple-grad:var(--accent-fill);
 --blue-grad:linear-gradient(135deg,var(--accent),var(--accent));
 --orange-grad:linear-gradient(135deg,var(--caution),var(--caution));
 --green-grad:linear-gradient(135deg,var(--positive),var(--positive));

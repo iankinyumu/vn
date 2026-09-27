@@ -354,7 +354,7 @@
 }
 
 .step-dot.active {
-    background: var(--accent);
+    background: var(--accent-fill);
     width: 24px;
     border-radius: 10px
 }

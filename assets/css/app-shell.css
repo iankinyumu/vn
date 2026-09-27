@@ -78,7 +78,7 @@ body.app-shell::before, .app-shell .animated-bg, .app-shell .live-ticker-bar { d
 .app-shell .profile-wrapper { max-width: 1200px; padding: 38px var(--space-5) 60px; }
 .app-shell .profile-header-card { border-radius: var(--radius-card); padding: 28px; gap: 22px; }
 .app-shell .avatar-img { border-radius: var(--radius-card); border: 1px solid var(--separator); padding: 0; }
-.app-shell .avatar-edit { border-radius: 0; background: var(--accent); color: var(--on-accent); border: 0; }
+.app-shell .avatar-edit { border-radius: 0; background: var(--accent-fill); color: var(--on-accent); border: 0; }
 .app-shell .profile-name { color: var(--label); }
 .app-shell .verified-badge { background: transparent; color: var(--accent); padding: 0; border-radius: 0; font: 500 var(--text-caption-2) var(--font-mono); }
 .app-shell .profile-email, .app-shell .profile-meta { color: var(--label-2); }
@@ -94,11 +94,11 @@ body.app-shell::before, .app-shell .animated-bg, .app-shell .live-ticker-bar { d
 .app-shell .input-wrapper:focus-within .form-icon { color: var(--accent); }
 .app-shell .toggle-slider { background: var(--field-border); border-radius: 2px; }
 .app-shell .toggle-slider::before { border-radius: 1px; }
-.app-shell .toggle-switch input:checked + .toggle-slider { background: var(--accent); }
+.app-shell .toggle-switch input:checked + .toggle-slider { background: var(--accent-fill); }
 .app-shell .toggle-switch input:checked + .toggle-slider::before { background: var(--on-accent); }
 .app-shell .toggle-switch input:focus-visible + .toggle-slider { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
 .app-shell .progress, .app-shell .progress-bar { border-radius: 0 !important; }
-.app-shell .progress-bar { background: var(--accent) !important; color: var(--on-accent); }
+.app-shell .progress-bar { background: var(--accent-fill) !important; color: var(--on-accent); }
 .app-shell .kyc-step-circle { border-radius: 3px; background: transparent; border-color: var(--separator); }
 .app-shell .kyc-step.completed .kyc-step-circle, .app-shell .kyc-step.current .kyc-step-circle { background: transparent; box-shadow: none; border-color: var(--accent); color: var(--accent); }
 .app-shell .kyc-step.current .kyc-step-label, .app-shell .kyc-step.completed .kyc-step-label { color: var(--accent); }
@@ -144,7 +144,7 @@ body.has-rail.rail-expanded { padding-inline-start: calc(var(--rail-w-open) + va
 .app-fund-btn::before { content: ''; position: absolute; inset: -4px 0; }
 .app-fund-btn i { font-size: var(--text-caption-2); }
 .app-fund-btn:disabled, .app-fund-btn[aria-busy="true"] { opacity: .5; cursor: not-allowed; }
-.app-fund-deposit { border: 1px solid var(--accent); background: var(--accent); color: var(--on-accent); }
+.app-fund-deposit { border: 1px solid var(--accent-fill); background: var(--accent-fill); color: var(--on-accent); }
 .app-fund-deposit:active:not(:disabled) { background: var(--accent-pressed); border-color: var(--accent-pressed); }
 .app-fund-withdraw { border: 1px solid var(--separator-strong); background: transparent; color: var(--label); }
 .app-fund-withdraw:active:not(:disabled) { background: var(--fill-pressed); }
@@ -246,7 +246,7 @@ body.has-rail.rail-expanded { padding-inline-start: calc(var(--rail-w-open) + va
 .fund-estimate { min-height: 18px; margin: 10px 0 var(--space-4); color: var(--label-2); font: 500 var(--text-caption) var(--font-mono); font-variant-numeric: tabular-nums; }
 .fund-btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); min-height: 46px; padding: 0 18px; border-radius: var(--radius-control); font: 800 var(--text-subhead) var(--font-text); cursor: pointer; transition: background-color var(--dur-fast), border-color var(--dur-fast); }
 .fund-btn:disabled, .fund-btn[aria-busy="true"] { opacity: .5; cursor: not-allowed; }
-.fund-btn-primary { width: 100%; border: 1px solid var(--accent); background: var(--accent); color: var(--on-accent); }
+.fund-btn-primary { width: 100%; border: 1px solid var(--accent-fill); background: var(--accent-fill); color: var(--on-accent); }
 .fund-btn-primary:active:not(:disabled) { background: var(--accent-pressed); border-color: var(--accent-pressed); }
 .fund-btn-quiet { border: 1px solid var(--separator-strong); background: transparent; color: var(--label); }
 .fund-btn-quiet:active:not(:disabled) { background: var(--fill-pressed); }
