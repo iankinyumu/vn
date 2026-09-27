@@ -22,7 +22,7 @@ const log = [];
 
 let server, base, browser, fixture, trustDir;
 const account = { id: '11111111-1111-4111-8111-111111111111', execution_mode: 'DEMO', status: 'ACTIVE', currency: 'USD' };
-const indices = [{ code: 'SPI50', display_name: 'SmartProfit Index 50', interval_ms: 2000, decimals: 3 }];
+const indices = [{ code: 'SPI50', display_name: 'SP Index 50', interval_ms: 2000, decimals: 3 }];
 const recentTicks = (count = 30) => Array.from({ length: count }, (_, i) => ({ index_code: 'SPI50', tick_no: 1000 - i, scheduled_at: new Date(Date.now() - i * 2000).toISOString(), price: (10000 + i / 10).toFixed(3), digit: i % 10 }));
 const v3Status = (overrides = {}) => [{ index_code: 'SPI50', execution_mode: 'DEMO', engine_generation: 3, shadow: false, halted: false, v2_final_tick_no: 900, purchase_block: null,
     volatility_1d: { window_ticks: 1800, target_annual: 0.5, observed_annual: 0.4987, relative_error: -0.0026, status: 'insufficient_data' }, ...overrides }];

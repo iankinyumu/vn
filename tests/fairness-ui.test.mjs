@@ -72,7 +72,7 @@ async function openFairnessPage(data) {
             return { data: null, error: { message: 'unexpected' } };
         }
     };
-    dom.window.initAccountSwitcher = async () => ({ client, config: { indices: [{ code: 'SPI10', display_name: 'SmartProfit Index 10' }] } });
+    dom.window.initAccountSwitcher = async () => ({ client, config: { indices: [{ code: 'SPI10', display_name: 'SP Index 10' }] } });
     dom.window.smartProfitAccount = { get: () => ({ accountId: 'practice-id', mode: 'DEMO', currency: 'USD' }) };
     const document = dom.window.document;
     const form = document.querySelector('[data-fairness-form]');

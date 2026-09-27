@@ -5,7 +5,7 @@ export const tradeFake = ({ overview = { available: false }, balance = 10000, en
     window.__CONTRACTS__ = [];
     window.__FAKE__ = { rpc: {
         get_engine_config: { real_enabled: false, enabled_contract_types: ${JSON.stringify(enabled)},
-            indices: [{ code: 'SPI10', display_name: 'SmartProfit Index 10', interval_ms: 2000, decimals: 3 }, { code: 'SPI25', display_name: 'SmartProfit Index 25', interval_ms: 2000, decimals: 3 }],
+            indices: [{ code: 'SPI10', display_name: 'SP Index 10', interval_ms: 2000, decimals: 3 }, { code: 'SPI25', display_name: 'SP Index 25', interval_ms: 2000, decimals: 3 }],
             accounts: [{ id: 'acc-demo', execution_mode: 'DEMO', currency: 'USD', status: 'ACTIVE', limits: { min_stake: 0.35, max_stake: 500 } }] },
         enroll_practice_account: 'acc-demo',
         list_my_accounts: [{ id: 'acc-demo', execution_mode: 'DEMO', currency: 'USD', status: 'ACTIVE' }, { id: 'acc-real', execution_mode: 'REAL', currency: 'USD', status: 'ACTIVE' }],

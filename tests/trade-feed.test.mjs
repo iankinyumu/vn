@@ -39,7 +39,7 @@ function fakeServer(count) {
     return { client, calls, channels, ticks, add, balances, tickChannel: () => channels.filter((channel) => channel.topic.startsWith('ticks:')).at(-1) };
 }
 
-const defaultConfig = () => ({ indices: [{ code: 'SPI10', display_name: 'SmartProfit Index 10', interval_ms: INTERVAL, decimals: 3 }, { code: 'SPI25', display_name: 'SmartProfit Index 25', interval_ms: INTERVAL, decimals: 3 }], enabled_contract_types: ['EVEN', 'ODD'] });
+const defaultConfig = () => ({ indices: [{ code: 'SPI10', display_name: 'SP Index 10', interval_ms: INTERVAL, decimals: 3 }, { code: 'SPI25', display_name: 'SP Index 25', interval_ms: INTERVAL, decimals: 3 }], enabled_contract_types: ['EVEN', 'ODD'] });
 
 async function openTradePage(server, query = '', { config = defaultConfig(), refreshedConfig = null, account = { accountId: 'practice-id', mode: 'DEMO', currency: 'USD' } } = {}) {
     const html = fs.readFileSync('pages/trade.html', 'utf8');
@@ -604,7 +604,7 @@ test('an announced price model change is shown for the selected index until it t
     try {
         const note = () => page.document.querySelector('[data-price-model-note]');
         await waitFor(() => note() && !note().hidden, 'the scheduled change was not announced');
-        assert.equal(note().textContent, 'From Fri, 02 Jan 2099 00:00:00 UTC, SmartProfit Index 10 moves to price model version 2.');
+        assert.equal(note().textContent, 'From Fri, 02 Jan 2099 00:00:00 UTC, SP Index 10 moves to price model version 2.');
         const index = page.document.querySelector('select[name="index"]');
         index.value = 'SPI25';
         index.dispatchEvent(new page.dom.window.Event('change', { bubbles: true }));
