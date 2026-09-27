@@ -179,6 +179,13 @@
         const feedNode = document.querySelector('[data-feed-state]');
         const guardNode = document.querySelector('[data-session-guard]');
         const setFeedLabel = (state) => { feedNode.textContent = feedLabels[state]; feedNode.dataset.state = state; };
+        // The chart shows the loader from the first moment the page runs until the feed has an answer.
+        let chartLoader = null;
+        const showChartLoader = (on) => {
+            if (on && !chartLoader) chartLoader = window.smartProfitLoader?.mount(canvas.parentElement, { label: 'Loading market' }) || null;
+            if (!on && chartLoader) { chartLoader.remove(); chartLoader = null; }
+        };
+        showChartLoader(true);
 
         // Static controls: the 0-9 digit strip, the barrier picker and the tick chips.
         const digitNodes = Array.from({ length: 10 }, (_, digit) => {
@@ -218,6 +225,7 @@
             // Startup failed before any account or configuration existed: say so and leave nothing buyable.
             status.textContent = window.smartProfitStartup?.message(error) || 'Trading is unavailable right now. Reload the page to try again.';
             setFeedLabel('unavailable');
+            showChartLoader(false);
             index.replaceChildren(new Option('Unavailable', ''));
             disableAll();
             return;
@@ -414,11 +422,6 @@
         const scheduleRender = () => { marketChanged = true; scheduleChart(); };
         const cancelRender = () => { if (frame) cancelFrame(frame); frame = 0; marketChanged = false; };
         const resetMarket = () => { showDigit(null); showFrequencies([]); livePrice.textContent = '—'; direction.dataset.direction = 'flat'; direction.textContent = ''; window.drawIndexChart(canvas, []); };
-        let chartLoader = null;
-        const showChartLoader = (on) => {
-            if (on && !chartLoader) chartLoader = window.smartProfitLoader?.mount(canvas.parentElement, { label: 'Loading market' }) || null;
-            if (!on && chartLoader) { chartLoader.remove(); chartLoader = null; }
-        };
         const setFeedState = (state) => {
             feedState = state;
             setFeedLabel(state);

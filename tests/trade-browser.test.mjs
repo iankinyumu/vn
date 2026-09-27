@@ -90,12 +90,13 @@ test('trade page on a phone: drawer navigation, one column and the action bar pi
 });
 
 test('trade page: a Lottie loader covers the chart while the market loads, and a CSS mark stands in if the player cannot load', async () => {
-    const slow = tradeFake() + 'window.__FAKE__.delay = { get_recent_ticks: 3000 };';
+    const slow = tradeFake() + 'window.__FAKE__.delay = { get_engine_config: 1500, get_recent_ticks: 3000 };';
     for (const blocked of [false, true]) {
         const routes = blocked ? [['**/vendor/lottie/**', (route) => route.abort()]] : [];
         const { page, context, errors } = await openApp(app, 'trade.html', { fake: slow, routes });
         const loader = page.locator('.chart-frame [data-loader]');
         await loader.waitFor({ state: 'visible' });
+        assert.equal(await page.locator('[data-mode-label]').count(), 0, 'the loader waited for the account to load');
         assert.equal(await loader.getAttribute('role'), 'status');
         assert.equal(await loader.textContent(), 'Loading market');
         if (blocked) await page.waitForTimeout(500);
