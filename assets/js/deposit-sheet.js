@@ -59,7 +59,7 @@
                 <span class="fund-method-name"><i class="fas fa-mobile-screen-button" aria-hidden="true"></i>Lipa na M-Pesa</span>
                 <span class="fund-env" data-fund-env hidden></span>
             </div>
-            <p class="fund-empty" data-fund-loading>Loading…</p>
+            <div class="fund-loading" data-fund-loading></div>
             <p class="fund-empty" data-fund-unavailable hidden>Deposits are not open on this account yet.</p>
             <form class="fund-step" data-fund-step="form" novalidate hidden>
                 <label class="fund-label" for="fundPhone">M-Pesa number</label>
@@ -184,7 +184,10 @@
     }
 
     async function load() {
-        q('[data-fund-loading]').hidden = false;
+        const loadingHost = q('[data-fund-loading]');
+        loadingHost.hidden = false;
+        const loader = window.smartProfitLoader?.mount(loadingHost, { label: 'Loading', overlay: false });
+        if (!loader) loadingHost.textContent = 'Loading…';
         q('[data-fund-unavailable]').hidden = true;
         showStep(null);
         loading = (async () => {
@@ -201,7 +204,9 @@
         } finally {
             loading = null;
         }
-        q('[data-fund-loading]').hidden = true;
+        loader?.remove();
+        loadingHost.replaceChildren();
+        loadingHost.hidden = true;
         if (!overview?.available) {
             q('[data-fund-unavailable]').hidden = false;
             overview = null;

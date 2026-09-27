@@ -46,7 +46,13 @@
             }));
         }
 
+        let chartLoader = null, chartShown = null;
+        const endChartLoader = () => { chartLoader?.remove(); chartLoader = null; };
         async function refreshChart() {
+            if (chartShown !== chartIndex && !chartLoader) chartLoader = window.smartProfitLoader?.mount(find('[data-index-chart]')?.parentElement, { label: 'Loading prices' }) || null;
+            try { await drawChart(); } finally { endChartLoader(); }
+        }
+        async function drawChart() {
             const index = indices.find((item) => item.code === chartIndex);
             if (!index) { text('[data-chart-status]', 'No indices are configured yet.'); return; }
             const recent = (await rpc('get_recent_ticks', { p_index: index.code, p_limit: CHART_TICKS }) || []).slice().reverse();
@@ -54,6 +60,7 @@
             text('[data-chart-title]', `${index.display_name || index.code} price`);
             const canvas = find('[data-index-chart]');
             if (canvas && window.drawIndexChart) window.drawIndexChart(canvas, recent);
+            chartShown = index.code;
             text('[data-chart-status]', recent.length ? '' : `No ticks published yet for ${index.display_name || index.code}.`);
             const latest = find('[data-latest-ticks]');
             if (!latest) return;

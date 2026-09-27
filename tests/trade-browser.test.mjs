@@ -88,3 +88,23 @@ test('trade page on a phone: drawer navigation, one column and the action bar pi
     assert.deepEqual(errors, []);
     await context.close();
 });
+
+test('trade page: a Lottie loader covers the chart while the market loads, and a CSS mark stands in if the player cannot load', async () => {
+    const slow = tradeFake() + 'window.__FAKE__.delay = { get_recent_ticks: 3000 };';
+    for (const blocked of [false, true]) {
+        const routes = blocked ? [['**/vendor/lottie/**', (route) => route.abort()]] : [];
+        const { page, context, errors } = await openApp(app, 'trade.html', { fake: slow, routes });
+        const loader = page.locator('.chart-frame [data-loader]');
+        await loader.waitFor({ state: 'visible' });
+        assert.equal(await loader.getAttribute('role'), 'status');
+        assert.equal(await loader.textContent(), 'Loading market');
+        if (blocked) await page.waitForTimeout(500);
+        else await page.locator('.chart-frame .sp-loader-art svg').waitFor();
+        assert.equal(await page.locator('.sp-loader-art').evaluate((node) => node.hasAttribute('data-fallback')), blocked);
+        if (!blocked) await shot(page, 'trade-loading');
+        await live(page);
+        assert.equal(await page.locator('[data-loader]').count(), 0, 'the loader stayed after the market loaded');
+        assert.deepEqual(errors.filter((error) => !/lottie|vendor|ERR_FAILED/i.test(error)), []);
+        await context.close();
+    }
+});

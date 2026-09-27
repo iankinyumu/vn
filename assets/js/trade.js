@@ -414,9 +414,15 @@
         const scheduleRender = () => { marketChanged = true; scheduleChart(); };
         const cancelRender = () => { if (frame) cancelFrame(frame); frame = 0; marketChanged = false; };
         const resetMarket = () => { showDigit(null); showFrequencies([]); livePrice.textContent = '—'; direction.dataset.direction = 'flat'; direction.textContent = ''; window.drawIndexChart(canvas, []); };
+        let chartLoader = null;
+        const showChartLoader = (on) => {
+            if (on && !chartLoader) chartLoader = window.smartProfitLoader?.mount(canvas.parentElement, { label: 'Loading market' }) || null;
+            if (!on && chartLoader) { chartLoader.remove(); chartLoader = null; }
+        };
         const setFeedState = (state) => {
             feedState = state;
             setFeedLabel(state);
+            showChartLoader(state === 'loading');
             if (state === 'empty') livePrice.textContent = 'No ticks yet';
             updateBuy();
         };
