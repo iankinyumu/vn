@@ -395,8 +395,27 @@
 
         // The crosshair follows the pointer over the chart; pointer is in CSS pixels from the canvas's top left.
         let pointer = null;
+        // Chart type and candle period are a per-viewer preference, remembered in this browser only.
+        const CHART_KEY = 'smartprofit:chart';
+        const CHART_STYLES = ['line', 'candles', 'ohlc'], CHART_PERIODS = [10000, 30000, 60000];
+        let chartStyle = 'line', chartPeriod = 30000;
+        try {
+            const saved = JSON.parse(localStorage.getItem(CHART_KEY) || '{}');
+            if (CHART_STYLES.includes(saved.style)) chartStyle = saved.style;
+            if (CHART_PERIODS.includes(saved.period)) chartPeriod = saved.period;
+        } catch (_) { /* The default chart is used. */ }
+        const styleInputs = [...form.querySelectorAll('input[name="chartStyle"]')];
+        const periodSelect = form.querySelector('[data-chart-period]');
+        const showChartChoice = () => {
+            styleInputs.forEach((input) => { input.checked = input.value === chartStyle; });
+            periodSelect.value = String(chartPeriod);
+            periodSelect.closest('[data-chart-period-wrap]').hidden = chartStyle === 'line';
+        };
+        showChartChoice();
+        // Ticks per candle for the chosen period at the selected index's tick interval.
+        const periodTicks = () => Math.max(1, Math.round(chartPeriod / (Number(index.selectedOptions[0]?.dataset.interval) || 2000)));
         const decimals = () => Number(index.selectedOptions[0]?.dataset.decimals);
-        const drawChart = (ticks) => window.drawIndexChart(canvas, ticks, { window: CHART_WINDOW, markLatest: true, decimals: decimals(), pointer, directionColors: true });
+        const drawChart = (ticks) => window.drawIndexChart(canvas, ticks, { window: CHART_WINDOW, markLatest: true, decimals: decimals(), pointer, directionColors: true, style: chartStyle, period: periodTicks() });
         const draw = (ticks) => {
             const current = ticks[ticks.length - 1];
             if (!current) return;
@@ -572,8 +591,18 @@
             applyFamily();
             changed();
         });
-        form.addEventListener('input', (event) => { if (event.target.name !== 'family') changed(); });
-        form.addEventListener('change', (event) => { if (!['index', 'family'].includes(event.target.name)) changed(); });
+        const CHART_FIELDS = ['chartStyle', 'chartPeriod'];
+        form.addEventListener('input', (event) => { if (!['family', ...CHART_FIELDS].includes(event.target.name)) changed(); });
+        form.addEventListener('change', (event) => { if (!['index', 'family', ...CHART_FIELDS].includes(event.target.name)) changed(); });
+        const chartChanged = () => {
+            chartStyle = styleInputs.find((input) => input.checked)?.value || 'line';
+            chartPeriod = Number(periodSelect.value) || 30000;
+            showChartChoice();
+            try { localStorage.setItem(CHART_KEY, JSON.stringify({ style: chartStyle, period: chartPeriod })); } catch (_) { /* Not remembered. */ }
+            scheduleChart();
+        };
+        styleInputs.forEach((input) => input.addEventListener('change', chartChanged));
+        periodSelect.addEventListener('change', chartChanged);
         index.addEventListener('change', () => subscribe().then(changed).catch(report));
         form.addEventListener('submit', (event) => event.preventDefault());
         form.querySelectorAll('[data-stake-step]').forEach((button) => button.addEventListener('click', () => stepStake(Number(button.dataset.stakeStep))));

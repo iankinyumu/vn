@@ -109,3 +109,26 @@ test('trade page: a Lottie loader covers the chart while the market loads, and a
         await context.close();
     }
 });
+
+test('trade page: the chart switches between line, candles and OHLC, and the choice is remembered', async () => {
+    const { page, context, errors } = await openApp(app, 'trade.html', { fake: tradeFake() });
+    await live(page);
+    assert.equal(await page.locator('[data-chart-period-wrap]').isHidden(), true, 'a line chart has no candle period');
+    await page.click('.chart-choice:has(input[value="candles"]) > span');
+    assert.equal(await page.locator('[data-chart-period-wrap]').isVisible(), true);
+    await page.selectOption('[data-chart-period]', '10000');
+    const drawn = () => page.evaluate(() => { const canvas = document.querySelector('[data-index-chart]'); const pixels = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data; let lit = 0; for (let i = 3; i < pixels.length; i += 4) if (pixels[i]) lit++; return lit; });
+    await page.waitForTimeout(300);
+    assert.ok(await drawn() > 0, 'nothing was drawn for candles');
+    await shot(page, 'trade-candles');
+    await page.click('.chart-choice:has(input[value="ohlc"]) > span');
+    await page.waitForTimeout(300);
+    assert.ok(await drawn() > 0, 'nothing was drawn for OHLC bars');
+    assert.equal(await page.evaluate(() => localStorage.getItem('smartprofit:chart')), '{"style":"ohlc","period":10000}');
+    await page.reload();
+    await live(page);
+    assert.equal(await page.locator('input[name="chartStyle"][value="ohlc"]').isChecked(), true, 'the chart type was not remembered');
+    assert.equal(await page.locator('[data-chart-period]').inputValue(), '10000');
+    assert.deepEqual(errors, []);
+    await context.close();
+});

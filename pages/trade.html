@@ -30,6 +30,14 @@
                         <strong data-live-price aria-label="Live price">—</strong>
                         <small class="price-direction" data-price-direction data-direction="flat"></small>
                     </div>
+                    <div class="chart-controls">
+                        <div class="chart-style" role="radiogroup" aria-label="Chart type" data-chart-style>
+                            <label class="chart-choice" title="Line"><input type="radio" name="chartStyle" value="line" checked><span><i class="fas fa-chart-line" aria-hidden="true"></i><span class="chart-choice-text">Line</span></span></label>
+                            <label class="chart-choice" title="Candles"><input type="radio" name="chartStyle" value="candles"><span><i class="fas fa-chart-column" aria-hidden="true"></i><span class="chart-choice-text">Candles</span></span></label>
+                            <label class="chart-choice" title="OHLC bars"><input type="radio" name="chartStyle" value="ohlc"><span><i class="fas fa-bars-staggered" aria-hidden="true"></i><span class="chart-choice-text">OHLC</span></span></label>
+                        </div>
+                        <label class="chart-period" data-chart-period-wrap hidden><span class="visually-hidden">Candle period</span><select name="chartPeriod" data-chart-period><option value="10000">10s</option><option value="30000" selected>30s</option><option value="60000">1m</option></select></label>
+                    </div>
                     <span class="feed-state" data-feed-state data-state="loading" aria-live="polite">Loading</span>
                 </div>
                 <div class="chart-frame">

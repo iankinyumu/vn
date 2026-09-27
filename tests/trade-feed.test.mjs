@@ -514,7 +514,7 @@ test('bursts of ticks are drawn in coalesced frames that always end on the lates
         assert.ok(contiguous(page.held()), 'the drawn buffer has a gap');
         assert.equal(page.held().length, 90, 'the chart must receive the full buffer so the window is applied from the latest tick');
         // The options object comes from the jsdom realm; copy it so deepEqual compares values, not prototypes.
-        assert.deepEqual({ ...page.chartOptions.at(-1) }, { window: 300, markLatest: true, decimals: 3, pointer: null, directionColors: true });
+        assert.deepEqual({ ...page.chartOptions.at(-1) }, { window: 300, markLatest: true, decimals: 3, pointer: null, directionColors: true, style: 'line', period: 1200 });
         assert.equal(page.document.querySelector('[data-live-price]').textContent, '1000.090');
         assert.equal(page.document.querySelector('[data-live-price] .price-last').textContent, '0');
         assert.equal(page.document.querySelector('[data-price-direction]').dataset.direction, 'up');
