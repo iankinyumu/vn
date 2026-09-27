@@ -14,6 +14,8 @@ import { authSchema, claimsFor, identities } from './test-db.mjs';
 
 export { claimsFor, identities };
 export const FUNDING_MIGRATIONS = ['20260926100000_funding_foundation.sql', '20260926110000_funding_rpc.sql', '20260926120000_funding_tester_msisdns.sql', '20260927100000_funding_rate_sync.sql', '20260927110000_funding_treasury_carry_forward.sql', '20260927120000_funding_treasury_carry_daily.sql'];
+// Engine migrations that landed after the funding set, in apply order.
+export const LATER_ENGINE_MIGRATIONS = ['20260927130000_engine_index_short_names.sql'];
 export const V3_MIGRATIONS = ['20260924100000_engine_v3_reference_functions.sql', '20260924110000_engine_v3_publication.sql', '20260924120000_engine_v3_observed_volatility.sql', '20260925100000_engine_v3_witness_attestation.sql'];
 
 async function sharedMigrationList() {

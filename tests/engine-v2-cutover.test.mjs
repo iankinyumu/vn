@@ -7,10 +7,12 @@ import { execFile } from 'node:child_process';
 import { readFile, readdir } from 'node:fs/promises';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { FUNDING_MIGRATIONS, V3_MIGRATIONS, asUser, createRealDatabase } from './helpers/pg-real.mjs';
+import { FUNDING_MIGRATIONS, LATER_ENGINE_MIGRATIONS, V3_MIGRATIONS, asUser, createRealDatabase } from './helpers/pg-real.mjs';
 
 const V2 = '20260920560000_engine_unified_price_ticks.sql';
-const PENDING = [V2, ...V3_MIGRATIONS, ...FUNDING_MIGRATIONS];
+// Every migration after the v2 baseline. A new migration must be added here (through the
+// lists in pg-real.mjs) so the real-CLI push rehearsal below covers it.
+const PENDING = [V2, ...V3_MIGRATIONS, ...FUNDING_MIGRATIONS, ...LATER_ENGINE_MIGRATIONS];
 const DAY = 86400000;
 
 async function apply(db, names) {
@@ -152,7 +154,7 @@ test('supabase db push applies the pending chain while a tick is in flight, with
     const tick = await connect();
     try {
         const all = (await readdir(new URL('../supabase/migrations/', import.meta.url))).filter((name) => name.endsWith('.sql')).sort();
-        assert.deepEqual(all.filter((name) => name >= V2), PENDING, 'the pending set matches the live dry run');
+        assert.deepEqual(all.filter((name) => name >= V2), PENDING, 'every migration after the v2 baseline is in the rehearsed set (add new ones to pg-real.mjs)');
         for (const name of PENDING) {
             const sql = await readFile(new URL(`../supabase/migrations/${name}`, import.meta.url), 'utf8');
             assert.doesNotMatch(sql, /^\s*(lock\s+table|set\s+local|begin\s*;|commit\s*;)/im, `${name} must run outside a transaction block`);
