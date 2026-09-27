@@ -56,8 +56,12 @@ body.public-shell::before, body.auth-shell::before, .public-shell .animated-bg, 
 .auth-shell .auth-title { color: var(--flat-ink); font-size: 26px; letter-spacing: -.6px; }
 .auth-shell .auth-subtitle, .auth-shell .auth-footer, .auth-shell .password-hint, .auth-shell .strength-text { color: var(--flat-muted); }
 .auth-shell .auth-footer a, .auth-shell .forgot-link, .auth-shell .back-home a { color: var(--flat-accent); }
-.auth-shell .back-home { top: 20px; left: 24px; }
-.auth-shell .back-home a { background: transparent; border: 0; border-radius: 0; padding: 0; }
+/* Links above the sign-in card: one row, 44px targets, spaced rather than dot-separated. */
+.auth-shell { grid-template-rows: auto 1fr; }
+.auth-shell .back-home { position: static; justify-self: start; display: flex; align-items: center; gap: var(--space-5); margin-bottom: var(--space-2); }
+.auth-shell .auth-wrapper { align-self: center; }
+.auth-shell .back-home a { display: inline-flex; align-items: center; gap: 6px; min-height: var(--target); background: transparent; border: 0; border-radius: 0; padding: 0; font-size: var(--text-footnote); font-weight: 600; }
+@media (hover: hover) and (pointer: fine) { .auth-shell .back-home a:hover { background: transparent; text-decoration: underline; } }
 .auth-shell .input-wrapper .form-icon { color: var(--flat-muted); }
 .auth-shell .form-input { min-height: 44px; }
 .auth-shell .social-btns { gap: 0; border: 1px solid var(--flat-line); border-radius: 4px; overflow: hidden; }
