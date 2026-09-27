@@ -72,5 +72,5 @@
             await window.refreshRestrictionBanner?.();
         }
     }
-    window.addEventListener('DOMContentLoaded', () => start().catch((error) => { console.error(error); text('[data-profile-status]', 'Some profile details are temporarily unavailable.'); }));
+    window.addEventListener('DOMContentLoaded', () => start().catch((error) => { console.error(error); text('[data-profile-status]', 'Some profile details are temporarily unavailable.'); }).finally(() => window.smartProfitLoader?.pageReady()));
 })();

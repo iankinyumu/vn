@@ -134,6 +134,7 @@
             if (!Number.isInteger(from) || !Number.isInteger(to) || from < 1 || to < from) { output.textContent = 'Enter a first tick of at least 1 and a last tick that is not before it.'; return; }
             if (to - from + 1 > MAX_RANGE) { output.textContent = `Verify at most ${MAX_RANGE} ticks at a time.`; return; }
             output.textContent = 'Verifying…';
+            const verifying = window.smartProfitLoader?.mount(output.parentElement, { label: 'Verifying', overlay: false, compact: true });
             try {
                 const ticks = [];
                 for (let after = Math.max(0, from - 2); after < to;) {
@@ -146,7 +147,7 @@
                 const result = await verify({ proofs, ticks, mode: account.mode, index, from, to });
                 output.textContent = describe(result);
                 list?.replaceChildren(...result.epochs.map(epochItem));
-            } catch (error) { fail(error); }
+            } catch (error) { fail(error); } finally { verifying?.remove(); }
         });
         document.addEventListener('smartprofit:account-changed', () => { output.textContent = ''; list?.replaceChildren(); });
         document.addEventListener('smartprofit:account-changed', () => { window.refreshRestrictionBanner?.().catch?.(console.error); });
@@ -154,5 +155,5 @@
         await defaultRange();
     }
     window.smartProfitFairness = { digit, priceV2, verify, digest, describe };
-    window.addEventListener('DOMContentLoaded', () => start().catch((error) => { console.error(error); const output = document.querySelector('[data-fairness-result]'); if (output) output.textContent = 'The verifier could not load. Please reload the page.'; }));
+    window.addEventListener('DOMContentLoaded', () => start().catch((error) => { console.error(error); const output = document.querySelector('[data-fairness-result]'); if (output) output.textContent = 'The verifier could not load. Please reload the page.'; }).finally(() => window.smartProfitLoader?.pageReady()));
 })();

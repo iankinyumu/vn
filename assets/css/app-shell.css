@@ -251,19 +251,3 @@ body.has-rail.rail-expanded { padding-left: var(--rail-w-open); }
 }
 @media (prefers-reduced-motion: reduce) { .fund-sheet[open], .fund-result[data-tone="pending"] .fund-result-icon { animation: none; } }
 
-/* Loading indicator (loader.js): the Lottie mark, with a CSS version until the player is ready. */
-.sp-loader { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; min-height: 120px; color: var(--app-muted); font: 500 11px 'DM Mono', monospace; letter-spacing: .06em; text-transform: uppercase; }
-.sp-loader-overlay { position: absolute; inset: 0; z-index: 5; min-height: 0; background: var(--app-panel); }
-.sp-loader-art { width: 96px; height: 58px; }
-.sp-loader-art svg { display: block; }
-.sp-loader-art[data-fallback] { background:
-    linear-gradient(var(--app-accent), var(--app-accent)) 22% 100% / 12px 40% no-repeat,
-    linear-gradient(var(--app-accent), var(--app-accent)) 50% 100% / 12px 70% no-repeat,
-    linear-gradient(var(--app-accent), var(--app-accent)) 78% 100% / 12px 50% no-repeat;
-    border-radius: 2px; animation: sp-loader-bars 1.1s ease-in-out infinite; }
-@keyframes sp-loader-bars {
-    0%, 100% { background-size: 12px 40%, 12px 70%, 12px 50%; }
-    33% { background-size: 12px 75%, 12px 35%, 12px 60%; }
-    66% { background-size: 12px 50%, 12px 60%, 12px 85%; }
-}
-@media (prefers-reduced-motion: reduce) { .sp-loader-art[data-fallback] { animation: none; } }

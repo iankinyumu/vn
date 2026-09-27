@@ -141,8 +141,10 @@
        discarded. */
     function clearAccountView() {
         for (const selector of ['[data-practice-balance]', '[data-net-result]', '[data-wins]', '[data-losses]', '[data-win-rate]', '[data-voids]', '[data-settled-count]']) text(selector, '—');
-        find('[data-contract-rows]')?.replaceChildren(noteRow(5, 'Loading contracts…'));
-        find('[data-open-contracts]')?.replaceChildren(noteRow(5, 'Loading open contracts…'));
+        // Rows reload in place (after an account switch or a reset) behind a compact loader.
+        const loading = (label) => window.smartProfitLoader?.row(5, label) || noteRow(5, `${label}…`);
+        find('[data-contract-rows]')?.replaceChildren(loading('Loading contracts'));
+        find('[data-open-contracts]')?.replaceChildren(loading('Loading open contracts'));
     }
 
     async function renderAccount(client, config) {
@@ -212,5 +214,5 @@
         await window.refreshRestrictionBanner?.().catch?.(console.error);
         await marketLoaded;
     }
-    window.addEventListener('DOMContentLoaded', () => start().catch((error) => { console.error(error); status('The dashboard could not load. Reload the page to try again.'); }));
+    window.addEventListener('DOMContentLoaded', () => start().catch((error) => { console.error(error); status('The dashboard could not load. Reload the page to try again.'); }).finally(() => window.smartProfitLoader?.pageReady()));
 })();

@@ -61,6 +61,7 @@ async function start() {
         say(UI_MESSAGES.loading);
         submit.disabled = true;
         section.setAttribute('aria-busy', 'true');
+        const verifying = window.smartProfitLoader?.mount(output.parentElement, { label: 'Verifying', overlay: false, compact: true });
         try {
             const account = window.smartProfitAccount.get();
             let pkg;
@@ -77,6 +78,7 @@ async function start() {
             say(UI_MESSAGES.network);
             console.error(error);
         } finally {
+            verifying?.remove();
             submit.disabled = false;
             section.removeAttribute('aria-busy');
         }

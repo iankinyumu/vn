@@ -13,6 +13,7 @@
     <link href="../assets/css/style.css" rel="stylesheet">
     <link href="../assets/css/app-shell.css" rel="stylesheet">
     <link href="../assets/css/mode-tokens.css" rel="stylesheet">
+    <link href="../assets/css/loader.css" rel="stylesheet">
     <style>
         .digit-row .digit-even strong { color: #34d399; }
         .digit-row .digit-odd strong { color: #c084fc; }
@@ -20,9 +21,10 @@
     </style>
 </head>
 
-<body class="premium-theme app-shell" data-shell-surface="app" data-shell-active="dashboard">
+<body class="premium-theme app-shell" data-shell-surface="app" data-shell-active="dashboard" data-page-loader="Loading dashboard">
     <script src="../assets/js/auth.js"></script>
     <script>requireAuth()</script>
+    <script src="../assets/js/loader.js"></script>
 
     <div class="animated-bg">
         <div class="particle particle-1"></div>
@@ -223,7 +225,6 @@
     <script src="../assets/js/account-context.js"></script>
     <script src="../assets/js/account-keys.js"></script>
     <script src="../assets/js/account-switcher.js"></script>
-    <script src="../assets/js/loader.js"></script>
     <script src="../assets/js/deposit-sheet.js"></script>
     <script src="../assets/js/restriction-banner.js"></script>
     <script src="../assets/js/charts.js"></script>

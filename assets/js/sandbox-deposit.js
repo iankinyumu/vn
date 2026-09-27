@@ -76,5 +76,5 @@
     window.addEventListener('DOMContentLoaded', () => start().catch((error) => {
         console.error(error);
         find('[data-sandbox-status]').textContent = 'Your Real account could not be loaded. Reload the page to try again.';
-    }));
+    }).finally(() => window.smartProfitLoader?.pageReady()));
 })();

@@ -6,6 +6,11 @@
  *
  *   const loader = window.smartProfitLoader.mount(host, { label: 'Loading market' });
  *   loader.remove();
+ *
+ * A page that declares data-page-loader="Loading dashboard" on <body> is covered
+ * below the top bar from the moment this script runs until the page calls
+ * window.smartProfitLoader.pageReady() once its main data has loaded or failed.
+ * A 20 second limit guarantees the page is never left covered.
  */
 (function () {
     'use strict';
@@ -38,10 +43,10 @@
         return player;
     }
 
-    function mount(host, { label = 'Loading', overlay = true } = {}) {
+    function mount(host, { label = 'Loading', overlay = true, compact = false } = {}) {
         if (!host) return { remove() {} };
         const root = document.createElement('div');
-        root.className = `sp-loader${overlay ? ' sp-loader-overlay' : ''}`;
+        root.className = `sp-loader${overlay ? ' sp-loader-overlay' : ''}${compact ? ' sp-loader-compact' : ''}`;
         root.dataset.loader = '';
         root.setAttribute('role', 'status');
         const art = document.createElement('div');
@@ -79,5 +84,43 @@
         };
     }
 
-    window.smartProfitLoader = Object.freeze({ mount });
+    const PAGE_LIMIT_MS = 20000;
+    let pageLoader = null;
+    let pageTimer = null;
+
+    function startPage() {
+        const label = document.body?.dataset.pageLoader;
+        if (!label) return;
+        const host = document.createElement('div');
+        host.className = 'sp-page-loader';
+        host.dataset.pageLoaderHost = '';
+        document.body.append(host);
+        const busy = () => { if (pageLoader) document.querySelector('main')?.setAttribute('aria-busy', 'true'); };
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', busy, { once: true }); else busy();
+        pageLoader = { host, loader: mount(host, { label, overlay: false }) };
+        pageTimer = setTimeout(pageReady, PAGE_LIMIT_MS);
+    }
+
+    function pageReady() {
+        clearTimeout(pageTimer);
+        if (!pageLoader) return;
+        const { host, loader } = pageLoader;
+        pageLoader = null;
+        document.querySelector('main')?.removeAttribute('aria-busy');
+        host.classList.add('is-done');
+        setTimeout(() => { loader.remove(); host.remove(); }, reducedMotion() ? 0 : 200);
+    }
+
+    // A table row holding a compact loader, for tables that reload in place.
+    function row(columns, label = 'Loading') {
+        const tr = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = columns;
+        tr.append(cell);
+        mount(cell, { label, overlay: false, compact: true });
+        return tr;
+    }
+
+    window.smartProfitLoader = Object.freeze({ mount, pageReady, row });
+    startPage();
 })();
