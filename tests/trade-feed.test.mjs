@@ -208,6 +208,7 @@ test('contract families come from the enabled types, each side shows its own pay
         const { document } = page;
         assert.deepEqual([...document.querySelectorAll('.family-tab')].map((tab) => tab.textContent), ['Even / Odd'], 'only families with an enabled type are offered');
         assert.deepEqual([...document.querySelectorAll('[data-side]')].map((side) => side.querySelector('[data-side-label]').textContent), ['Even', 'Odd']);
+        assert.equal(document.querySelector('[data-families]').hidden, true, 'a single family is shown without tabs');
         assert.equal(document.querySelector('[data-barrier-row]').hidden, true, 'Even / Odd needs no digit');
         assert.equal(document.querySelector('select[name="type"], [data-quote]'), null, 'the old single contract selector is gone');
         setStake(page, '10');
@@ -241,6 +242,7 @@ test('barrier families pick a digit, colour the digits around it, and never offe
         await goLive(server, page);
         const { document } = page;
         assert.deepEqual([...document.querySelectorAll('.family-tab')].map((tab) => tab.textContent), ['Even / Odd', 'Matches / Differs', 'Over / Under']);
+        assert.equal(document.querySelector('[data-families]').hidden, false);
         choose(page, 'family', 'overunder');
         assert.equal(document.querySelector('[data-barrier-row]').hidden, false);
         assert.deepEqual([...document.querySelectorAll('[data-side]')].map((side) => side.dataset.type), ['OVER', 'UNDER']);

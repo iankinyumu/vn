@@ -27,6 +27,12 @@
         { title: 'Account', links: [{ href: 'faq.html', label: 'FAQ' }, { href: 'login.html', label: 'Sign in' }, { href: 'register.html', label: 'Create account' }] }
     ]);
 
+    const APP_FOOTER_LINKS = Object.freeze([
+        { href: 'faq.html', label: 'FAQ' },
+        { href: 'contact.html', label: 'Contact' },
+        { href: 'blog.html', label: 'Guides' }
+    ]);
+
     const TAGLINE = 'Digit contracts on self-generated indices. Practice only, with virtual funds.';
     const FOOTER_NOTE = '© 2026 SmartProfit. Practice mode only; virtual funds have no cash value.';
     // A page in Real mode declares data-shell-mode="real-sandbox" on <body>. Today the
@@ -212,7 +218,10 @@
         menu.append(icon('fa-bars'));
         const switcher = element('div');
         switcher.dataset.accountSwitcher = '';
+        // Funding is a Real mode action: the mode switch reveals these once the active mode is Real.
         const actions = element('div', 'app-topbar-actions');
+        actions.dataset.fundingActions = '';
+        actions.hidden = true;
         const deposit = element('button', 'app-fund-btn app-fund-deposit');
         deposit.type = 'button';
         deposit.dataset.fundingOpen = 'deposit';
@@ -268,7 +277,10 @@
     // Signed-in pages carry one line of legal text; navigation lives in the side panel.
     function buildAppFooter(realSandbox) {
         const footer = element('footer', 'app-footer');
-        footer.append(element('p', null, realSandbox ? REAL_SANDBOX_NOTE : FOOTER_NOTE));
+        const links = element('nav', 'app-footer-links');
+        links.setAttribute('aria-label', 'Help');
+        APP_FOOTER_LINKS.forEach((link) => { const anchor = element('a', null, link.label); anchor.href = link.href; links.append(anchor); });
+        footer.append(links, element('p', null, realSandbox ? REAL_SANDBOX_NOTE : FOOTER_NOTE));
         return footer;
     }
 

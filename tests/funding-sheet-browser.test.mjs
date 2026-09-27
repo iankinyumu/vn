@@ -46,7 +46,7 @@ let app;
 before(async () => { assert.ok(EDGE, 'Microsoft Edge is required for the real-browser checks'); app = await startApp(); });
 after(async () => { await app?.close(); });
 
-async function open({ overview, expiresInMs, deposit = null, path = 'profile.html', viewport } = {}) {
+async function open({ overview, expiresInMs, deposit = null, path = 'sandbox-deposit.html', viewport } = {}) {
     const posted = [];
     const route = ['**/functions/v1/funding-deposit', async (request) => {
         const body = JSON.parse(request.request().postData() || '{}');
@@ -60,10 +60,28 @@ async function open({ overview, expiresInMs, deposit = null, path = 'profile.htm
 }
 const openSheet = async (page, tab = 'deposit') => { await page.click(`.app-topbar [data-funding-open="${tab}"]`); await page.locator('dialog[data-fund-sheet][open]').waitFor(); };
 
-test('funding sheet: the top bar carries Deposit and Withdraw; a non-tester sees closed deposits and withdrawals and no form', async () => {
-    const { page, context, errors, posted } = await open({ overview: { available: false } });
-    assert.deepEqual(await page.locator('.app-topbar [data-funding-open]').allTextContents(), ['Deposit', 'Withdraw']);
-    await openSheet(page);
+test('funding sheet: Deposit and Withdraw show in Real mode only', async () => {
+    const practice = await open({ path: 'profile.html' });
+    await practice.page.waitForFunction(() => document.querySelector('[data-mode-label]')?.textContent === 'Practice');
+    assert.equal(await practice.page.locator('[data-funding-actions]').isHidden(), true, 'Practice shows funding buttons');
+    assert.deepEqual(practice.errors, []);
+    await practice.context.close();
+    const real = await open();
+    await real.page.waitForFunction(() => document.querySelector('[data-mode-label]')?.textContent === 'Real');
+    assert.deepEqual(await real.page.locator('.app-topbar [data-funding-open]').allTextContents(), ['Deposit', 'Withdraw']);
+    assert.equal(await real.page.locator('[data-funding-actions]').isVisible(), true);
+    assert.deepEqual(real.errors, []);
+    await real.context.close();
+});
+
+test('funding sheet: a non-tester who reaches the sheet sees closed deposits and withdrawals and no form', async () => {
+    const { page, context, errors, posted } = await open({ path: 'profile.html', overview: { available: false } });
+    await page.waitForFunction(() => document.querySelector('[data-mode-label]')?.textContent === 'Practice');
+    assert.equal(await page.locator('[data-funding-actions]').isHidden(), true);
+    const trigger = page.locator('.app-topbar [data-funding-open="deposit"]');
+    await page.evaluate(() => { document.querySelector('[data-funding-actions]').hidden = false; });
+    await trigger.click();
+    await page.locator('dialog[data-fund-sheet][open]').waitFor();
     await page.locator('[data-fund-unavailable]').waitFor({ state: 'visible' });
     assert.equal(await page.locator('[data-fund-unavailable]').textContent(), 'Deposits are not open on this account yet.');
     assert.equal(await page.locator('[data-fund-step="form"]').isVisible(), false);

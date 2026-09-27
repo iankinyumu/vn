@@ -196,6 +196,8 @@
                     const isReal = id !== practice.id;
                     ui.label.textContent = isReal ? 'Real' : 'Practice';
                     host.dataset.mode = isReal ? 'real' : 'demo';
+                    // Deposit and Withdraw belong to Real mode only.
+                    document.querySelectorAll('[data-funding-actions]').forEach((actions) => { actions.hidden = !isReal; });
                     ui.toggle.setAttribute('aria-label', `Account: ${ui.label.textContent}, balance ${ui.balance.textContent}. Change account`);
                 };
                 let balanceRequest = 0;

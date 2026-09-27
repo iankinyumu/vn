@@ -23,6 +23,10 @@ test('trade page on a desktop: side panel, top bar, market beside the ticket, po
     const ticket = await page.locator('.trade-ticket').boundingBox();
     assert.ok(ticket.x > market.x + market.width - 1, 'the ticket sits beside the market');
     assert.equal(await page.locator('[data-mode-label]').textContent(), 'Practice');
+    assert.equal(await page.locator('[data-funding-actions]').isHidden(), true, 'Deposit and Withdraw belong to Real mode');
+    // The chart is the main view: the market reaches the bottom of the screen and trades start below the fold.
+    const fold = await page.evaluate(() => ({ market: document.querySelector('.trade-market').getBoundingClientRect().bottom, activity: document.querySelector('.trade-activity').getBoundingClientRect().top, height: innerHeight }));
+    assert.ok(fold.market > fold.height - 40 && fold.activity >= fold.height - 2, JSON.stringify(fold));
     await page.waitForFunction(() => document.querySelector('[data-mode-balance]').textContent === '$10,000.00');
     // The pointer is centred over the digit that is current when it is measured.
     const offset = await page.evaluate(() => {
@@ -70,7 +74,7 @@ test('trade page on a phone: drawer navigation, one column and the action bar pi
     const pinned = await page.locator('[data-trade-actions]').boundingBox();
     assert.ok(Math.abs(pinned.y + pinned.height - 640) <= 1, `the action bar is pinned to the bottom (${pinned.y + pinned.height})`);
     await page.setViewportSize({ width: 390, height: 844 });
-    for (const selector of ['.app-fund-deposit', '.app-fund-withdraw', '[data-mode-balance]']) {
+    for (const selector of ['[data-mode-balance]', '[data-rail-open]']) {
         const box = await page.locator(selector).boundingBox();
         assert.ok(box.x >= 0 && box.x + box.width <= 390, `${selector} is cut off`);
     }

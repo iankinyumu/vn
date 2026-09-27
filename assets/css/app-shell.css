@@ -127,6 +127,7 @@ body.has-rail.rail-expanded { padding-left: var(--rail-w-open); }
 .app-topbar { position: sticky; top: 0; z-index: 1030; display: flex; align-items: center; gap: 12px; height: var(--topbar-h); padding: 0 20px; background: var(--app-bg); border-bottom: 1px solid var(--app-line); }
 .app-topbar-menu { display: none; flex: none; width: 36px; height: 36px; margin-left: -8px; border: 0; background: transparent; color: var(--app-ink); font-size: 17px; }
 .app-topbar-actions { display: flex; gap: 8px; margin-left: auto; }
+.app-topbar-actions[hidden] { display: none; }
 .app-fund-btn { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 14px; border-radius: 4px; font: 700 13px Manrope, sans-serif; white-space: nowrap; cursor: pointer; }
 .app-fund-btn i { font-size: 11px; }
 .app-fund-deposit { border: 1px solid var(--app-accent); background: var(--app-accent); color: #10160c; }
@@ -155,6 +156,9 @@ body.has-rail.rail-expanded { padding-left: var(--rail-w-open); }
 .mode-menu-note[hidden] { display: none; }
 .app-footer { padding: 18px 20px 22px; border-top: 1px solid var(--app-line); color: var(--app-muted); font-size: 11px; text-align: center; }
 .app-footer p { margin: 0; }
+.app-footer-links { display: flex; justify-content: center; gap: 20px; margin-bottom: 8px; }
+.app-footer-links a { color: var(--app-ink); font-size: 12px; font-weight: 600; text-decoration: none; }
+.app-footer-links a:hover, .app-footer-links a:focus-visible { color: var(--app-accent); }
 @media (max-width: 991.98px) {
     body.has-rail, body.has-rail.rail-expanded { padding-left: 0; }
     .app-rail, .rail-expanded .app-rail { width: 248px; transform: translateX(-100%); }

@@ -323,7 +323,8 @@
             if (!available.some((item) => item.key === family?.key)) family = available[0] || null;
             familiesHost.querySelectorAll('.family-tab').forEach((node) => node.remove());
             familiesHost.append(...available.map((item) => { const tab = radio('family', item.key, item.label, 'family-tab'); tab.querySelector('input').checked = item.key === family?.key; return tab; }));
-            familiesHost.hidden = !available.length;
+            // A single family needs no tabs: its two side buttons already name it.
+            familiesHost.hidden = available.length < 2;
             applyFamily();
         };
         const applyFamily = () => {

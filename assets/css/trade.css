@@ -35,6 +35,8 @@ body.trade-page { margin: 0; }
 .feed-state[data-state="stale"]::before { background: #f2b95b; }
 .feed-state[data-state="unavailable"]::before { background: var(--down); }
 .chart-frame { position: relative; height: clamp(240px, 40vh, 440px); padding: 10px 0 6px 4px; }
+/* On a desktop the market is the main view: the chart fills the screen below the top bar, tabs, price bar and digit strip; trades sit below the fold. */
+@media (min-width: 1100px) { .chart-frame { height: max(360px, calc(100vh - var(--topbar-h) - 214px)); } .trade-families[hidden] + .trade-market .chart-frame { height: max(360px, calc(100vh - var(--topbar-h) - 166px)); } .trade-activity { margin-top: 20px; } }
 .index-chart { display: block; width: 100%; height: 100%; cursor: crosshair; touch-action: pan-y; }
 .market-active { position: absolute; top: 12px; left: 14px; padding: 4px 9px; border: 1px solid var(--mode-accent); border-radius: 4px; background: rgba(8,13,20,.85); color: var(--mode-accent); font: 600 11px 'DM Mono', monospace; white-space: nowrap; }
 .market-active[hidden] { display: none; }
