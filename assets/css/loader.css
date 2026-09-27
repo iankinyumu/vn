@@ -1,12 +1,12 @@
 /* Loading indicator (loader.js): the Lottie mark, with a CSS version until the player is ready.
    Colours fall back to the app tokens' values so public pages can use it without app-shell.css. */
-.sp-loader { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; min-height: 120px; color: var(--app-muted, #8f9baa); font: 500 11px 'DM Mono', monospace; letter-spacing: .06em; text-transform: uppercase; }
-.sp-loader-overlay { position: absolute; inset: 0; z-index: 5; min-height: 0; background: var(--app-panel, #101721); }
+.sp-loader { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; min-height: 120px; color: var(--app-muted, var(--label-2)); font: 500 11px 'DM Mono', monospace; letter-spacing: .06em; text-transform: uppercase; }
+.sp-loader-overlay { position: absolute; inset: 0; z-index: 5; min-height: 0; background: var(--app-panel, var(--bg-2)); }
 .sp-loader-compact { min-height: 72px; gap: 6px; }
 .sp-loader-art { width: 96px; height: 58px; }
 .sp-loader-compact .sp-loader-art { width: 64px; height: 38px; }
 .sp-loader-art svg { display: block; }
-.sp-loader-art[data-fallback] { --sp-loader-ink: var(--app-accent, #adff56); background:
+.sp-loader-art[data-fallback] { --sp-loader-ink: var(--app-accent, var(--accent)); background:
     linear-gradient(var(--sp-loader-ink), var(--sp-loader-ink)) 22% 100% / 12px 40% no-repeat,
     linear-gradient(var(--sp-loader-ink), var(--sp-loader-ink)) 50% 100% / 12px 70% no-repeat,
     linear-gradient(var(--sp-loader-ink), var(--sp-loader-ink)) 78% 100% / 12px 50% no-repeat;
@@ -17,9 +17,9 @@
     66% { background-size: 12px 50%, 12px 60%, 12px 85%; }
 }
 /* The page loader covers the content area below the top bar; the side panel and top bar stay usable. */
-.sp-page-loader { position: fixed; top: var(--topbar-h, 52px); right: 0; bottom: 0; left: var(--rail-w, 64px); z-index: 1020; display: grid; place-items: center; background: var(--app-bg, #080d14); transition: opacity .2s ease, left .18s ease; }
-body.rail-expanded .sp-page-loader { left: var(--rail-w-open, 220px); }
-body:not(.has-rail) .sp-page-loader { top: 0; left: 0; }
+.sp-page-loader { position: fixed; top: calc(var(--topbar-h, 52px) + var(--safe-top, 0px)); inset-inline-end: 0; bottom: 0; inset-inline-start: calc(var(--rail-w, 64px) + var(--safe-start, 0px)); z-index: 1020; display: grid; place-items: center; background: var(--app-bg, var(--bg)); transition: opacity .2s ease, inset-inline-start .18s ease; }
+body.rail-expanded .sp-page-loader { inset-inline-start: calc(var(--rail-w-open, 220px) + var(--safe-start, 0px)); }
+body:not(.has-rail) .sp-page-loader { top: 0; inset-inline-start: 0; }
 .sp-page-loader.is-done { opacity: 0; pointer-events: none; }
-@media (max-width: 991.98px) { .sp-page-loader, body.rail-expanded .sp-page-loader { left: 0; } }
+@media (max-width: 991.98px) { .sp-page-loader, body.rail-expanded .sp-page-loader { inset-inline-start: 0; } }
 @media (prefers-reduced-motion: reduce) { .sp-loader-art[data-fallback] { animation: none; } .sp-page-loader { transition: none; } }

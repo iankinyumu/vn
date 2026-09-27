@@ -1,8 +1,9 @@
 /* Shared design tokens: every colour, type size, space, radius and timing the
    shell uses, named by role (HIG semantic colours) rather than by hue. Page CSS
    reads these; the older --app-*, --flat-* and --text-* names alias them.
-   The product is dark only today; a light palette is one more block here once
-   page CSS stops hard-coding colours. */
+   Appearance follows the system (theme.js sets data-bs-theme on <html>, which
+   also switches Bootstrap); there is no in-app setting, per HIG Dark Mode. Dark
+   is the default so the page stays consistent if the script cannot run. */
 :root {
     color-scheme: dark;
 
@@ -23,6 +24,7 @@
     --field-border: #5e6979;
 
     /* Fills for interaction states on transparent controls. */
+    --fill-subtle: rgb(255 255 255 / .025);
     --fill-hover: rgb(255 255 255 / .04);
     --fill-pressed: rgb(255 255 255 / .08);
     --scrim: rgb(4 7 11 / .6);
@@ -39,6 +41,8 @@
     --positive: #66d9a5;
     --negative: #ff8585;
     --negative-tint: rgb(255 133 133 / .08);
+    --on-positive: #07170f;
+    --on-negative: #240909;
     --caution: #f2b95b;
     --info: #80d7ff;
     --alert-bg: #7f2d2d;
@@ -76,11 +80,91 @@
 
     --target: 44px;
 
+    /* 1 in left-to-right text, -1 in right-to-left: mirrors slides and edge indicators. */
+    --start-sign: 1;
+
+    /* Safe areas (notches, home indicator) with viewport-fit=cover; 0 elsewhere. */
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-start: env(safe-area-inset-left, 0px);
+    --safe-end: env(safe-area-inset-right, 0px);
+
     --ease-out: cubic-bezier(.2, .8, .2, 1);
     --dur-fast: 150ms;
     --dur-base: 200ms;
 
     --shadow-float: 0 14px 36px rgb(0 0 0 / .45);
+    --shadow-sheet: 0 24px 60px rgb(0 0 0 / .55);
+    /* Chart canvas colours (charts.js reads them; canvas needs plain rgba/hex). */
+    --chart-up: #64d9a0;
+    --chart-down: #ff7885;
+    --chart-line: #80d7ff;
+    --chart-area: rgba(128,215,255,.55);
+    --chart-grid: rgba(255,255,255,.055);
+    --chart-edge: rgba(255,255,255,.12);
+    --chart-axis: rgba(214,224,235,.66);
+    --chart-crosshair: rgba(255,255,255,.4);
+    --chart-tag: #2c3947;
+    --chart-tag-ink: #eef4fa;
+    --chart-on-trend: #0b111a;
+}
+
+/* Bootstrap's link colour follows the one accent (HIG Color: one accent for links). */
+:root[data-bs-theme] {
+    --bs-link-color: var(--accent);
+    --bs-link-color-rgb: 173, 255, 86;
+    --bs-link-hover-color: var(--accent-hover);
+    --bs-link-hover-color-rgb: 197, 255, 137;
+}
+
+/* Light appearance: brighter backgrounds and darker foregrounds, not an inversion.
+   The lime accent is 1.2:1 on white, so light uses a deep green of the same hue
+   that holds 6:1 as text and behind white text. */
+:root[data-bs-theme="light"] {
+    color-scheme: light;
+    --bg: #f2f4f7;
+    --bg-2: #ffffff;
+    --bg-3: #ffffff;
+    --bg-field: #ffffff;
+    --label: #0b1017;
+    --label-2: #566170;
+    --label-table: #2b3440;
+    --separator: rgb(11 16 23 / .1);
+    --separator-strong: rgb(11 16 23 / .2);
+    --field-border: #7c8795;
+    --fill-subtle: rgb(11 16 23 / .025);
+    --fill-hover: rgb(11 16 23 / .045);
+    --fill-pressed: rgb(11 16 23 / .09);
+    --scrim: rgb(11 16 23 / .32);
+    --scrim-strong: rgb(11 16 23 / .45);
+    --accent: #3b6e00;
+    --accent-hover: #325e00;
+    --accent-pressed: #2a4f00;
+    --accent-tint: rgb(59 110 0 / .08);
+    --on-accent: #ffffff;
+    --positive: #0b7a4b;
+    --negative: #c42b31;
+    --negative-tint: rgb(196 43 49 / .07);
+    --on-positive: #ffffff;
+    --on-negative: #ffffff;
+    --caution: #8a5800;
+    --info: #0a64a0;
+    --alert-bg: #b3261e;
+    --shadow-float: 0 14px 36px rgb(15 23 42 / .14);
+    --shadow-sheet: 0 24px 60px rgb(15 23 42 / .2);
+    --chart-up: #0b7a4b;
+    --chart-down: #c42b31;
+    --chart-line: #0a64a0;
+    --chart-area: rgba(10,100,160,.45);
+    --chart-grid: rgba(11,16,23,.07);
+    --chart-edge: rgba(11,16,23,.14);
+    --chart-axis: rgba(43,52,64,.9);
+    --chart-crosshair: rgba(11,16,23,.4);
+    --chart-tag: #2b3440;
+    --chart-tag-ink: #ffffff;
+    --chart-on-trend: #ffffff;
+    --bs-link-color-rgb: 59, 110, 0;
+    --bs-link-hover-color-rgb: 50, 94, 0;
 }
 
 /* Increase Contrast: stronger secondary text and separators. */
@@ -92,6 +176,13 @@
         --field-border: #8f9baa;
         --fill-hover: rgb(255 255 255 / .1);
     }
+    :root[data-bs-theme="light"] {
+        --label-2: #2b3440;
+        --separator: rgb(11 16 23 / .25);
+        --separator-strong: rgb(11 16 23 / .45);
+        --field-border: #566170;
+        --fill-hover: rgb(11 16 23 / .08);
+    }
 }
 
 /* A visible focus ring on every interactive element; components may refine it. */
@@ -99,6 +190,10 @@
     outline: var(--focus-width) solid var(--focus-ring);
     outline-offset: 2px;
 }
+
+/* Right-to-left: the layout mirrors through logical properties; these cover what they cannot. */
+[dir="rtl"] { --start-sign: -1; --safe-start: env(safe-area-inset-right, 0px); --safe-end: env(safe-area-inset-left, 0px); }
+[dir="rtl"] :is(.fa-angles-right, .fa-angles-left, .fa-arrow-right, .fa-arrow-left, .fa-chevron-right, .fa-chevron-left, .fa-right-from-bracket, .fa-arrow-right-long) { scale: -1 1; }
 
 /* Reduce Motion: state changes stay, movement goes. */
 @media (prefers-reduced-motion: reduce) {

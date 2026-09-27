@@ -10,13 +10,14 @@ body.public-shell::before, body.auth-shell::before, .public-shell .animated-bg, 
 .public-shell .nav-link { display: inline-flex; align-items: center; min-height: var(--target); color: var(--label-2) !important; border-radius: 0; font-size: var(--text-footnote); padding: 7px 10px !important; }
 .public-shell .nav-link:hover { color: var(--label) !important; background: transparent; }
 .public-shell .nav-link.active { color: var(--label) !important; background: transparent; box-shadow: inset 0 -1px 0 var(--accent); }
-.public-shell .premium-header .btn, .public-shell .navbar-toggler { display: inline-flex; align-items: center; justify-content: center; min-height: var(--target); }
-.public-shell .navbar-toggler { min-width: var(--target); border-color: var(--separator-strong); }
+.public-shell .premium-header .btn { display: inline-flex; align-items: center; justify-content: center; min-height: var(--target); }
+/* Size only: Bootstrap owns the toggler's display, which hides it on wide screens. */
+.public-shell .navbar-toggler { min-width: var(--target); min-height: var(--target); border-color: var(--separator-strong); }
 .public-shell .btn, .auth-shell .btn, .auth-shell .btn-signin, .auth-shell .btn-register, .auth-shell .btn-reset { border-radius: 4px; box-shadow: none; font-weight: 600; }
 .public-shell .btn-premium-primary, .auth-shell .btn-signin, .auth-shell .btn-register, .auth-shell .btn-reset { background: var(--flat-accent); border: 1px solid var(--accent); color: var(--on-accent); }
 .public-shell .btn-premium-primary:hover, .auth-shell .btn-signin:hover, .auth-shell .btn-register:hover, .auth-shell .btn-reset:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--on-accent); box-shadow: none; transform: none; }
 .public-shell .btn-outline-light, .public-shell .btn-glass-premium { background: transparent; border-color: var(--flat-line); color: var(--flat-ink); }
-.public-shell .btn-outline-light:hover, .public-shell .btn-glass-premium:hover { background: var(--fill-hover); border-color: rgb(255 255 255 / .2); }
+.public-shell .btn-outline-light:hover, .public-shell .btn-glass-premium:hover { background: var(--fill-hover); border-color: var(--separator-strong); }
 .public-shell .btn:active, .auth-shell .btn:active { opacity: .85; }
 .public-shell .btn-outline-light:active, .public-shell .btn-glass-premium:active { background: var(--fill-pressed); opacity: 1; }
 .public-shell .premium-glass-card, .public-shell .contact-hero, .public-shell .article-card, .public-shell .blog-card, .public-shell .faq-card, .public-shell .sidebar-card { background: var(--flat-panel); border: 1px solid var(--flat-line); border-radius: var(--radius-card); box-shadow: none; backdrop-filter: none; }
@@ -39,7 +40,7 @@ body.public-shell::before, body.auth-shell::before, .public-shell .animated-bg, 
 .public-shell .form-select-custom { color: var(--flat-ink); }
 .public-shell .form-select-custom option { background: var(--bg-2); }
 .public-shell .file-upload-label, .public-shell .social-link, .public-shell .share-btn, .public-shell .comment-action-btn { background: transparent; border: 1px solid var(--flat-line); border-radius: 4px; color: var(--flat-muted); }
-.public-shell .social-link:hover, .public-shell .share-btn:hover, .public-shell .comment-action-btn:hover { background: rgba(255,255,255,.04); border-color: var(--flat-accent); color: var(--flat-accent); }
+.public-shell .social-link:hover, .public-shell .share-btn:hover, .public-shell .comment-action-btn:hover { background: var(--fill-hover); border-color: var(--flat-accent); color: var(--flat-accent); }
 .public-shell .faq-item, .public-shell .faq-question { background: transparent; border-color: var(--flat-line); border-radius: 0; }
 .public-shell .faq-question:hover, .public-shell .faq-item.active .faq-question { color: var(--flat-accent); }
 .public-shell .pagination .page-link { background: transparent; border-color: var(--flat-line); border-radius: 0; color: var(--flat-muted); }
@@ -60,11 +61,17 @@ body.public-shell::before, body.auth-shell::before, .public-shell .animated-bg, 
 .auth-shell .input-wrapper .form-icon { color: var(--flat-muted); }
 .auth-shell .form-input { min-height: 44px; }
 .auth-shell .social-btns { gap: 0; border: 1px solid var(--flat-line); border-radius: 4px; overflow: hidden; }
-.auth-shell .social-btn { flex: 1; background: transparent !important; border: 0 !important; border-right: 1px solid var(--flat-line) !important; border-radius: 0 !important; color: var(--flat-muted) !important; box-shadow: none !important; }
-.auth-shell .social-btn:last-child { border-right: 0 !important; }
+.auth-shell .social-btn { flex: 1; background: transparent !important; border: 0 !important; border-inline-end: 1px solid var(--flat-line) !important; border-radius: 0 !important; color: var(--flat-muted) !important; box-shadow: none !important; }
+.auth-shell .social-btn:last-child { border-inline-end: 0 !important; }
 .auth-shell .social-btn:hover { color: var(--flat-accent) !important; }
 .auth-shell .step-indicator, .auth-shell .step-dots { display: none; }
 .auth-shell .password-strength { border-radius: 0; background: transparent; }
 .auth-shell .strength-bar { border-radius: 0; }
 .auth-shell .error-message, .auth-shell .success-message { border-radius: 4px; box-shadow: none; }
-@media (max-width: 767px) { .public-shell .premium-header .container-fluid { padding-left: 16px; padding-right: 16px; } .auth-shell .auth-card { padding: 26px 20px; } }
+@media (max-width: 767px) { .public-shell .premium-header .container-fluid { padding-inline-start: 16px; padding-inline-end: 16px; } .auth-shell .auth-card { padding: 26px 20px; } }
+/* Safe areas: keep the header, footer and auth card clear of notches with viewport-fit=cover. */
+.public-shell .premium-header { padding-top: calc(15px + var(--safe-top)); }
+.public-shell .premium-header .container-fluid, .public-shell .premium-footer .container-fluid { padding-left: max(1.5rem, env(safe-area-inset-left)); padding-right: max(1.5rem, env(safe-area-inset-right)); }
+.public-shell .premium-footer { padding-bottom: max(20px, var(--safe-bottom)); }
+.auth-shell { padding: max(28px, var(--safe-top)) max(16px, env(safe-area-inset-right)) max(28px, var(--safe-bottom)) max(16px, env(safe-area-inset-left)); }
+@media (max-width: 767px) { .public-shell .premium-header .container-fluid, .public-shell .premium-footer .container-fluid { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); } }

@@ -9,7 +9,7 @@
 .about-hero {
     padding: 40px 30px;
     text-align: center;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.06), rgba(139, 92, 246, 0.03))
+    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 6%, transparent), color-mix(in srgb, var(--accent) 3%, transparent))
 }
 
 .about-hero-icon {
@@ -29,11 +29,11 @@
 
     0%,
     100% {
-        box-shadow: 0 0 15px rgba(99, 102, 241, 0.2)
+        box-shadow: 0 0 15px color-mix(in srgb, var(--accent) 20%, transparent)
     }
 
     50% {
-        box-shadow: 0 0 30px rgba(139, 92, 246, 0.4)
+        box-shadow: 0 0 30px color-mix(in srgb, var(--accent) 40%, transparent)
     }
 }
 
@@ -70,7 +70,7 @@
     align-items: center;
     justify-content: center;
     font-size: 22px;
-    color: white;
+    color: var(--label);
     flex-shrink: 0
 }
 
@@ -79,7 +79,7 @@
     font-weight: 800;
     margin-bottom: 2px;
     line-height: 1.1;
-    background: linear-gradient(135deg, #f1f5f9, #cbd5e1);
+    background: linear-gradient(135deg, var(--label), var(--label-2));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent
 }
@@ -102,7 +102,7 @@
     align-items: center;
     justify-content: center;
     font-size: 20px;
-    color: white;
+    color: var(--label);
     margin-bottom: 16px
 }
 
@@ -135,7 +135,7 @@
 }
 
 .mission-list li i {
-    color: #34d399;
+    color: var(--positive);
     font-size: 14px
 }
 
@@ -156,26 +156,26 @@
 
 .value-card:hover {
     transform: translateY(-4px);
-    border-color: rgba(99, 102, 241, 0.3)
+    border-color: color-mix(in srgb, var(--accent) 30%, transparent)
 }
 
 .value-icon-wrap {
     width: 55px;
     height: 55px;
     border-radius: 16px;
-    background: rgba(99, 102, 241, 0.1);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 22px;
-    color: #818cf8;
+    color: var(--accent);
     margin: 0 auto 14px;
     transition: all 0.3s
 }
 
 .value-card:hover .value-icon-wrap {
     background: var(--purple-grad);
-    color: white
+    color: var(--on-accent)
 }
 
 .value-card h5 {
@@ -196,7 +196,7 @@
 
 .timeline {
     position: relative;
-    padding-left: 30px
+    padding-inline-start: 30px
 }
 
 .timeline::before {
@@ -226,13 +226,13 @@
     height: 18px;
     border-radius: 50%;
     background: var(--purple-grad);
-    border: 3px solid #070b1a;
+    border: 3px solid var(--bg);
     z-index: 1
 }
 
 .timeline-year {
     font-size: 12px;
-    color: #818cf8;
+    color: var(--accent);
     font-weight: 600;
     margin-bottom: 4px;
     display: block
@@ -294,7 +294,7 @@
 
 .team-role {
     font-size: 12px;
-    color: #818cf8;
+    color: var(--accent);
     font-weight: 500;
     display: block;
     margin-bottom: 8px
@@ -329,7 +329,7 @@
 
 .team-social a:hover {
     background: var(--purple-grad);
-    color: white;
+    color: var(--on-accent);
     border-color: transparent
 }
 
@@ -356,7 +356,7 @@
 
 .cta-card {
     padding: 40px 30px;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.05))
+    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, transparent), color-mix(in srgb, var(--accent) 5%, transparent))
 }
 
 .cta-card h2 {
@@ -396,7 +396,7 @@
     }
 
     .timeline {
-        padding-left: 24px
+        padding-inline-start: 24px
     }
 
     .timeline-dot {

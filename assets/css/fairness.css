@@ -9,12 +9,12 @@
 .fairness-range-note { color: var(--app-muted); font: 500 11px 'DM Mono', monospace; white-space: nowrap; }
 .fairness-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 .fairness-fields label { display: flex; flex-direction: column; gap: 8px; color: var(--app-muted); font: 500 11px 'DM Mono', monospace; text-transform: uppercase; }
-.fairness-fields .form-select, .fairness-fields .form-control { min-height: 46px; background-color: #0b111a; border: 1px solid rgba(255,255,255,.16); border-radius: 4px; color: var(--app-ink); font: 500 14px 'DM Mono', monospace; }
+.fairness-fields .form-select, .fairness-fields .form-control { min-height: 46px; background-color: var(--bg-field); border: 1px solid var(--separator-strong); border-radius: 4px; color: var(--app-ink); font: 500 14px 'DM Mono', monospace; }
 .fairness-fields .form-select:focus, .fairness-fields .form-control:focus { border-color: var(--mode-accent); box-shadow: 0 0 0 2px var(--mode-surface); }
 .fairness-submit { margin-top: 18px; min-width: 180px; border-radius: 4px; }
 .fairness-results { margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--app-line); }
 .fairness-results [data-fairness-result] { min-height: 24px; margin: 0; color: var(--app-ink); font-size: 13px; line-height: 1.6; }
-.fairness-results [data-fairness-epochs] { margin: 10px 0 0; padding-left: 20px; color: var(--app-muted); font-size: 13px; line-height: 1.7; }
+.fairness-results [data-fairness-epochs] { margin: 10px 0 0; padding-inline-start: 20px; color: var(--app-muted); font-size: 13px; line-height: 1.7; }
 .fairness-results [data-fairness-epochs]:empty { display: none; }
 .fairness-help { max-width: 760px; margin: 20px 0 0; color: var(--app-muted); font-size: 13px; line-height: 1.7; }
 .fairness-help a { color: var(--app-accent); }

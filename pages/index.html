@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="description"
         content="SmartProfit runs self-generated indices and settles digit contracts on the final digit of a future tick. Practice only, with virtual funds.">
     <title>SmartProfit — Digit contracts on self-generated indices</title>
@@ -11,48 +11,49 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
+    <script src="../assets/js/theme.js"></script>
     <link href="../assets/css/tokens.css" rel="stylesheet">
     <link href="../assets/css/glassmorphism.css" rel="stylesheet">
     <link href="../assets/css/style.css" rel="stylesheet">
     <link href="../assets/css/public-shell.css" rel="stylesheet">
     <style>
-        :root { --ink: #e9edf3; --muted: #98a2b3; --line: rgba(255,255,255,.09); --accent: #adff56; }
-        body.premium-theme::before { background: radial-gradient(circle at 74% 7%, rgba(173,255,86,.10), transparent 23%), radial-gradient(circle at 10% 36%, rgba(104,132,255,.12), transparent 28%); }
+        :root { --ink: var(--label); --muted: var(--label-2); --line: var(--separator); }
+        body.premium-theme::before { background: radial-gradient(circle at 74% 7%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 23%); }
         .logo-primary { font-family: Manrope, sans-serif; font-size: 18px; letter-spacing: -.8px; }
         .logo-secondary { color: var(--accent); font-size: 18px; font-weight: 700; letter-spacing: -.8px; }
-        .btn-premium-primary { background: var(--accent); border: 1px solid var(--accent); color: #10160c; box-shadow: none; }
-        .btn-premium-primary:hover { background: #c1ff7d; border-color: #c1ff7d; color: #10160c; box-shadow: none; transform: translateY(-1px); }
+        .btn-premium-primary { background: var(--accent); border: 1px solid var(--accent); color: var(--on-accent); box-shadow: none; }
+        .btn-premium-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--on-accent); box-shadow: none; transform: none; }
         .landing { position: relative; z-index: 1; }
-        .eyebrow { display: inline-flex; align-items: center; gap: 9px; color: #c6d1c1; font: 500 12px/1 'DM Mono', monospace; letter-spacing: .05em; text-transform: uppercase; }
-        .eyebrow::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 5px rgba(173,255,86,.08); }
+        .eyebrow { display: inline-flex; align-items: center; gap: 9px; color: var(--label-2); font: 500 12px/1 'DM Mono', monospace; letter-spacing: .05em; text-transform: uppercase; }
+        .eyebrow::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 8%, transparent); }
         .hero { padding: 105px 0 72px; }
         .hero h1 { max-width: 780px; color: var(--ink); font-size: clamp(3rem, 6.4vw, 5.6rem); font-weight: 800; letter-spacing: -.075em; line-height: .99; margin: 21px 0 25px; }
         .hero h1 em { color: var(--accent); font-style: normal; }
         .hero-copy { color: var(--muted); font-size: 1.05rem; line-height: 1.75; max-width: 590px; margin-bottom: 32px; }
         .hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
         .hero-actions .btn { padding: 13px 21px; font-weight: 700; }
-        .quiet-link { color: #d9e1d4; font-weight: 600; font-size: 14px; text-decoration: none; padding: 12px 9px; }
+        .quiet-link { display: inline-flex; align-items: center; min-height: var(--target); color: var(--label); font-weight: 600; font-size: 14px; text-decoration: none; padding: 12px 9px; }
         .quiet-link:hover { color: var(--accent); }
-        .hero-note { color: #85909d; font-size: 12px; line-height: 1.7; margin: 22px 0 0; max-width: 560px; }
-        .digit-card { background: linear-gradient(145deg, rgba(21,30,43,.96), rgba(11,17,26,.92)); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+        .hero-note { color: var(--label-2); font-size: 12px; line-height: 1.7; margin: 22px 0 0; max-width: 560px; }
+        .digit-card { background: var(--bg-2); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
         .digit-top { display: flex; align-items: center; justify-content: space-between; padding: 19px 20px 15px; border-bottom: 1px solid var(--line); }
         .digit-title { color: var(--ink); font-size: 14px; font-weight: 700; margin: 0; }
-        .digit-scope { color: #7d8795; font: 400 11px/1 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .04em; margin-left: 6px; }
+        .digit-scope { color: var(--label-2); font: 400 11px/1 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .04em; margin-inline-start: 6px; }
         .digit-body { padding: 20px; }
         .digit-strip { display: flex; gap: 8px; flex-wrap: wrap; }
         .digit-strip span { align-items: center; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); display: inline-flex; font: 500 18px/1 'DM Mono', monospace; height: 42px; justify-content: center; width: 34px; }
-        .digit-strip span.settled { border-color: rgba(173,255,86,.5); color: var(--accent); }
-        .digit-status { color: #a9ee65; font: 500 11px/1 'DM Mono', monospace; text-transform: uppercase; }
-        .digit-status i { font-size: 7px; vertical-align: 1px; margin-right: 5px; }
+        .digit-strip span.settled { border-color: color-mix(in srgb, var(--accent) 50%, transparent); color: var(--accent); }
+        .digit-status { color: var(--accent); font: 500 11px/1 'DM Mono', monospace; text-transform: uppercase; }
+        .digit-status i { font-size: 7px; vertical-align: 1px; margin-inline-end: 5px; }
         .digit-legend { color: var(--muted); font-size: 12px; line-height: 1.7; margin: 16px 0 0; }
         .digit-detail { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--line); }
         .digit-detail div { padding: 15px 20px; }
-        .digit-detail div + div { border-left: 1px solid var(--line); }
-        .digit-detail span { display: block; color: #7d8795; font: 400 11px/1.4 'DM Mono', monospace; text-transform: uppercase; }
-        .digit-detail strong { display: block; color: #e7ecf1; font: 600 15px/1.4 'DM Mono', monospace; margin-top: 4px; }
+        .digit-detail div + div { border-inline-start: 1px solid var(--line); }
+        .digit-detail span { display: block; color: var(--label-2); font: 400 11px/1.4 'DM Mono', monospace; text-transform: uppercase; }
+        .digit-detail strong { display: block; color: var(--label); font: 600 15px/1.4 'DM Mono', monospace; margin-top: 4px; }
         .credibility { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
         .credibility-item { padding: 22px 15px; }
-        .credibility-item + .credibility-item { border-left: 1px solid var(--line); }
+        .credibility-item + .credibility-item { border-inline-start: 1px solid var(--line); }
         .credibility-item b { display: block; color: var(--ink); font-size: 14px; }
         .credibility-item span { color: var(--muted); font-size: 13px; }
         .section { padding: 100px 0; }
@@ -64,18 +65,18 @@
         .step-number { color: var(--accent); font: 500 13px 'DM Mono', monospace; }
         .workflow-step h3 { color: var(--ink); font-size: 18px; font-weight: 700; margin: 0 0 4px; }
         .workflow-step p { color: var(--muted); font-size: 14px; margin: 0; max-width: 470px; }
-        .workflow-step i { color: #718093; font-size: 15px; }
+        .workflow-step i { color: var(--label-2); font-size: 15px; }
         .feature-stack { display: grid; gap: 12px; }
-        .feature { display: grid; grid-template-columns: 42px 1fr; gap: 16px; align-items: start; padding: 20px; background: rgba(255,255,255,.025); border: 1px solid var(--line); border-radius: 12px; }
-        .feature-icon { width: 42px; height: 42px; display: grid; place-items: center; color: var(--accent); background: rgba(173,255,86,.08); border-radius: 10px; }
+        .feature { display: grid; grid-template-columns: 42px 1fr; gap: 16px; align-items: start; padding: 20px; background: var(--fill-subtle); border: 1px solid var(--line); border-radius: 12px; }
+        .feature-icon { width: 42px; height: 42px; display: grid; place-items: center; color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); border-radius: 10px; }
         .feature h3 { color: var(--ink); font-size: 15px; font-weight: 700; margin: 1px 0 5px; }
         .feature p { color: var(--muted); font-size: 13px; line-height: 1.55; margin: 0; }
         .closing { padding: 66px 0 86px; }
-        .closing-panel { padding: clamp(30px, 6vw, 70px); border: 1px solid rgba(173,255,86,.28); border-radius: 20px; background: linear-gradient(120deg, rgba(173,255,86,.12), rgba(21,30,43,.72) 43%, rgba(21,30,43,.55)); }
+        .closing-panel { padding: clamp(30px, 6vw, 70px); border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent); border-radius: 20px; background: color-mix(in srgb, var(--accent) 6%, var(--bg-2)); }
         .closing h2 { color: var(--ink); font-size: clamp(2rem, 4vw, 3.5rem); letter-spacing: -.06em; font-weight: 800; line-height: 1.04; max-width: 600px; margin: 16px 0; }
-        .closing p { color: #b7c0b2; max-width: 540px; margin: 0 0 26px; }
+        .closing p { color: var(--label-2); max-width: 540px; margin: 0 0 26px; }
         @media (max-width: 991px) { .hero { padding-top: 70px; } .digit-card { margin-top: 8px; } }
-        @media (max-width: 767px) { .hero { padding: 58px 0; } .hero h1 { font-size: 2.9rem; } .credibility-item + .credibility-item { border-left: 0; border-top: 1px solid var(--line); } .workflow-step { grid-template-columns: 34px 1fr; gap: 12px; } .workflow-step i { display: none; } .section { padding: 68px 0; } .digit-strip span { height: 38px; width: 30px; font-size: 16px; } }
+        @media (max-width: 767px) { .hero { padding: 58px 0; } .hero h1 { font-size: 2.9rem; } .credibility-item + .credibility-item { border-inline-start: 0; border-top: 1px solid var(--line); } .workflow-step { grid-template-columns: 34px 1fr; gap: 12px; } .workflow-step i { display: none; } .section { padding: 68px 0; } .digit-strip span { height: 38px; width: 30px; font-size: 16px; } }
     </style>
 </head>
 

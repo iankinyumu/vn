@@ -185,7 +185,6 @@
             const item = element('li');
             const anchor = element('a', 'app-rail-link');
             anchor.href = link.href;
-            anchor.title = link.label;
             if (link.key === activeKey) { anchor.classList.add('active'); anchor.setAttribute('aria-current', 'page'); }
             anchor.append(icon(link.icon), element('span', 'app-rail-text', link.label));
             item.append(anchor);
@@ -195,7 +194,6 @@
         const foot = element('div', 'app-rail-foot');
         const logout = element('button', 'app-rail-link app-rail-logout');
         logout.type = 'button';
-        logout.title = 'Log out';
         logout.append(icon('fa-right-from-bracket'), element('span', 'app-rail-text', 'Log out'));
         logout.addEventListener('click', () => { if (typeof window.logout === 'function') window.logout(); });
         const expand = element('button', 'app-rail-link app-rail-expand');
@@ -246,8 +244,30 @@
             document.body.classList.toggle('rail-expanded', value);
             expand.setAttribute('aria-expanded', String(value));
             expand.querySelector('.app-rail-text').textContent = value ? 'Collapse' : 'Expand';
-            expand.title = value ? 'Collapse menu' : 'Expand menu';
+            hideTip();
         };
+        // Collapsed, the panel shows icons only, so a label appears beside the item under the
+        // keyboard focus or the pointer. It is visual only: each item already has its text for
+        // assistive technology. Escape dismisses it (WCAG 1.4.13).
+        const tip = element('div', 'app-rail-tip');
+        tip.setAttribute('aria-hidden', 'true');
+        tip.hidden = true;
+        rail.append(tip);
+        function hideTip() { tip.hidden = true; }
+        const showTip = (item) => {
+            if (drawer.matches || document.body.classList.contains('rail-expanded')) return;
+            const box = item.getBoundingClientRect();
+            const rtl = window.getComputedStyle(rail).direction === 'rtl';
+            tip.textContent = item.querySelector('.app-rail-text')?.textContent || '';
+            tip.style.top = `${Math.round(box.top + box.height / 2)}px`;
+            tip.style.insetInlineStart = `${Math.round(rtl ? window.innerWidth - box.left : box.right) + 8}px`;
+            tip.hidden = false;
+        };
+        const railItem = (event) => event.target.closest?.('.app-rail-link');
+        rail.addEventListener('focusin', (event) => { const item = railItem(event); if (item?.matches(':focus-visible')) showTip(item); });
+        rail.addEventListener('focusout', hideTip);
+        rail.addEventListener('pointerover', (event) => { const item = railItem(event); if (item && event.pointerType === 'mouse') showTip(item); });
+        rail.addEventListener('pointerout', (event) => { if (railItem(event) && !railItem(event).contains(event.relatedTarget)) hideTip(); });
         // On phones the closed drawer sits off screen; inert keeps it out of the Tab order and
         // the accessibility tree. While it is open, the page behind it is inert instead.
         let covered = [];
@@ -275,7 +295,7 @@
         opener.addEventListener('click', () => (document.body.classList.contains('rail-open') ? closeDrawer(true) : openDrawer()));
         backdrop.addEventListener('click', () => closeDrawer(true));
         rail.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape') { closeDrawer(true); return; }
+            if (event.key === 'Escape') { if (!tip.hidden) { hideTip(); return; } closeDrawer(true); return; }
             // Keep Tab inside the open drawer, as a modal would.
             if (event.key !== 'Tab' || !document.body.classList.contains('rail-open')) return;
             const items = focusable();

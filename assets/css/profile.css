@@ -32,7 +32,7 @@
     height: 100px;
     border-radius: 50%;
     object-fit: cover;
-    border: 3px solid #6366f1;
+    border: 3px solid var(--accent);
     padding: 3px;
     background: var(--glass-bg)
 }
@@ -41,7 +41,7 @@ div.avatar-img {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #fff;
+    color: var(--on-accent);
     font-size: 30px;
     font-weight: 700;
     letter-spacing: 1px;
@@ -59,16 +59,16 @@ div.avatar-img {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
+    color: var(--on-accent);
     font-size: 13px;
     cursor: pointer;
-    border: 2px solid #070b1a;
+    border: 2px solid var(--bg);
     transition: all 0.3s
 }
 
 .avatar-edit:hover {
     transform: scale(1.1);
-    box-shadow: 0 5px 15px rgba(99, 102, 241, 0.4)
+    box-shadow: 0 5px 15px color-mix(in srgb, var(--accent) 40%, transparent)
 }
 
 .profile-info {
@@ -87,7 +87,7 @@ div.avatar-img {
 
 .verified-badge {
     background: var(--blue-grad);
-    color: white;
+    color: var(--on-accent);
     font-size: 11px;
     padding: 4px 12px;
     border-radius: 20px;
@@ -135,7 +135,7 @@ div.avatar-img {
     transition: all 0.3s;
     cursor: pointer;
     border: 1px solid var(--glass-border);
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--fill-hover);
     color: var(--text-primary);
     text-decoration: none;
     display: inline-flex;
@@ -144,18 +144,18 @@ div.avatar-img {
 }
 
 .btn-action:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: white
+    background: var(--fill-pressed);
+    color: var(--label)
 }
 
 .btn-action.danger {
-    color: #f87171;
-    border-color: rgba(239, 68, 68, 0.3)
+    color: var(--negative);
+    border-color: color-mix(in srgb, var(--negative) 30%, transparent)
 }
 
 .btn-action.danger:hover {
-    background: rgba(239, 68, 68, 0.15);
-    border-color: rgba(239, 68, 68, 0.5)
+    background: color-mix(in srgb, var(--negative) 15%, transparent);
+    border-color: color-mix(in srgb, var(--negative) 50%, transparent)
 }
 
 .tab-nav {
@@ -163,7 +163,7 @@ div.avatar-img {
     gap: 6px;
     margin-bottom: 24px;
     flex-wrap: wrap;
-    background: rgba(18, 22, 45, 0.5);
+    background: var(--bg-2);
     backdrop-filter: blur(15px);
     border: 1px solid var(--glass-border);
     border-radius: 16px;
@@ -195,13 +195,13 @@ div.avatar-img {
 
 .tab-btn.active {
     background: var(--purple-grad);
-    color: white;
-    box-shadow: 0 5px 15px rgba(99, 102, 241, 0.3)
+    color: var(--on-accent);
+    box-shadow: 0 5px 15px color-mix(in srgb, var(--accent) 30%, transparent)
 }
 
 .tab-btn:hover:not(.active) {
-    background: rgba(255, 255, 255, 0.05);
-    color: white
+    background: var(--fill-hover);
+    color: var(--label)
 }
 
 .tab-content {
@@ -262,12 +262,12 @@ div.avatar-img {
 }
 
 .input-wrapper:focus-within .form-icon {
-    color: #818cf8
+    color: var(--accent)
 }
 
 .form-input {
     width: 100%;
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--fill-hover);
     border: 1px solid var(--glass-border);
     border-radius: 14px;
     padding: 12px 16px 12px 42px;
@@ -278,13 +278,13 @@ div.avatar-img {
 }
 
 .form-input:focus {
-    border-color: #6366f1;
-    background: rgba(255, 255, 255, 0.06);
-    box-shadow: 0 0 20px rgba(99, 102, 241, 0.15)
+    border-color: var(--accent);
+    background: var(--fill-hover);
+    box-shadow: 0 0 20px color-mix(in srgb, var(--accent) 15%, transparent)
 }
 
 .form-input::placeholder {
-    color: rgba(148, 163, 184, 0.5)
+    color: color-mix(in srgb, var(--label-2) 50%, transparent)
 }
 
 .form-label {
@@ -335,7 +335,7 @@ div.avatar-img {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--fill-pressed);
     border-radius: 26px;
     transition: 0.3s
 }
@@ -347,7 +347,7 @@ div.avatar-img {
     width: 20px;
     left: 3px;
     bottom: 3px;
-    background: white;
+    background: var(--bg-2);
     border-radius: 50%;
     transition: 0.3s
 }
@@ -368,13 +368,13 @@ div.avatar-img {
 }
 
 .badge-active {
-    background: rgba(16, 185, 129, 0.15);
-    color: #34d399
+    background: color-mix(in srgb, var(--positive) 15%, transparent);
+    color: var(--positive)
 }
 
 .badge-inactive {
-    background: rgba(239, 68, 68, 0.15);
-    color: #f87171
+    background: color-mix(in srgb, var(--negative) 15%, transparent);
+    color: var(--negative)
 }
 
 .api-key-row {
@@ -382,7 +382,7 @@ div.avatar-img {
     justify-content: space-between;
     align-items: center;
     padding: 14px 16px;
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--fill-subtle);
     border-radius: 12px;
     margin-bottom: 8px;
     flex-wrap: wrap;
@@ -405,7 +405,7 @@ div.avatar-img {
     font-family: 'Courier New', monospace;
     font-size: 12px;
     color: var(--text-secondary);
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--fill-hover);
     padding: 4px 10px;
     border-radius: 6px
 }
@@ -426,7 +426,7 @@ div.avatar-img {
 }
 
 .transaction-table th {
-    text-align: left;
+    text-align: start;
     padding: 12px 14px;
     font-size: 12px;
     color: var(--text-secondary);
@@ -446,7 +446,7 @@ div.avatar-img {
 }
 
 .transaction-table tbody tr:hover {
-    background: rgba(255, 255, 255, 0.02)
+    background: var(--fill-subtle)
 }
 
 .tx-type {
@@ -462,15 +462,15 @@ div.avatar-img {
 }
 
 .tx-dot.deposit {
-    background: #34d399
+    background: var(--positive)
 }
 
 .tx-dot.withdraw {
-    background: #f87171
+    background: var(--negative)
 }
 
 .tx-dot.trade {
-    background: #818cf8
+    background: var(--accent)
 }
 
 .kyc-progress {
@@ -505,7 +505,7 @@ div.avatar-img {
     width: 38px;
     height: 38px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--fill-hover);
     border: 2px solid var(--glass-border);
     display: flex;
     align-items: center;
@@ -517,16 +517,16 @@ div.avatar-img {
 }
 
 .kyc-step.completed .kyc-step-circle {
-    background: rgba(16, 185, 129, 0.2);
-    border-color: #34d399;
-    color: #34d399
+    background: color-mix(in srgb, var(--positive) 20%, transparent);
+    border-color: var(--positive);
+    color: var(--positive)
 }
 
 .kyc-step.current .kyc-step-circle {
-    background: rgba(99, 102, 241, 0.2);
-    border-color: #818cf8;
-    color: #818cf8;
-    box-shadow: 0 0 15px rgba(99, 102, 241, 0.3)
+    background: color-mix(in srgb, var(--accent) 20%, transparent);
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: 0 0 15px color-mix(in srgb, var(--accent) 30%, transparent)
 }
 
 .kyc-step-label {
@@ -535,11 +535,11 @@ div.avatar-img {
 }
 
 .kyc-step.completed .kyc-step-label {
-    color: #34d399
+    color: var(--positive)
 }
 
 .kyc-step.current .kyc-step-label {
-    color: #818cf8
+    color: var(--accent)
 }
 
 @media (max-width:576px) {

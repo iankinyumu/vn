@@ -8,7 +8,7 @@ function showLoginStatus(message, isError) {
     const status = document.getElementById('loginStatus');
     if (!status) return;
     status.textContent = message;
-    status.style.color = isError ? '#ef4444' : '#10b981';
+    status.style.color = isError ? 'var(--negative)' : 'var(--positive)';
 }
 
 function validateLoginCredentials(email, password) {

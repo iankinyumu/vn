@@ -23,7 +23,7 @@
 }
 
 .auth-card:hover {
-    border-color: rgba(255, 255, 255, 0.12);
+    border-color: var(--separator-strong);
     box-shadow: 0 30px 70px rgba(0, 0, 0, 0.6)
 }
 
@@ -44,11 +44,11 @@
 
     0%,
     100% {
-        box-shadow: 0 0 15px rgba(99, 102, 241, 0.3)
+        box-shadow: 0 0 15px color-mix(in srgb, var(--accent) 30%, transparent)
     }
 
     50% {
-        box-shadow: 0 0 30px rgba(139, 92, 246, 0.6)
+        box-shadow: 0 0 30px color-mix(in srgb, var(--accent) 60%, transparent)
     }
 }
 
@@ -97,12 +97,12 @@
 }
 
 .input-wrapper:focus-within .form-icon {
-    color: #818cf8
+    color: var(--accent)
 }
 
 .form-input {
     width: 100%;
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--fill-hover);
     border: 1px solid var(--glass-border);
     border-radius: 14px;
     padding: 12px 16px 12px 42px;
@@ -114,20 +114,20 @@
 }
 
 .form-input:focus {
-    border-color: #6366f1;
-    background: rgba(255, 255, 255, 0.06);
-    box-shadow: 0 0 20px rgba(99, 102, 241, 0.15)
+    border-color: var(--accent);
+    background: var(--fill-hover);
+    box-shadow: 0 0 20px color-mix(in srgb, var(--accent) 15%, transparent)
 }
 
 .form-input::placeholder {
-    color: rgba(148, 163, 184, 0.5)
+    color: color-mix(in srgb, var(--label-2) 50%, transparent)
 }
 
 .btn-reset {
     width: 100%;
     background: var(--purple-grad);
     border: none;
-    color: white;
+    color: var(--on-accent);
     font-weight: 600;
     padding: 13px;
     border-radius: 14px;
@@ -145,7 +145,7 @@
 
 .btn-reset:hover {
     transform: translateY(-1px);
-    box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4)
+    box-shadow: 0 10px 30px color-mix(in srgb, var(--accent) 40%, transparent)
 }
 
 .btn-reset:active {
@@ -167,14 +167,14 @@
 }
 
 .auth-footer a {
-    color: #818cf8;
+    color: var(--accent);
     text-decoration: none;
     font-weight: 600;
     transition: color 0.3s
 }
 
 .auth-footer a:hover {
-    color: #a78bfa;
+    color: var(--accent);
     text-decoration: underline
 }
 
@@ -193,15 +193,15 @@
     text-decoration: none;
     font-size: 13px;
     padding: 8px 16px;
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--fill-hover);
     border: 1px solid var(--glass-border);
     border-radius: 30px;
     transition: all 0.3s
 }
 
 .back-home a:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: white
+    background: var(--fill-pressed);
+    color: var(--label)
 }
 
 .success-message {
@@ -213,14 +213,14 @@
 .success-message .success-icon {
     width: 64px;
     height: 64px;
-    background: rgba(16, 185, 129, 0.15);
+    background: color-mix(in srgb, var(--positive) 15%, transparent);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 0 auto 15px;
     font-size: 28px;
-    color: #34d399
+    color: var(--positive)
 }
 
 .success-message h4 {
@@ -240,7 +240,7 @@
 }
 
 .success-hint a {
-    color: #818cf8;
+    color: var(--accent);
     text-decoration: none
 }
 
@@ -250,12 +250,12 @@
 
 .error-message {
     display: none;
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.2);
+    background: color-mix(in srgb, var(--negative) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--negative) 20%, transparent);
     border-radius: 12px;
     padding: 12px 16px;
     margin-bottom: 16px;
-    color: #f87171;
+    color: var(--negative);
     font-size: 13px;
     align-items: center;
     gap: 8px
@@ -270,8 +270,8 @@
     display: none;
     width: 18px;
     height: 18px;
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    border-top: 2px solid white;
+    border: 2px solid var(--separator-strong);
+    border-top: 2px solid var(--label);
     border-radius: 50%;
     animation: spin 0.6s linear infinite
 }

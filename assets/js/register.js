@@ -19,21 +19,21 @@ function checkPasswordStrength() {
     if (password.length === 0) {
         bar.style.width = '0%';
         text.textContent = 'Min 8 characters';
-        text.style.color = '#94a3b8';
+        text.style.color = 'var(--label-2)';
         return;
     }
     if (password.length < 6) {
         bar.classList.add('weak');
         text.textContent = 'Weak - Add more characters';
-        text.style.color = '#ef4444';
+        text.style.color = 'var(--negative)';
     } else if (password.length < 8 || !(/[A-Z]/.test(password) && /[0-9]/.test(password))) {
         bar.classList.add('medium');
         text.textContent = 'Medium - Add uppercase & numbers';
-        text.style.color = '#f59e0b';
+        text.style.color = 'var(--caution)';
     } else {
         bar.classList.add('strong');
         text.textContent = 'Strong password!';
-        text.style.color = '#10b981';
+        text.style.color = 'var(--positive)';
     }
     const confirmPassword = document.getElementById('confirmPassword');
     if (confirmPassword && confirmPassword.value) checkPasswordMatch();
@@ -64,7 +64,7 @@ async function handleRegister(e) {
     const showStatus = (message, isError) => {
         if (!status) return;
         status.textContent = message;
-        status.style.color = isError ? '#ef4444' : '#10b981';
+        status.style.color = isError ? 'var(--negative)' : 'var(--positive)';
     };
     const errors = [];
 

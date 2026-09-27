@@ -30,7 +30,7 @@
 .error-digit {
     font-size: 120px;
     font-weight: 900;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7);
+    background: linear-gradient(135deg, var(--accent), var(--accent), var(--accent));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     line-height: 1;
@@ -59,15 +59,15 @@
     background: var(--glass-bg);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 2px solid rgba(99, 102, 241, 0.3);
+    border: 2px solid color-mix(in srgb, var(--accent) 30%, transparent);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 45px;
-    color: #f59e0b;
+    color: var(--caution);
     animation: spinCoin 4s ease-in-out infinite;
-    box-shadow: 0 0 40px rgba(245, 158, 11, 0.2)
+    box-shadow: 0 0 40px color-mix(in srgb, var(--caution) 20%, transparent)
 }
 
 @keyframes spinCoin {
@@ -87,7 +87,7 @@
 .error-shadow {
     width: 150px;
     height: 15px;
-    background: radial-gradient(ellipse, rgba(0, 0, 0, 0.4), transparent);
+    background: radial-gradient(ellipse, var(--scrim), transparent);
     margin: 10px auto 0;
     border-radius: 50%;
     animation: shadowPulse 3s ease-in-out infinite
@@ -120,21 +120,21 @@
 }
 
 .error-card:hover {
-    border-color: rgba(255, 255, 255, 0.12);
+    border-color: var(--separator-strong);
     box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5)
 }
 
 .error-icon-wrapper {
     width: 70px;
     height: 70px;
-    background: rgba(245, 158, 11, 0.1);
-    border: 2px solid rgba(245, 158, 11, 0.2);
+    background: color-mix(in srgb, var(--caution) 10%, transparent);
+    border: 2px solid color-mix(in srgb, var(--caution) 20%, transparent);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 28px;
-    color: #f59e0b;
+    color: var(--caution);
     margin: 0 auto 15px;
     animation: pulseWarn 2s ease-in-out infinite
 }
@@ -143,11 +143,11 @@
 
     0%,
     100% {
-        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.3)
+        box-shadow: 0 0 0 0 color-mix(in srgb, var(--caution) 30%, transparent)
     }
 
     50% {
-        box-shadow: 0 0 0 20px rgba(245, 158, 11, 0)
+        box-shadow: 0 0 0 20px color-mix(in srgb, var(--caution) 0%, transparent)
     }
 }
 
@@ -163,8 +163,8 @@
     line-height: 1.7;
     margin-bottom: 20px;
     max-width: 400px;
-    margin-left: auto;
-    margin-right: auto
+    margin-inline-start: auto;
+    margin-inline-end: auto
 }
 
 .error-divider {
@@ -199,7 +199,7 @@
     gap: 6px;
     padding: 8px 16px;
     border-radius: 10px;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--fill-subtle);
     border: 1px solid var(--glass-border);
     color: var(--text-secondary);
     text-decoration: none;
@@ -208,15 +208,15 @@
 }
 
 .error-link:hover {
-    background: rgba(255, 255, 255, 0.06);
-    color: white;
-    border-color: rgba(255, 255, 255, 0.12);
+    background: var(--fill-hover);
+    color: var(--label);
+    border-color: var(--separator-strong);
     transform: translateY(-1px)
 }
 
 .error-link i {
     font-size: 13px;
-    color: #818cf8
+    color: var(--accent)
 }
 
 .error-actions {

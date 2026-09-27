@@ -77,17 +77,27 @@
     // Space per candle: never cramped below MIN_SLOT or stretched past MAX_SLOT CSS pixels.
     const MIN_SLOT = 6, MAX_SLOT = 22;
 
+    // Chart colours come from the --chart-* tokens (tokens.css), so the chart follows the
+    // light or dark appearance. The fallbacks are the dark values, for a canvas outside a themed page.
+    const FALLBACK = Object.freeze({ up: '#64d9a0', down: '#ff7885', line: '#80d7ff', area: 'rgba(128,215,255,.55)', grid: 'rgba(255,255,255,.055)', edge: 'rgba(255,255,255,.12)', axis: 'rgba(214,224,235,.66)', crosshair: 'rgba(255,255,255,.4)', tag: '#2c3947', tagInk: '#eef4fa', onTrend: '#0b111a' });
+    function palette(canvas) {
+        let style = null;
+        try { style = window.getComputedStyle(canvas); } catch (_) { style = null; }
+        const read = (key) => (style && style.getPropertyValue('--chart-' + key.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase())).trim()) || FALLBACK[key];
+        return Object.fromEntries(Object.keys(FALLBACK).map((key) => [key, read(key)]));
+    }
+
     /* Draws candlesticks ('candles') or OHLC bars ('ohlc') with the same axis, latest-price
        line and crosshair as the line chart, plus an O/H/L/C readout for the candle under
        the pointer, or the latest candle. */
-    function drawCandles(context, ticks, options, ratio, width, height) {
+    function drawCandles(context, ticks, options, ratio, width, height, colors) {
         const all = candles(ticks, options.period);
         if (!all.length) return null;
         const decimals = Number.isInteger(options.decimals) && options.decimals >= 0 ? options.decimals : 2;
         const format = (price) => `$${price.toFixed(decimals)}`;
         context.font = `500 ${11 * ratio}px 'DM Mono', monospace`;
         context.textBaseline = 'middle';
-        const up = '#64d9a0', down = '#ff7885';
+        const { up, down } = colors;
         let low = Infinity, high = -Infinity;
         for (const candle of all) { if (candle.low < low) low = candle.low; if (candle.high > high) high = candle.high; }
         const axisWidth = Math.ceil(context.measureText('8'.repeat(Math.max(format(low).length, format(high).length))).width + 14 * ratio);
@@ -107,11 +117,11 @@
         const layout = { style: options.style, plotWidth, axisWidth, low, high, labels: [], latestY: yOf(latest.close), latestPrice: latest.close, direction, candles: shown.length, slot, crosshair: null, readout: null };
         const tagHeight = 18 * ratio;
         layout.labels = axisTicks(priceAt(height), priceAt(0), height / ratio, decimals).map((price) => ({ price, y: yOf(price) }));
-        context.fillStyle = 'rgba(255,255,255,.055)';
+        context.fillStyle = colors.grid;
         for (const label of layout.labels) context.fillRect(0, Math.round(label.y), plotWidth, ratio);
-        context.fillStyle = 'rgba(255,255,255,.12)';
+        context.fillStyle = colors.edge;
         context.fillRect(plotWidth, 0, ratio, height);
-        context.fillStyle = 'rgba(214,224,235,.66)';
+        context.fillStyle = colors.axis;
         for (const label of layout.labels) {
             label.shown = Math.abs(label.y - layout.latestY) >= tagHeight && label.y >= tagHeight / 2 && label.y <= height - tagHeight / 2;
             if (label.shown) context.fillText(format(label.price), plotWidth + 6 * ratio, label.y);
@@ -138,7 +148,7 @@
         const trendColor = direction === 'down' ? down : up;
         context.fillStyle = trendColor;
         for (let dash = 0; dash < plotWidth; dash += 8 * ratio) context.fillRect(dash, Math.round(layout.latestY), Math.min(4 * ratio, plotWidth - dash), ratio);
-        priceTag(context, format(latest.close), plotWidth, layout.latestY, width, height, ratio, trendColor, '#0b111a');
+        priceTag(context, format(latest.close), plotWidth, layout.latestY, width, height, ratio, trendColor, colors.onTrend);
         let focus = latest;
         const pointer = options.pointer;
         if (pointer && pointer.x >= 0 && pointer.y >= 0 && pointer.x * ratio <= plotWidth && pointer.y * ratio <= height) {
@@ -146,10 +156,10 @@
             const position = Math.min(shown.length - 1, Math.max(0, Math.floor(shown.length - (plotWidth - px) / slot)));
             focus = shown[position] || latest;
             layout.crosshair = { x: px, y: py, price: Number(priceAt(py).toFixed(decimals)), candle: position };
-            context.fillStyle = 'rgba(255,255,255,.4)';
+            context.fillStyle = colors.crosshair;
             context.fillRect(px, 0, ratio, height);
             context.fillRect(0, py, plotWidth, ratio);
-            priceTag(context, format(layout.crosshair.price), plotWidth, py, width, height, ratio, '#2c3947', '#eef4fa');
+            priceTag(context, format(layout.crosshair.price), plotWidth, py, width, height, ratio, colors.tag, colors.tagInk);
         }
         // The O/H/L/C readout for the focused candle, top left of the plot.
         const fields = [['O', focus.open], ['H', focus.high], ['L', focus.low], ['C', focus.close]];
@@ -161,7 +171,7 @@
             const keyWidth = context.measureText(key).width + 4 * ratio;
             // On a narrow chart the readout stops at the plot's edge rather than run into the axis.
             if (cursor + keyWidth + context.measureText(text).width > plotWidth - 6 * ratio) break;
-            context.fillStyle = 'rgba(214,224,235,.66)';
+            context.fillStyle = colors.axis;
             context.fillText(key, cursor, line);
             cursor += keyWidth;
             context.fillStyle = focus.close >= focus.open ? up : down;
@@ -190,7 +200,8 @@
         if (!context) return null;
         context.clearRect(0, 0, width, height);
         if (!width || !height) return null;
-        if (options.style === 'candles' || options.style === 'ohlc') return drawCandles(context, ticks, options, ratio, width, height);
+        const colors = palette(canvas);
+        if (options.style === 'candles' || options.style === 'ohlc') return drawCandles(context, ticks, options, ratio, width, height, colors);
         const recent = options.window && ticks.length > options.window ? ticks.slice(-options.window) : ticks;
         if (recent.length < 2) return null;
         let low = Infinity, high = -Infinity;
@@ -212,44 +223,44 @@
         const latest = points[points.length - 1];
         const previousPrice = Number(recent[recent.length - 2].price);
         const direction = latest.price > previousPrice ? 'up' : latest.price < previousPrice ? 'down' : 'flat';
-        const trendColor = direction === 'up' ? '#64d9a0' : direction === 'down' ? '#ff7885' : '#80d7ff';
+        const trendColor = direction === 'up' ? colors.up : direction === 'down' ? colors.down : colors.line;
         const layout = { plotWidth, axisWidth, low, high, labels: [], latestY: y(latest), latestPrice: latest.price, direction, crosshair: null };
         const tagHeight = 18 * ratio;
         if (withAxis) {
             // Gridlines and labels share one position, so they stay aligned with the line at any size and price range.
             layout.labels = axisTicks(priceAt(height), priceAt(0), height / ratio, decimals).map((price) => ({ price, y: yOf(price) }));
-            context.fillStyle = 'rgba(255,255,255,.055)';
+            context.fillStyle = colors.grid;
             for (const label of layout.labels) context.fillRect(0, Math.round(label.y), plotWidth, ratio);
-            context.fillStyle = 'rgba(255,255,255,.12)';
+            context.fillStyle = colors.edge;
             context.fillRect(plotWidth, 0, ratio, height);
-            context.fillStyle = 'rgba(214,224,235,.66)';
+            context.fillStyle = colors.axis;
             for (const label of layout.labels) {
                 // A label under the latest-price tag, or cut off at an edge, would be unreadable.
                 label.shown = Math.abs(label.y - layout.latestY) >= tagHeight && label.y >= tagHeight / 2 && label.y <= height - tagHeight / 2;
                 if (label.shown) context.fillText(format(label.price), plotWidth + 6 * ratio, label.y);
             }
         }
-        context.strokeStyle = options.directionColors ? trendColor : '#80d7ff'; context.lineWidth = 2 * ratio; context.beginPath();
+        context.strokeStyle = options.directionColors ? trendColor : colors.line; context.lineWidth = 2 * ratio; context.beginPath();
         points.forEach((point, position) => { position ? context.lineTo(x(point), y(point)) : context.moveTo(x(point), y(point)); });
         context.stroke();
         if (options.markLatest) {
             // The latest tick is marked so the newest price is always visible at the right edge.
-            context.fillStyle = options.directionColors ? trendColor : '#80d7ff'; context.beginPath();
+            context.fillStyle = options.directionColors ? trendColor : colors.line; context.beginPath();
             context.arc(x(latest) - 3 * ratio, y(latest), 3 * ratio, 0, Math.PI * 2);
             context.fill();
         }
         if (!withAxis) return layout;
-        context.fillStyle = options.directionColors ? trendColor : 'rgba(128,215,255,.55)';
+        context.fillStyle = options.directionColors ? trendColor : colors.area;
         for (let dash = 0; dash < plotWidth; dash += 8 * ratio) context.fillRect(dash, Math.round(layout.latestY), Math.min(4 * ratio, plotWidth - dash), ratio);
-        priceTag(context, format(latest.price), plotWidth, layout.latestY, width, height, ratio, options.directionColors ? trendColor : '#80d7ff', '#0b111a');
+        priceTag(context, format(latest.price), plotWidth, layout.latestY, width, height, ratio, options.directionColors ? trendColor : colors.line, colors.onTrend);
         const pointer = options.pointer;
         if (pointer && pointer.x >= 0 && pointer.y >= 0 && pointer.x * ratio <= plotWidth && pointer.y * ratio <= height) {
             const px = Math.round(pointer.x * ratio), py = Math.round(pointer.y * ratio);
             layout.crosshair = { x: px, y: py, price: Number(priceAt(py).toFixed(decimals)) };
-            context.fillStyle = 'rgba(255,255,255,.4)';
+            context.fillStyle = colors.crosshair;
             context.fillRect(px, 0, ratio, height);
             context.fillRect(0, py, plotWidth, ratio);
-            priceTag(context, format(layout.crosshair.price), plotWidth, py, width, height, ratio, '#2c3947', '#eef4fa');
+            priceTag(context, format(layout.crosshair.price), plotWidth, py, width, height, ratio, colors.tag, colors.tagInk);
         }
         return layout;
     }

@@ -4,7 +4,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0, viewport-fit=cover">
     <meta name="description" content="SmartProfitBinary - Staff sign in">
     <meta name="robots" content="noindex, nofollow">
     <title>Staff Sign In - SmartProfitBinary</title>
@@ -12,6 +12,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
+    <script src="../assets/js/theme.js"></script>
     <link href="../assets/css/tokens.css" rel="stylesheet">
     <link href="../assets/css/glassmorphism.css" rel="stylesheet">
     <link href="../assets/css/login.css" rel="stylesheet">
@@ -23,9 +24,9 @@
             gap: 8px;
             margin-bottom: 14px;
             padding: 6px 14px;
-            border: 1px solid rgba(255, 255, 255, 0.14);
+            border: 1px solid var(--separator-strong);
             border-radius: 999px;
-            color: #cfd7e3;
+            color: var(--label);
             font-family: 'DM Mono', monospace;
             font-size: 11px;
             letter-spacing: 0.06em;
@@ -35,18 +36,18 @@
         .staff-login-status {
             min-height: 20px;
             margin: 14px 0 0;
-            color: #9aa4b2;
+            color: var(--label-2);
             font-size: 13px;
             text-align: center;
         }
 
-        .staff-login-status.is-error { color: #fca5a5; }
+        .staff-login-status.is-error { color: var(--negative); }
 
         .staff-scope-note {
             margin: 20px 0 0;
             padding-top: 16px;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-            color: #7f8a99;
+            border-top: 1px solid var(--separator);
+            color: var(--label-2);
             font-size: 11px;
             line-height: 1.6;
             text-align: center;
@@ -96,7 +97,7 @@
             <p class="staff-scope-note">
                 Staff sessions are stored separately from customer sessions and are never shared between them.
                 Customer accounts and password resets use the
-                <a href="login.html" style="color:#cfd7e3;">customer sign-in page</a>.
+                <a href="login.html" style="color: var(--label);">customer sign-in page</a>.
             </p>
 
         </div>

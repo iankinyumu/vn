@@ -22,7 +22,7 @@
 }
 
 .auth-card:hover {
-    border-color: rgba(255, 255, 255, 0.12);
+    border-color: var(--separator-strong);
     box-shadow: 0 30px 70px rgba(0, 0, 0, 0.6)
 }
 
@@ -43,11 +43,11 @@
 
     0%,
     100% {
-        box-shadow: 0 0 15px rgba(99, 102, 241, 0.3)
+        box-shadow: 0 0 15px color-mix(in srgb, var(--accent) 30%, transparent)
     }
 
     50% {
-        box-shadow: 0 0 30px rgba(139, 92, 246, 0.6)
+        box-shadow: 0 0 30px color-mix(in srgb, var(--accent) 60%, transparent)
     }
 }
 
@@ -80,7 +80,7 @@
 
 .form-input {
     width: 100%;
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--fill-hover);
     border: 1px solid var(--glass-border);
     border-radius: 14px;
     padding: 12px 16px 12px 42px;
@@ -91,13 +91,13 @@
 }
 
 .form-input:focus {
-    border-color: #6366f1;
-    background: rgba(255, 255, 255, 0.06);
-    box-shadow: 0 0 20px rgba(99, 102, 241, 0.15)
+    border-color: var(--accent);
+    background: var(--fill-hover);
+    box-shadow: 0 0 20px color-mix(in srgb, var(--accent) 15%, transparent)
 }
 
 .form-input::placeholder {
-    color: rgba(148, 163, 184, 0.5)
+    color: color-mix(in srgb, var(--label-2) 50%, transparent)
 }
 
 .form-icon {
@@ -110,7 +110,7 @@
 }
 
 .form-group:focus-within .form-icon {
-    color: #818cf8
+    color: var(--accent)
 }
 
 .remember-row {
@@ -130,21 +130,21 @@
 }
 
 .remember-check input {
-    accent-color: #6366f1;
+    accent-color: var(--accent);
     width: 15px;
     height: 15px;
     cursor: pointer
 }
 
 .forgot-link {
-    color: #818cf8;
+    color: var(--accent);
     text-decoration: none;
     font-weight: 500;
     transition: color 0.3s
 }
 
 .forgot-link:hover {
-    color: #a78bfa;
+    color: var(--accent);
     text-decoration: underline
 }
 
@@ -152,7 +152,7 @@
     width: 100%;
     background: var(--purple-grad);
     border: none;
-    color: white;
+    color: var(--on-accent);
     font-weight: 600;
     padding: 13px;
     border-radius: 14px;
@@ -165,7 +165,7 @@
 
 .btn-signin:hover {
     transform: translateY(-1px);
-    box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4)
+    box-shadow: 0 10px 30px color-mix(in srgb, var(--accent) 40%, transparent)
 }
 
 .btn-signin:active {
@@ -204,7 +204,7 @@
     padding: 11px;
     border-radius: 14px;
     border: 1px solid var(--glass-border);
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--fill-subtle);
     color: var(--text-primary);
     font-size: 13px;
     font-weight: 500;
@@ -214,9 +214,9 @@
 }
 
 .social-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.15);
-    color: white;
+    background: var(--fill-pressed);
+    border-color: var(--separator-strong);
+    color: var(--label);
     transform: translateY(-1px)
 }
 
@@ -226,13 +226,13 @@
 }
 
 .social-btn.apple:hover {
-    border-color: #a2aaad;
-    box-shadow: 0 5px 15px rgba(162, 170, 173, 0.2)
+    border-color: var(--label-2);
+    box-shadow: 0 5px 15px color-mix(in srgb, var(--label-2) 20%, transparent)
 }
 
 .social-btn.github:hover {
-    border-color: #8b5cf6;
-    box-shadow: 0 5px 15px rgba(139, 92, 246, 0.2)
+    border-color: var(--accent);
+    box-shadow: 0 5px 15px color-mix(in srgb, var(--accent) 20%, transparent)
 }
 
 .auth-footer {
@@ -243,14 +243,14 @@
 }
 
 .auth-footer a {
-    color: #818cf8;
+    color: var(--accent);
     text-decoration: none;
     font-weight: 600;
     transition: color 0.3s
 }
 
 .auth-footer a:hover {
-    color: #a78bfa;
+    color: var(--accent);
     text-decoration: underline
 }
 
@@ -269,15 +269,15 @@
     text-decoration: none;
     font-size: 13px;
     padding: 8px 16px;
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--fill-hover);
     border: 1px solid var(--glass-border);
     border-radius: 30px;
     transition: all 0.3s
 }
 
 .back-home a:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: white
+    background: var(--fill-pressed);
+    color: var(--label)
 }
 
 @media (max-width:576px) {

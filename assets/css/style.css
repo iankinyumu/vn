@@ -1,6 +1,6 @@
 /* assets/css/style.css - Minified extra styles */
 .btn-outline-light:hover {
-    background: rgba(255, 255, 255, 0.1)
+    background: var(--fill-pressed)
 }
 
 .text-success {
@@ -20,7 +20,7 @@
 }
 
 .text-primary {
-    color: #818cf8 !important
+    color: var(--accent) !important
 }
 
 .fw-bold {
@@ -28,19 +28,19 @@
 }
 
 .ms-1 {
-    margin-left: 0.25rem
+    margin-inline-start: 0.25rem
 }
 
 .ms-2 {
-    margin-left: 0.5rem
+    margin-inline-start: 0.5rem
 }
 
 .ms-3 {
-    margin-left: 1rem
+    margin-inline-start: 1rem
 }
 
 .me-2 {
-    margin-right: 0.5rem
+    margin-inline-end: 0.5rem
 }
 
 .mb-0 {
@@ -48,13 +48,13 @@
 }
 
 .px-3 {
-    padding-left: 1rem;
-    padding-right: 1rem
+    padding-inline-start: 1rem;
+    padding-inline-end: 1rem
 }
 
 .px-4 {
-    padding-left: 1.5rem;
-    padding-right: 1.5rem
+    padding-inline-start: 1.5rem;
+    padding-inline-end: 1.5rem
 }
 
 .rounded-pill {
