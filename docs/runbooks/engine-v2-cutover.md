@@ -41,3 +41,17 @@ The fairness page verifies version 1 and version 2 ticks, including the first ve
 
 - Before the start: move the start to a later day with the same call. There is no "unschedule" call. To cancel, the database owner can set `v2_start_tick_no = null`, provided no version 2 tick exists yet; record the reason in `admin_audit_events`.
 - After the start: published ticks are never rewritten. Returning to version 1 would need a new forward migration and its own announced start.
+
+## Verification record: start of 2026-09-27
+
+Checked 2026-09-28 00:53 UTC with read-only queries through `supabase db query --linked` (project `cdaxvkpmgqjfukbtrzys`), about 25 hours after the start.
+
+| Index | `v2_start_tick_no` | First v2 tick | Tick 129970 (v1) | Tick 129971 (v2): previous -> price | Ticks 129960..129980 | v1 ticks after 129970 | v2 ticks / expected |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SPI10 | 129971 | 129971 | 983.873 | 983.873 -> 983.682 | 21 | 0 | 44796 / 44796 |
+| SPI25 | 129971 | 129971 | 1058.529 | 1058.529 -> 1058.458 | 21 | 0 | 44796 / 44796 |
+| SPI50 | 129971 | 129971 | 1077.889 | 1077.889 -> 1078.202 | 21 | 0 | 44796 / 44796 |
+| SPI75 | 129971 | 129971 | 890.112 | 890.112 -> 890.354 | 21 | 0 | 44796 / 44796 |
+| SPI100 | 129971 | 129971 | 1007.267 | 1007.267 -> 1009.905 | 21 | 0 | 44796 / 44796 |
+
+Result: every index switched at tick 129971, the first v2 tick continues from the last v1 price, there is no gap across the boundary or anywhere in the v2 series, and the feed lag was 3 s. Live v2 prices stayed between 890 and 1078 over the day.
