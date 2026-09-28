@@ -136,7 +136,7 @@ const command = `node scripts/engine-v3-calibrate.mjs --ticks ${TICKS} --seeds $
 // Fingerprint of the generator that produced these numbers (line endings normalised),
 // so acceptance can refuse a report made by an older revision.
 const generatorSha256 = createHash('sha256').update(readFileSync(new URL('../engine/v3/generator.mjs', import.meta.url), 'utf8').split('\r\n').join('\n')).digest('hex');
-const report = { spec: 'v3.0', generated_at: new Date().toISOString(), commit, engine_files_uncommitted: dirty, generator_sha256: generatorSha256, node: process.version, command, bands: BANDS, results };
+const report = { spec: JSON.parse(readFileSync(new URL('../engine/v3/vectors.json', import.meta.url), 'utf8')).spec, generated_at: new Date().toISOString(), commit, engine_files_uncommitted: dirty, generator_sha256: generatorSha256, node: process.version, command, bands: BANDS, results };
 const outPath = resolve(OUT);
 mkdirSync(dirname(`${outPath}.json`), { recursive: true });
 writeFileSync(`${outPath}.json`, `${JSON.stringify(report, null, 2)}\n`);

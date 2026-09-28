@@ -1,0 +1,76 @@
+{
+  "spec": "v3.1",
+  "generated_at": "2026-09-28T01:41:04.194Z",
+  "commit": "1a5c11718fa15348613efbdae85b92fbf7152773",
+  "engine_files_uncommitted": false,
+  "generator_sha256": "8c915e3d44ca9145ccbd4e2159c8ca71536d32cb447a78a692de65f670d08949",
+  "node": "v24.20.0",
+  "command": "node scripts/engine-v3-calibrate.mjs --ticks 15768000 --seeds 1 --first-seed 0 --indices SPI50 --out docs/calibration/engine-v3-1y-SPI50",
+  "bands": {
+    "volFull": 0.01,
+    "volDay": 0.03,
+    "driftZ": 5,
+    "acfZ": 5,
+    "kurtosis": [
+      -0.15,
+      -0.05
+    ],
+    "maxAbsE": 6,
+    "digitChi": 33.72,
+    "pairChi": 137.20528580249547,
+    "runPerMillion": 12,
+    "logDevSd": 8,
+    "walkDevSd": 5
+  },
+  "results": [
+    {
+      "metrics": {
+        "index": "SPI50",
+        "seed": "calibration-0",
+        "ticks": 15768000,
+        "seconds": 1347.448,
+        "target_vol": 0.49999999965626996,
+        "realised_vol": 0.5000881795100259,
+        "vol_ratio_error": 0.0001763597076331891,
+        "worst_day_vol_error": 0.009349452123184276,
+        "drift_z": -0.24428285132395824,
+        "lag1_acf_z": -0.06223419613270286,
+        "excess_kurtosis": -0.09895909873983522,
+        "max_abs_e": 4.7183606309852175,
+        "digit_chi2": 1.4819469812278032,
+        "pair_chi2": 84.39108439054438,
+        "longest_run_per_million": 8,
+        "min_price": 7093.803,
+        "max_price": 10708.724,
+        "max_log_dev_sd": 0.6867270144213801,
+        "anchorless": true,
+        "soft_range_exits": 0,
+        "digits": [
+          1577551,
+          1576262,
+          1577577,
+          1577369,
+          1576572,
+          1576407,
+          1576746,
+          1576305,
+          1576492,
+          1576719
+        ]
+      },
+      "checks": {
+        "vol": true,
+        "vol_day": true,
+        "drift": true,
+        "acf": true,
+        "kurtosis": true,
+        "tails": true,
+        "digits": true,
+        "pairs": true,
+        "runs": true,
+        "range": true
+      },
+      "pass": true
+    }
+  ]
+}
