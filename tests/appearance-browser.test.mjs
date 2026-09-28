@@ -116,3 +116,33 @@ test('the Appearance menu opens inside the screen from the public header and the
     assert.deepEqual(errors, []);
     await context.close();
 });
+
+test('scheduled engine changes are announced once, calmly, and can be dismissed until the schedule changes', async () => {
+    const cutover = Date.UTC(2031, 0, 1);
+    const fake = tradeFake() + `
+        window.__FAKE__.rpc.get_engine_v3_status = [
+            { index_code: 'SPI10', execution_mode: 'DEMO', engine_generation: 2, cutover_ms: ${cutover} },
+            { index_code: 'SPI25', execution_mode: 'DEMO', engine_generation: 2, cutover_ms: ${cutover} },
+            { index_code: 'SPI50', execution_mode: 'DEMO', engine_generation: 2, cutover_ms: null }];
+        window.__FAKE__.rpc.get_engine_v3_rescales = [
+            { index: 'SPI100', mode: 'DEMO', kind: 'rescale', factor: '10', status: 'scheduled', pause_from: '${new Date(cutover + 86400000 - 4500000).toISOString()}', resume_at: '${new Date(cutover + 86400000).toISOString()}' }];`;
+    const { page, context, errors } = await openApp(app, 'trade.html', { fake });
+    const notice = page.locator('[data-engine-notice]');
+    await notice.waitFor({ state: 'visible' });
+    const text = await notice.innerText();
+    assert.match(text, /SP Index 10 and SP Index 25 move to the new price engine at 00:00 UTC on Wednesday,? 1 January 2031/);
+    assert.match(text, /SP Index 100 is rescaled at 00:00 UTC on Thursday,? 2 January 2031: its price is multiplied by 10\. It pauses from 22:45 UTC/);
+    assert.doesNotMatch(text, /SP Index 50/);
+    assert.equal(await notice.getAttribute('role'), 'status');
+    const close = page.getByRole('button', { name: 'Dismiss this notice' });
+    const box = await close.boundingBox();
+    assert.ok(box.width >= 44 && box.height >= 44, 'the close button is a 44px target');
+    await close.click();
+    assert.equal(await notice.isHidden(), true);
+    await page.reload();
+    await page.waitForSelector('[data-app-rail]');
+    await page.waitForTimeout(800);
+    assert.equal(await notice.isHidden(), true, 'a dismissed announcement stays dismissed');
+    assert.deepEqual(errors, []);
+    await context.close();
+});

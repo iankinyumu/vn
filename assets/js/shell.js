@@ -452,6 +452,15 @@
         return footer;
     }
 
+    // Scheduled engine changes (engine-notice.js fills it; empty and hidden otherwise).
+    function buildEngineNotice() {
+        const notice = element('div', 'engine-notice');
+        notice.dataset.engineNotice = '';
+        notice.setAttribute('role', 'status');
+        notice.hidden = true;
+        return notice;
+    }
+
     function buildRestrictionBanner() {
         const banner = element('div', 'restriction-banner');
         banner.dataset.restrictionBanner = '';
@@ -478,7 +487,7 @@
             const appearance = buildAppearance('rail');
             const rail = buildRail(active, appearance.button);
             const topbar = buildTopbar();
-            headerMount.replaceChildren(rail, wireRail(rail, topbar), topbar, buildRestrictionBanner(), appearance.menu);
+            headerMount.replaceChildren(rail, wireRail(rail, topbar), topbar, buildRestrictionBanner(), buildEngineNotice(), appearance.menu);
             document.body.classList.add('has-rail');
         } else if (headerMount) {
             const appearance = buildAppearance('nav');

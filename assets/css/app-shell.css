@@ -170,6 +170,16 @@ body.has-rail.rail-expanded { padding-inline-start: calc(var(--rail-w-open) + va
 .mode-menu-divider[hidden] { display: none; }
 .mode-menu-note { position: absolute; top: calc(100% + 8px); inset-inline-start: 0; z-index: 1050; width: max-content; max-width: 280px; margin: 0; padding: 8px 12px; border: 1px solid var(--separator); border-radius: var(--radius-card); background: var(--bg-3); color: var(--label); font-size: var(--text-caption); }
 .mode-menu-note[hidden] { display: none; }
+/* Scheduled engine changes (engine-notice.js): informational, never urgent. */
+.engine-notice { display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-3) max(20px, var(--safe-end)) var(--space-3) 20px; border-bottom: 1px solid var(--separator); background: color-mix(in srgb, var(--info) 8%, var(--bg)); color: var(--label); font-size: var(--text-footnote); line-height: 1.5; }
+.engine-notice[hidden] { display: none; }
+.engine-notice-icon { flex: none; margin-top: 3px; color: var(--info); }
+.engine-notice-body { flex: 1; min-width: 0; }
+.engine-notice-body p { margin: 0; }
+.engine-notice-body p + p { margin-top: var(--space-1); }
+.engine-notice-close { flex: none; display: inline-grid; place-items: center; width: var(--target); height: var(--target); margin: calc(-1 * var(--space-3)) calc(-1 * var(--space-2)) calc(-1 * var(--space-3)) 0; border: 0; border-radius: var(--radius-control); background: transparent; color: var(--label-2); cursor: pointer; }
+.engine-notice-close:active { background: var(--fill-pressed); }
+@media (hover: hover) and (pointer: fine) { .engine-notice-close:hover { color: var(--label); background: var(--fill-hover); } }
 .app-footer { padding: var(--space-4) max(20px, var(--safe-end)) max(22px, var(--safe-bottom)) 20px; border-top: 1px solid var(--separator); color: var(--label-2); font-size: var(--text-caption); text-align: center; }
 .app-footer p { margin: 0; }
 .app-shell .chart-wrapper { position: relative; }

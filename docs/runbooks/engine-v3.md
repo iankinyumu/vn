@@ -123,9 +123,10 @@ It verifies every submitted token against `verifier/v3/tsa-roots.json` and recor
 
 ## 9. Practice cutover
 
-1. Choose `D2` at least 48 h ahead. Set the index's `genesis_tick_no` to the last tick before `D2` and deploy the parameters.
+1. Choose `D2` at least 48 h ahead. Generate the parameters with `node scripts/engine-v3-params.mjs --cutover <D2 as YYYY-MM-DD> --t0-ms <t0> --out <file>` (anchorless, start 10000.000, genesis at the last tick before `D2`) and deploy them.
+   Live v2 prices sit near 1000, and the v3 series starts at 10000.000 by design: at 1000 the three-decimal precision would add more than 1 % to SPI10's realised volatility (ADR 0001 §3). The jump is announced; digit contracts are unaffected.
 2. When the `D2` epoch is committed **and** attested on time, call `engine_v3_schedule_cutover('DEMO', '<index>', <D2_ms>, '<reason>')`. From then on, v2 buys that would end after the final tick are refused, and v2 stops at that tick.
-3. Announce the effective tick (`genesis + 1`), the time, the version and the new 10000.000 series.
+3. Announce the effective tick (`genesis + 1`), the time, the version and the new 10000.000 series. Signed-in pages show the scheduled switch automatically (`assets/js/engine-notice.js`, from `get_engine_v3_status`), as they do for rescales.
 4. At `D2` the worker activates the cutover once the last v2 tick is final and no v2 contract is open.
 5. In the same release, update the "No index uses version 3 yet" paragraph in `pages/guide-fairness.html`.
 
