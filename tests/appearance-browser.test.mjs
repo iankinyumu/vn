@@ -71,7 +71,8 @@ test('the Appearance menu overrides the system setting, persists, and works from
     await menu.waitFor({ state: 'visible' });
     assert.equal(await toggle.getAttribute('aria-expanded'), 'true');
     assert.deepEqual(await menu.locator('[role="menuitemradio"]').allTextContents(), ['SystemMatch this device', 'Light', 'Dark']);
-    assert.equal(await page.evaluate(() => document.activeElement?.dataset.appearance), 'system', 'focus starts on the checked choice');
+    // Focus moves in the popover's toggle event, which fires just after the menu shows.
+    await page.waitForFunction(() => document.activeElement?.dataset.appearance === 'system', null, { timeout: 5000 });
     await page.keyboard.press('ArrowDown');
     await page.keyboard.press('Enter');
     await page.waitForFunction(() => document.documentElement.dataset.bsTheme === 'light');
