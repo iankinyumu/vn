@@ -1,5 +1,5 @@
 {
-  "spec": "v3.0",
+  "spec": "v3.1",
   "note": "Test-only seeds. Never use these values outside env=test.",
   "rfc5869_case1": {
     "ikm": "0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b",
@@ -835,5 +835,410 @@
     "digit_block_0": "fbbddf34a806f0a361d7f53820f85b20b83ef31af67b88b52780563e5f4f8b0c",
     "residue": 9,
     "price_units": "9998724"
+  },
+  "anchorless": {
+    "config_hash": "dcceef99eb25a6bdbb2122d80dd7f5425ccab2041e540978d1735d2f50eadfcf",
+    "kappa_e12": "0",
+    "series": {
+      "SPI10": [
+        {
+          "tick_no": "1",
+          "prev_units": "10000000",
+          "price_units": "9999954",
+          "digit": 4,
+          "config_hash": "dcceef99eb25a6bdbb2122d80dd7f5425ccab2041e540978d1735d2f50eadfcf",
+          "prev_tick_hash": "20e010f651bfee383df05348473c6d899cd89b9df82b788ae4b2ff4d271c52aa",
+          "tick_hash": "dd6cbc73674fe9b90d6a5ce76da255404b8a01503e5847439f99eccba55924f3"
+        },
+        {
+          "tick_no": "2",
+          "prev_units": "9999954",
+          "price_units": "9999657",
+          "digit": 7,
+          "config_hash": "dcceef99eb25a6bdbb2122d80dd7f5425ccab2041e540978d1735d2f50eadfcf",
+          "prev_tick_hash": "dd6cbc73674fe9b90d6a5ce76da255404b8a01503e5847439f99eccba55924f3",
+          "tick_hash": "5594a6630c2ca11087329d2bdcd6eca9e4d883006bb9bfe245dd36adde442c41"
+        },
+        {
+          "tick_no": "3",
+          "prev_units": "9999657",
+          "price_units": "9999832",
+          "digit": 2,
+          "config_hash": "dcceef99eb25a6bdbb2122d80dd7f5425ccab2041e540978d1735d2f50eadfcf",
+          "prev_tick_hash": "5594a6630c2ca11087329d2bdcd6eca9e4d883006bb9bfe245dd36adde442c41",
+          "tick_hash": "1b8d612338e0260d7dfadd07c4dd005d65f53f84df0d5a141f168a4082651486"
+        },
+        {
+          "tick_no": "4",
+          "prev_units": "9999832",
+          "price_units": "9999524",
+          "digit": 4,
+          "config_hash": "dcceef99eb25a6bdbb2122d80dd7f5425ccab2041e540978d1735d2f50eadfcf",
+          "prev_tick_hash": "1b8d612338e0260d7dfadd07c4dd005d65f53f84df0d5a141f168a4082651486",
+          "tick_hash": "2c987c62f9dcd103b704b59af9219ff6ca8f51636ff4dabfaf9b402a51055ff9"
+        },
+        {
+          "tick_no": "5",
+          "prev_units": "9999524",
+          "price_units": "9999544",
+          "digit": 4,
+          "config_hash": "dcceef99eb25a6bdbb2122d80dd7f5425ccab2041e540978d1735d2f50eadfcf",
+          "prev_tick_hash": "2c987c62f9dcd103b704b59af9219ff6ca8f51636ff4dabfaf9b402a51055ff9",
+          "tick_hash": "59874a9b59077dafaf4a13bb7e16d0e33c65b2c1272fd553282ae800bf38b1d1"
+        },
+        {
+          "tick_no": "6",
+          "prev_units": "9999544",
+          "price_units": "9999226",
+          "digit": 6,
+          "config_hash": "dcceef99eb25a6bdbb2122d80dd7f5425ccab2041e540978d1735d2f50eadfcf",
+          "prev_tick_hash": "59874a9b59077dafaf4a13bb7e16d0e33c65b2c1272fd553282ae800bf38b1d1",
+          "tick_hash": "70aa02a6f1ff7ad082346f0b2e5dca919d721d2a2c30488bec004fe17b55d736"
+        },
+        {
+          "tick_no": "7",
+          "prev_units": "9999226",
+          "price_units": "9999242",
+          "digit": 2,
+          "config_hash": "dcceef99eb25a6bdbb2122d80dd7f5425ccab2041e540978d1735d2f50eadfcf",
+          "prev_tick_hash": "70aa02a6f1ff7ad082346f0b2e5dca919d721d2a2c30488bec004fe17b55d736",
+          "tick_hash": "c33f3af6b5e885c9cd2eb3548ad4b9dfc1b6e5244293b7e5f56fbda980d7c8d7"
+        },
+        {
+          "tick_no": "8",
+          "prev_units": "9999242",
+          "price_units": "9999067",
+          "digit": 7,
+          "config_hash": "dcceef99eb25a6bdbb2122d80dd7f5425ccab2041e540978d1735d2f50eadfcf",
+          "prev_tick_hash": "c33f3af6b5e885c9cd2eb3548ad4b9dfc1b6e5244293b7e5f56fbda980d7c8d7",
+          "tick_hash": "9ca702fabd2e66c6e59cf1e924fd94cbbe784876381b808deb35fa5b99aa8d81"
+        },
+        {
+          "tick_no": "9",
+          "prev_units": "9999067",
+          "price_units": "9999373",
+          "digit": 3,
+          "config_hash": "dcceef99eb25a6bdbb2122d80dd7f5425ccab2041e540978d1735d2f50eadfcf",
+          "prev_tick_hash": "9ca702fabd2e66c6e59cf1e924fd94cbbe784876381b808deb35fa5b99aa8d81",
+          "tick_hash": "bad2e484893878bd7416d825f710f3579cdbd21ae5d136dc94d9879e03184a90"
+        },
+        {
+          "tick_no": "10",
+          "prev_units": "9999373",
+          "price_units": "9999600",
+          "digit": 0,
+          "config_hash": "dcceef99eb25a6bdbb2122d80dd7f5425ccab2041e540978d1735d2f50eadfcf",
+          "prev_tick_hash": "bad2e484893878bd7416d825f710f3579cdbd21ae5d136dc94d9879e03184a90",
+          "tick_hash": "927ae6a4bffe2720f845ed7e64f031a88c812e52a9a8fd0442c4c5487bf30c71"
+        },
+        {
+          "tick_no": "11",
+          "prev_units": "9999600",
+          "price_units": "9999023",
+          "digit": 3,
+          "config_hash": "dcceef99eb25a6bdbb2122d80dd7f5425ccab2041e540978d1735d2f50eadfcf",
+          "prev_tick_hash": "927ae6a4bffe2720f845ed7e64f031a88c812e52a9a8fd0442c4c5487bf30c71",
+          "tick_hash": "0a4b4580ecd64f01df34f6d3d04234687dff8568c73186f41d57e8f12e56e9de"
+        },
+        {
+          "tick_no": "12",
+          "prev_units": "9999023",
+          "price_units": "9998784",
+          "digit": 4,
+          "config_hash": "dcceef99eb25a6bdbb2122d80dd7f5425ccab2041e540978d1735d2f50eadfcf",
+          "prev_tick_hash": "0a4b4580ecd64f01df34f6d3d04234687dff8568c73186f41d57e8f12e56e9de",
+          "tick_hash": "0a2da8c2ef8dd5c8204b160aa17a3e23c25f605b86218a22a6d6a80e5686ebd0"
+        }
+      ],
+      "SPI100": [
+        {
+          "tick_no": "1",
+          "prev_units": "10000000",
+          "price_units": "10002710",
+          "digit": 0,
+          "config_hash": "dcceef99eb25a6bdbb2122d80dd7f5425ccab2041e540978d1735d2f50eadfcf",
+          "prev_tick_hash": "c951c067d950fe5f309d1c7cf9cef8e83993d4a4fd1642f6d9367d3dd29a6642",
+          "tick_hash": "b52da3876e6a4ce3495277f22915c6725eacab45e3ae9478194f415f70799f37"
+        },
+        {
+          "tick_no": "2",
+          "prev_units": "10002710",
+          "price_units": "10005910",
+          "digit": 0,
+          "config_hash": "dcceef99eb25a6bdbb2122d80dd7f5425ccab2041e540978d1735d2f50eadfcf",
+          "prev_tick_hash": "b52da3876e6a4ce3495277f22915c6725eacab45e3ae9478194f415f70799f37",
+          "tick_hash": "689d45b1739264885a1bda3d5814fd52daf8b261bd4954d874cb0c8f3a7947e7"
+        },
+        {
+          "tick_no": "3",
+          "prev_units": "10005910",
+          "price_units": "10007051",
+          "digit": 1,
+          "config_hash": "dcceef99eb25a6bdbb2122d80dd7f5425ccab2041e540978d1735d2f50eadfcf",
+          "prev_tick_hash": "689d45b1739264885a1bda3d5814fd52daf8b261bd4954d874cb0c8f3a7947e7",
+          "tick_hash": "ee1d4bb7230583aae08550bfe7624109d9095d810841949514f389ac38500a39"
+        },
+        {
+          "tick_no": "4",
+          "prev_units": "10007051",
+          "price_units": "10009966",
+          "digit": 6,
+          "config_hash": "dcceef99eb25a6bdbb2122d80dd7f5425ccab2041e540978d1735d2f50eadfcf",
+          "prev_tick_hash": "ee1d4bb7230583aae08550bfe7624109d9095d810841949514f389ac38500a39",
+          "tick_hash": "972dd461911346c85179d1fc739b0469c1a48b37d24732f2f765c193759c61c8"
+        },
+        {
+          "tick_no": "5",
+          "prev_units": "10009966",
+          "price_units": "10011217",
+          "digit": 7,
+          "config_hash": "dcceef99eb25a6bdbb2122d80dd7f5425ccab2041e540978d1735d2f50eadfcf",
+          "prev_tick_hash": "972dd461911346c85179d1fc739b0469c1a48b37d24732f2f765c193759c61c8",
+          "tick_hash": "fc59255edfb48e714cb4b1a8745587d966e82611e50a26938ac1b1b8f38122f9"
+        },
+        {
+          "tick_no": "6",
+          "prev_units": "10011217",
+          "price_units": "10012416",
+          "digit": 6,
+          "config_hash": "dcceef99eb25a6bdbb2122d80dd7f5425ccab2041e540978d1735d2f50eadfcf",
+          "prev_tick_hash": "fc59255edfb48e714cb4b1a8745587d966e82611e50a26938ac1b1b8f38122f9",
+          "tick_hash": "97de8cf2d35729bcbd90916a4e1279c7d66f7de1da48e834c91f6b7ffd48ceb3"
+        },
+        {
+          "tick_no": "7",
+          "prev_units": "10012416",
+          "price_units": "10009131",
+          "digit": 1,
+          "config_hash": "dcceef99eb25a6bdbb2122d80dd7f5425ccab2041e540978d1735d2f50eadfcf",
+          "prev_tick_hash": "97de8cf2d35729bcbd90916a4e1279c7d66f7de1da48e834c91f6b7ffd48ceb3",
+          "tick_hash": "6d27116979f7853c24956b648674d54fa95c18d77fa4f03b846134263d620f0b"
+        },
+        {
+          "tick_no": "8",
+          "prev_units": "10009131",
+          "price_units": "10008294",
+          "digit": 4,
+          "config_hash": "dcceef99eb25a6bdbb2122d80dd7f5425ccab2041e540978d1735d2f50eadfcf",
+          "prev_tick_hash": "6d27116979f7853c24956b648674d54fa95c18d77fa4f03b846134263d620f0b",
+          "tick_hash": "8d467bd0a569c6b1917ad29b1a4fa139a32bf15f2a623216865ecf160756044d"
+        },
+        {
+          "tick_no": "9",
+          "prev_units": "10008294",
+          "price_units": "10006836",
+          "digit": 6,
+          "config_hash": "dcceef99eb25a6bdbb2122d80dd7f5425ccab2041e540978d1735d2f50eadfcf",
+          "prev_tick_hash": "8d467bd0a569c6b1917ad29b1a4fa139a32bf15f2a623216865ecf160756044d",
+          "tick_hash": "67bb4cf62ac8f4733d872c5df701b2408dd90311a8bac99c6559aace1aa014a7"
+        },
+        {
+          "tick_no": "10",
+          "prev_units": "10006836",
+          "price_units": "10009888",
+          "digit": 8,
+          "config_hash": "dcceef99eb25a6bdbb2122d80dd7f5425ccab2041e540978d1735d2f50eadfcf",
+          "prev_tick_hash": "67bb4cf62ac8f4733d872c5df701b2408dd90311a8bac99c6559aace1aa014a7",
+          "tick_hash": "c30bb8e8ae1121177558faf9216607f3861df5f49b2f0171d6faf6d26d108bc6"
+        },
+        {
+          "tick_no": "11",
+          "prev_units": "10009888",
+          "price_units": "10014060",
+          "digit": 0,
+          "config_hash": "dcceef99eb25a6bdbb2122d80dd7f5425ccab2041e540978d1735d2f50eadfcf",
+          "prev_tick_hash": "c30bb8e8ae1121177558faf9216607f3861df5f49b2f0171d6faf6d26d108bc6",
+          "tick_hash": "0dfbc0af1eb5b49acf2f0cd509f8ed8fe3f938512e5c74bd124e0239e59a482f"
+        },
+        {
+          "tick_no": "12",
+          "prev_units": "10014060",
+          "price_units": "10009447",
+          "digit": 7,
+          "config_hash": "dcceef99eb25a6bdbb2122d80dd7f5425ccab2041e540978d1735d2f50eadfcf",
+          "prev_tick_hash": "0dfbc0af1eb5b49acf2f0cd509f8ed8fe3f938512e5c74bd124e0239e59a482f",
+          "tick_hash": "2af46a7b47d7fec561dc511de4df4a70a2de8c082e3094b13da7c093c7a25847"
+        }
+      ]
+    }
+  },
+  "move_bound": [
+    {
+      "config": "anchorless",
+      "index": "SPI10",
+      "prev_units": "500000",
+      "max_move_units": "85"
+    },
+    {
+      "config": "anchorless",
+      "index": "SPI10",
+      "prev_units": "10000000",
+      "max_move_units": "1515"
+    },
+    {
+      "config": "anchorless",
+      "index": "SPI10",
+      "prev_units": "199999999",
+      "max_move_units": "30225"
+    },
+    {
+      "config": "anchorless",
+      "index": "SPI100",
+      "prev_units": "500000",
+      "max_move_units": "765"
+    },
+    {
+      "config": "anchorless",
+      "index": "SPI100",
+      "prev_units": "10000000",
+      "max_move_units": "15115"
+    },
+    {
+      "config": "anchorless",
+      "index": "SPI100",
+      "prev_units": "199999999",
+      "max_move_units": "302195"
+    },
+    {
+      "config": "v3.0",
+      "index": "SPI10",
+      "prev_units": "500000",
+      "max_move_units": "85"
+    },
+    {
+      "config": "v3.0",
+      "index": "SPI10",
+      "prev_units": "10000000",
+      "max_move_units": "1515"
+    },
+    {
+      "config": "v3.0",
+      "index": "SPI10",
+      "prev_units": "199999999",
+      "max_move_units": "30325"
+    },
+    {
+      "config": "v3.0",
+      "index": "SPI100",
+      "prev_units": "500000",
+      "max_move_units": "765"
+    },
+    {
+      "config": "v3.0",
+      "index": "SPI100",
+      "prev_units": "10000000",
+      "max_move_units": "15115"
+    },
+    {
+      "config": "v3.0",
+      "index": "SPI100",
+      "prev_units": "199999999",
+      "max_move_units": "302305"
+    }
+  ],
+  "resume": {
+    "index": "SPI100",
+    "pause_after_tick_no": "5",
+    "genesis_tick_no": "10",
+    "exponent": 1,
+    "last_units": "10011217",
+    "genesis_units": "100112170",
+    "config_hash_before": "dcceef99eb25a6bdbb2122d80dd7f5425ccab2041e540978d1735d2f50eadfcf",
+    "config_hash_after": "b4a57eaa55741522a4cf8100c1b25f2e3ba42d6680e861a23b8cd9b285d2c23b",
+    "genesis_hash": "1ffb1a5a8d4c0f9bda46def025c4d7bd1321e662b8c324583b4232dabd39527b",
+    "before": [
+      {
+        "tick_no": "1",
+        "prev_units": "10000000",
+        "price_units": "10002710",
+        "digit": 0,
+        "config_hash": "dcceef99eb25a6bdbb2122d80dd7f5425ccab2041e540978d1735d2f50eadfcf",
+        "prev_tick_hash": "c951c067d950fe5f309d1c7cf9cef8e83993d4a4fd1642f6d9367d3dd29a6642",
+        "tick_hash": "b52da3876e6a4ce3495277f22915c6725eacab45e3ae9478194f415f70799f37"
+      },
+      {
+        "tick_no": "2",
+        "prev_units": "10002710",
+        "price_units": "10005910",
+        "digit": 0,
+        "config_hash": "dcceef99eb25a6bdbb2122d80dd7f5425ccab2041e540978d1735d2f50eadfcf",
+        "prev_tick_hash": "b52da3876e6a4ce3495277f22915c6725eacab45e3ae9478194f415f70799f37",
+        "tick_hash": "689d45b1739264885a1bda3d5814fd52daf8b261bd4954d874cb0c8f3a7947e7"
+      },
+      {
+        "tick_no": "3",
+        "prev_units": "10005910",
+        "price_units": "10007051",
+        "digit": 1,
+        "config_hash": "dcceef99eb25a6bdbb2122d80dd7f5425ccab2041e540978d1735d2f50eadfcf",
+        "prev_tick_hash": "689d45b1739264885a1bda3d5814fd52daf8b261bd4954d874cb0c8f3a7947e7",
+        "tick_hash": "ee1d4bb7230583aae08550bfe7624109d9095d810841949514f389ac38500a39"
+      },
+      {
+        "tick_no": "4",
+        "prev_units": "10007051",
+        "price_units": "10009966",
+        "digit": 6,
+        "config_hash": "dcceef99eb25a6bdbb2122d80dd7f5425ccab2041e540978d1735d2f50eadfcf",
+        "prev_tick_hash": "ee1d4bb7230583aae08550bfe7624109d9095d810841949514f389ac38500a39",
+        "tick_hash": "972dd461911346c85179d1fc739b0469c1a48b37d24732f2f765c193759c61c8"
+      },
+      {
+        "tick_no": "5",
+        "prev_units": "10009966",
+        "price_units": "10011217",
+        "digit": 7,
+        "config_hash": "dcceef99eb25a6bdbb2122d80dd7f5425ccab2041e540978d1735d2f50eadfcf",
+        "prev_tick_hash": "972dd461911346c85179d1fc739b0469c1a48b37d24732f2f765c193759c61c8",
+        "tick_hash": "fc59255edfb48e714cb4b1a8745587d966e82611e50a26938ac1b1b8f38122f9"
+      }
+    ],
+    "after": [
+      {
+        "tick_no": "11",
+        "prev_units": "100112170",
+        "price_units": "100153852",
+        "digit": 2,
+        "config_hash": "b4a57eaa55741522a4cf8100c1b25f2e3ba42d6680e861a23b8cd9b285d2c23b",
+        "prev_tick_hash": "1ffb1a5a8d4c0f9bda46def025c4d7bd1321e662b8c324583b4232dabd39527b",
+        "tick_hash": "6eea420b1583fa4b5ba0ab634ea83d1844de780db0fce42c0f17c9feffab6adb"
+      },
+      {
+        "tick_no": "12",
+        "prev_units": "100153852",
+        "price_units": "100107779",
+        "digit": 9,
+        "config_hash": "b4a57eaa55741522a4cf8100c1b25f2e3ba42d6680e861a23b8cd9b285d2c23b",
+        "prev_tick_hash": "6eea420b1583fa4b5ba0ab634ea83d1844de780db0fce42c0f17c9feffab6adb",
+        "tick_hash": "23857e254712842c79fab4ff667c9c48251e8ad12adf822571c18d5c8f840ed9"
+      },
+      {
+        "tick_no": "13",
+        "prev_units": "100107779",
+        "price_units": "100149796",
+        "digit": 6,
+        "config_hash": "b4a57eaa55741522a4cf8100c1b25f2e3ba42d6680e861a23b8cd9b285d2c23b",
+        "prev_tick_hash": "23857e254712842c79fab4ff667c9c48251e8ad12adf822571c18d5c8f840ed9",
+        "tick_hash": "cc0af25aa0a89cc305db1af14ba9536a7668f1839c2675e7e44410af0c6cacfe"
+      },
+      {
+        "tick_no": "14",
+        "prev_units": "100149796",
+        "price_units": "100216279",
+        "digit": 9,
+        "config_hash": "b4a57eaa55741522a4cf8100c1b25f2e3ba42d6680e861a23b8cd9b285d2c23b",
+        "prev_tick_hash": "cc0af25aa0a89cc305db1af14ba9536a7668f1839c2675e7e44410af0c6cacfe",
+        "tick_hash": "8e40314ed41e04d5aab5f193973252d783d18665181673b91400c3ec8e469081"
+      },
+      {
+        "tick_no": "15",
+        "prev_units": "100216279",
+        "price_units": "100233883",
+        "digit": 3,
+        "config_hash": "b4a57eaa55741522a4cf8100c1b25f2e3ba42d6680e861a23b8cd9b285d2c23b",
+        "prev_tick_hash": "8e40314ed41e04d5aab5f193973252d783d18665181673b91400c3ec8e469081",
+        "tick_hash": "4cdafb5ecb65b82aff5e1087ecdc4bd421c33cb18eef2d91ed7612ead5998ae6"
+      }
+    ]
   }
 }

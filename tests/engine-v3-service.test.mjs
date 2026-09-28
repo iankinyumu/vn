@@ -68,7 +68,7 @@ before(async () => {
     genesis = Math.floor((Date.now() - t0) / 2000) + 1;
     const tomorrow = Math.floor(Date.now() / DAY) * DAY + DAY;
     params = Object.fromEntries(g.INDICES.map((index) => [index, {
-        annual_vol_bp: g.ANNUAL_VOL_BP[index], anchor_units: 10_000_000, kappa_e12: 534835, min_units: 500_000, max_units: 200_000_000,
+        annual_vol_bp: g.ANNUAL_VOL_BP[index], anchor_units: 10_000_000, kappa_e12: 0, min_units: 500_000, max_units: 200_000_000,
         // SPI25 is reserved for the scheduled-cutover checks: its genesis is the last tick before tomorrow.
         genesis_tick_no: index === 'SPI25' ? Math.floor((tomorrow - 1 - t0) / 2000) : genesis, genesis_units: 10_000_000,
     }]));
@@ -166,7 +166,13 @@ test('the database refuses future, out-of-order, conflicting, skewed and forged 
     assert.match(await errorOf(publish({ ...next, p: BigInt(stored.u) + 1n })), /engine_v3_prev_mismatch/);
     assert.match(await errorOf(publish({ ...next, g: Date.now() + 5000 })), /engine_v3_clock_drift/);
     assert.match(await errorOf(publish({ ...next, s: next.s + 1n })), /engine_v3_schedule_mismatch/);
-    assert.match(await errorOf(publish({ ...next, u: 100n, d: 0 })), /engine_v3_price_out_of_band/);
+    // Move limit (ADR 0001 §5.7): one unit past the model's largest move is refused; the limit itself passes that check.
+    const limit = g.maxMoveUnits({ anchor_units: 10_000_000n, sigma_e12: g.sigmaE12(g.ANNUAL_VOL_BP.SPI50, 2000), kappa_e12: 0n }, BigInt(stored.u));
+    const jump = BigInt(stored.u) + limit + 1n;
+    assert.match(await errorOf(publish({ ...next, u: jump, d: Number(jump % 10n) })), /engine_v3_move_out_of_bound/);
+    assert.match(await errorOf(publish({ ...next, u: 100n, d: 0 })), /engine_v3_move_out_of_bound/);
+    const edge = BigInt(stored.u) - limit;
+    assert.match(await errorOf(publish({ ...next, u: edge, d: Number(edge % 10n) })), /engine_v3_tick_hash_mismatch/);
     assert.match(await errorOf(publish(next)), /engine_v3_tick_hash_mismatch/);
     await worker.cycle(); // the honest worker resumes the chain
     const live = await liveTicks('SPI50');

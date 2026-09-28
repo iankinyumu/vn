@@ -3,7 +3,8 @@
 | Field | Value |
 | --- | --- |
 | Status | **Proposed — not reviewed.** Not approved for live use in any mode. |
-| Specification | `v3.0` (frozen by this document and `engine/v3/vectors.json`) |
+| Specification | `v3.1` (frozen by this document and `engine/v3/vectors.json`) |
+| Revision | v3.1 (2026-09-28, before any sign-off): anchorless configurations (`kappa_e12 = 0`), resume and rescale (§5.6), per-tick move limit (§5.7). Every v3.0 vector still holds; the byte encodings and the `v3` label are unchanged. |
 | Supersedes | Nothing. Versions 1 and 2 remain valid for the ticks they produced. |
 | Scope | Practice (`DEMO`) prototype and shadow run. REAL stays disabled; see §10. |
 | Plan | `docs/CLAUDE_SYNTHETIC_ENGINE_PLAN.md` |
@@ -25,7 +26,7 @@ Version 2 (migration `20260920560000`) generates a price first and settles on it
 ## 2. Decision summary
 
 1. **SPI-N means a target annualised volatility of N % of log returns.** Annualisation uses a 24/7 calendar (§3).
-2. **Model.** Log-return random walk with weak mean reversion toward a published anchor (30-day half-life). Bounded symmetric innovations. All normative arithmetic uses exact integers.
+2. **Model.** Log-return random walk with no anchor (v3.1; v3.0 had weak mean reversion with a 30-day half-life). Bounded symmetric innovations. All normative arithmetic uses exact integers. A price that drifts far from the reference is rescaled by exactly ×10 or ÷10 at an announced UTC midnight (§5.6).
 3. **Digit.** The digit is `price_units mod 10` of the published price. It is exactly uniform, conditional on all prior state, by construction (§6). The `winning_digits / 10` payout basis remains valid.
 4. **Keys.** HKDF-SHA-256 separates keys by environment, mode, version, index, epoch and purpose. Tick randomness comes from an HMAC-SHA-256 counter PRF.
 5. **Commitments.** Length-framed canonical records hash the seed, the full model configuration and the previous commitment. Signing and independent witnessing are specified as required fields; their providers are Phase 2 decisions (§9).
@@ -40,10 +41,12 @@ Version 2 (migration `20260920560000`) generates a price first and settles on it
 | Cadence | one tick every 2000 ms, 24 hours a day, 7 days a week, including weekends and holidays |
 | Ticks per year | `TPY = 365 × 86400 × 1000 / 2000 = 15 768 000` |
 | Precision | 3 decimals; `price_units = price × 1000` |
-| Anchor / start price | 10000.000 (`anchor_units = 10 000 000`) |
+| Reference / start price | 10000.000 (`anchor_units = 10 000 000`). With `kappa_e12 = 0` it does not affect the transition; it defines the soft range. |
+| Soft range | A tenth to ten times the reference, 1000.000 to 100000.000. Outside it a rescale is due (§5.6). |
 | Hard band | `min_units = 500 000` (500.000), `max_units = 200 000 000` (200000.000) |
+| Per-tick move limit | `max_move_units(P)` (§5.7): about 6 σ of the price, for example 15.115 at 10000.000 for SPI100 |
 | Contracts | EVEN, ODD, OVER b (0–8), UNDER b (1–9), MATCH b, DIFFER b, settled on the final price digit |
-| Resets | None. The price never resets daily. A price series starts only at an announced cutover genesis (§5.5). |
+| Resets | None. The price never resets daily. A series starts at an announced cutover genesis (§5.5) and restarts only at an announced resume (§5.6). |
 | Regime changes | None inside v3.0. Any parameter change is a new configuration hash, committed before its first epoch and announced. It must never respond to customer positions or P/L. |
 
 **Volatility definition.** Realised volatility over a window of `n` consecutive tick returns `r_t = ln(P_t / P_{t-1})` is `sd(r) × √TPY`, where `sd` is the sample standard deviation. The per-tick target is `σ = annual_vol / √TPY`, frozen as an integer:
@@ -62,7 +65,19 @@ sigma_e12 = isqrt( floor( annual_vol_bp² × 10^16 / TPY ) )
 
 The start price and precision are chosen so that the lowest tier moves about 250 units per tick. Quantisation noise (≈ 16.8 units², §6.3) then adds less than 0.02 % to realised volatility. The number in an index name may be shown as a percentage **only** next to the measured value for a stated window (Workstream C.5).
 
-**Stationarity.** Mean reversion rate `kappa_e12 = 534 835`, i.e. `κ = floor(ln 2 × 10^12 / 1 296 000) / 10^12`, a half-life of 30 days of ticks. The stationary log-price standard deviation is about `σ / √(2κ)`: ≈ 0.024 for SPI10 and ≈ 0.244 for SPI100. The hard band lies more than 12 stationary standard deviations from the anchor for every tier. Reversion is weak: at +2 stationary sd, the per-tick pull is under 0.1 % of σ, and lag-one return autocorrelation is about `−κ`, which cannot be detected at any practical sample size. The price is a martingale apart from the pull. Log returns therefore carry the usual `−σ²/2` convexity term; for SPI100 the stationary median sits a few percent below the anchor. This is disclosed rather than corrected.
+**Drift (v3.1).** Configurations set `kappa_e12 = 0`: there is no pull toward the reference. The price is a martingale (the expected next price is the current price), so the log price carries the usual `−σ²/2` convexity term and the median price falls over time: after one year to about 100 %, 97 %, 88 %, 75 % and 61 % of its start for SPI10 to SPI100. This is disclosed rather than corrected. Probabilities of leaving the soft range, or of reaching the hard band if no rescale were made, starting from the reference price (exact first-passage probabilities of a Brownian motion with that drift):
+
+| Index | Soft range, 1 year | Soft range, 5 years | Hard band, 1 year | Hard band, 5 years |
+| --- | --- | --- | --- | --- |
+| SPI10 | < 0.01 % | < 0.01 % | < 0.01 % | < 0.01 % |
+| SPI25 | < 0.01 % | 0.01 % | < 0.01 % | < 0.01 % |
+| SPI50 | < 0.01 % | 12 % | < 0.01 % | 3 % |
+| SPI75 | 0.7 % | 47 % | 0.03 % | 27 % |
+| SPI100 | 6.7 % | 76 % | 1.2 % | 58 % |
+
+Almost all exits are downward. §5.6 turns them into announced ×10 rescales before the band is reached.
+
+**v3.0 stationarity (historical).** v3.0 used `kappa_e12 = 534 835`, i.e. `κ = floor(ln 2 × 10^12 / 1 296 000) / 10^12`, a half-life of 30 days of ticks and a stationary log-price standard deviation of about `σ / √(2κ)`. The field stays in the encoding, and the v3.0 vectors use that value.
 
 ## 4. Canonical encodings
 
@@ -170,11 +185,37 @@ digit = next mod 10
 
 ### 5.4 Band handling
 
-If `next < min_units` or `next > max_units`, no tick is produced. The index enters `HALTED_BAND` and new purchases fail closed. Contracts whose exit tick cannot be produced are refunded through the audited refund path. Resuming needs a new configuration (a new `config_hash`) committed before its first epoch. The generator never rerolls, clamps or reflects. At the §3 settings the band is more than 12 stationary sd away.
+If `next < min_units` or `next > max_units`, no tick is produced. The index enters `HALTED_BAND` and new purchases fail closed. Contracts whose exit tick cannot be produced are refunded through the audited refund path. Resuming needs a new configuration (a new `config_hash`) committed before its first epoch, under §5.6. The generator never rerolls, clamps or reflects.
 
 ### 5.5 Genesis and cutover
 
 Each index's v3 series starts at an announced `(genesis_tick_no, genesis_units)` in the committed configuration. The v3 tick-number space continues the existing `(index, mode)` numbering: `genesis_tick_no` is the last v2 tick. Version 2 ticks are neither re-read nor rewritten. The genesis price is announced, not derived. For this prototype it is the anchor (10000.000).
+
+### 5.6 Resume and rescale (v3.1)
+
+An index that is halted (§5.4, §5.7 or an operational fault), or paused for a rescale, restarts only through a new configuration for a whole epoch `E`, committed and witnessed like any other. In that configuration the index's entry has:
+
+- `genesis_tick_no = G`, the last tick scheduled before `epoch_start_ms(E)`;
+- `genesis_units = scale(units_H, k)`, where `H` is the index's last produced tick, `k ∈ {−1, 0, 1}`, and `scale(u, 1) = 10·u`, `scale(u, 0) = u`, `scale(u, −1) = floor(u / 10)`.
+
+Ticks `H + 1 … G` are never produced (an announced pause). The first tick of the new series is `G + 1`, with `prev_units = genesis_units` and `prev_tick_hash = genesis_hash` (§4.5). Nothing in §4 or §5.1–§5.3 changes. The digit proof (§6) holds unchanged, because it does not depend on `P`.
+
+**Verifier rule.** After a verified tick `H`, a tick `G + 1` whose configuration has `genesis_tick_no = G ≥ H` is accepted as a resume when `genesis_units` equals `scale(units_H, k)` for some `k ∈ {−1, 0, 1}` and the tick chains to that genesis. Any other resume price is a `price_mismatch`. The verifier lists the resumes it accepted.
+
+**Operation (not normative for verification).**
+
+- A running index can be rescaled only while its last price is outside the soft range. The direction is computed, never chosen: `k = 1` below a tenth of the reference, `k = −1` above ten times it. A halted index may also resume unchanged (`k = 0`).
+- A rescale is scheduled at least one day ahead, for an epoch not yet committed, by staff with a fresh TOTP (`engine_v3_schedule_rescale`) or by the database owner (`engine_private.operator_schedule_rescale`). It is published for customers (`get_engine_v3_rescales`).
+- The index pauses `rescale_pause_lead_ms` (default 75 minutes) before the epoch, so its last price is known when the configuration is committed at least `min_commit_lead_ms` (one hour) ahead. Purchases whose ticks would fall in the pause are refused (`engine_v3_rescale_pause`).
+- The database refuses a configuration that changes a running index's genesis without a scheduled resume, or that does not match one exactly. If the worker cannot commit a scheduled resume in time, it records it as missed and commits the epoch unchanged, so no other index is affected.
+
+### 5.7 Move limit (v3.1)
+
+```
+max_move_units(P) = 10 · floor( (P · sigma_e12 · 786 420 + kappa_e12 · |A − P| · S + 5·E·S) / (10·E·S) ) + 5
+```
+
+This is the largest `|next − P|` the §5.3 transition can produce (`|Z| ≤ 786 420`, jitter within ±5), and it is reached exactly at the extreme innovation. The database refuses any tick with `|price_units − prev_units| > max_move_units(prev_units)` (`engine_v3_move_out_of_bound`). The generator asserts the same, and the worker then halts the index with refunds. Honest generation can never trigger it: it exists to stop a fault or a forged tick from reaching customers.
 
 ## 6. Digit model proof
 
@@ -209,7 +250,7 @@ For each index and seed, over a run of `n` ticks with standardised innovations `
 | Digit counts | χ²(9) < 33.72 (p = 10⁻⁴) |
 | Digit lag-1 pairs | χ²(81) (independence) < 137.2 (p ≈ 10⁻⁴, Wilson–Hilferty) |
 | Digit repeat runs | longest run < 12 per 10⁶ ticks |
-| Price range | never outside the band; log deviation from anchor within ±8 stationary sd |
+| Price range | Never outside the band. Anchorless (v3.1): max \|ln(P / reference)\| within 5 · σ√n over the run, with soft-range exits reported. v3.0: log deviation from the anchor within ±8 stationary sd |
 | Exposure link | not applicable to the prototype: the generator takes no position input (structural) |
 
 Multi-year stationarity: at least one run of 15 768 000 ticks (one year) per index must meet the range criterion. The pre-registered thresholds use p ≈ 10⁻⁴ per test to keep the family-wise false-alarm rate low across 5 indices × seeds. Every failing sample is kept in the report.
@@ -222,6 +263,8 @@ Multi-year stationarity: at least one run of 15 768 000 ticks (one year) per ind
 | Compromised DB/app role predicts ticks | Price functions are revoked from `public/anon/authenticated`. A superuser can still predict. | Derivation only inside the engine service, only for due ticks (monotonic schedule). |
 | Seed grinding before commitment | Not prevented. Commitment occurs ≥ 24 h ahead, before any position on that epoch exists, so grinding cannot target specific positions. It could target aggregate statistics. | Optional public beacon mixed after commitment (§9). Otherwise disclose. |
 | Post-commitment parameter change | **Prevented and detectable:** `config_hash` is inside the commitment and every tick hash. | Same |
+| Operator-chosen restart price | **Prevented and detectable (v3.1):** a resume price must be the last price × 10, × 1 or ÷ 10 (§5.6). The database refuses anything else and the verifier reports it. | Same |
+| Forged extreme tick | **Prevented (v3.1):** the database refuses any tick beyond the §5.7 move limit. | Same |
 | Forged or backdated ticks | Detectable against the revealed seed (price mismatch). Backdating the *commitment* is **not** detectable without a witness. | Signed commitments plus an external timestamp/witness receipt before the first tradable tick. Otherwise purchases fail closed. |
 | Tick deletion / replay | Hash chain with `prev_tick_hash` and a monotonic `tick_no` makes gaps and reordering detectable inside a fetched range. | Signed periodic checkpoints exported to a witness store |
 | Selective outage (suppress an unfavourable tick) | The tick schedule is fixed. A missing tick is catch-up generated from the same committed state; there is no reroll. Contracts keep their fixed exit tick. | Lag, backlog and clock-drift thresholds with fail-closed purchasing (Workstream D) |
@@ -249,7 +292,8 @@ Multi-year stationarity: at least one run of 15 768 000 ticks (one year) per ind
 2. **Phase 1b.** Forward-only migration: `generation_version` accepts 3; add v3 columns (`config_hash`, `commitment`, `tick_hash`, `prev_tick_hash`, `generated_ms`); add SQL v3 functions matched to the vectors under real PostgreSQL + pgcrypto; add a per-index `engine_generation` flag that defaults to `2`. Old rows are untouched.
 3. **Phase 2.** Custody, signing, witness, shadow run (v3 ticks stored separately and never settled).
 4. **Phase 3.** Per-index announced cutover tick. All v2 contracts settle on v2 ticks first.
-5. **Rollback.** Before cutover: drop the shadow feed; v2 is unaffected. After cutover, v3 ticks stay immutable. Rolling back means a *new* announced cutover to a new version or configuration, with no rewriting and no re-settlement.
+5. **Phase 1c (v3.1).** Migration `20260928100000`: move limit on publication, resumes and rescales (§5.6, §5.7). Worker parameters set `kappa_e12 = 0`. No index runs on v3 when it is applied.
+6. **Rollback.** Before cutover: drop the shadow feed; v2 is unaffected. After cutover, v3 ticks stay immutable. Rolling back means a *new* announced cutover to a new version or configuration, with no rewriting and no re-settlement.
 
 ## 11. Sign-off
 

@@ -173,7 +173,7 @@ export function summarize(result) {
  * Verifies a `smartprofit-proof/v3` package (package_version 1 or 2) without
  * trusting any live API. Options: trustedKeys ({key_id: hex}, from the
  * published manifest), tsaRoots ({provider: [DER]}), requiredWitnesses.
- * Returns { verdict, components, status, states, anchored, issues, ticks, contracts, witness, signatures }.
+ * Returns { verdict, components, status, states, anchored, resumes, issues, ticks, contracts, witness, signatures }.
  */
 export async function verifyPackage(pkg, options = {}) {
     const trustedKeys = options.trustedKeys || null;
@@ -187,6 +187,7 @@ export async function verifyPackage(pkg, options = {}) {
     const RANK = { verified: 0, valid: 0, witnessed: 0, revealed: 0, none: 0, unsigned: 1, unpinned: 1, unanchored: 1, not_yet_revealable: 1, late: 1, missing: 1, no_roots: 1, unwitnessed: 1, unverifiable: 1, invalid: 2 };
     const degrade = (name, value) => { if (RANK[value] > RANK[components[name]] || (components[name] === 'none' && value !== 'none')) components[name] = value; };
     const anchored = {};
+    const resumes = [];
     const contracts = [];
     try {
         if (pkg?.format !== 'smartprofit-proof/v3') reject('unsupported proof format');
@@ -310,6 +311,15 @@ export async function verifyPackage(pkg, options = {}) {
                     const genesis = await sha256(kind('genesis'), label(env), label(mode), label(index), U64(e.genesisTick), U64(e.genesisUnits), fromHex(cfg.hash, 32));
                     anchored[index] = tickNo === e.genesisTick + 1n && t.prevUnits === e.genesisUnits && equal(t.prevHash, genesis);
                     if (!anchored[index]) { mark(key, 'missing_history'); note('missing_history', `${index} history before tick ${tickNo} is not in this package, so its starting price is unanchored`); }
+                } else if (e.genesisTick >= prior.tickNo && tickNo === e.genesisTick + 1n) {
+                    // Resume (ADR 0001 §5.6): a new genesis at or after the last published tick.
+                    // Ticks between them were never produced (an announced pause). The new start
+                    // must be the last price times 10, unchanged, or divided by 10 (floored).
+                    const genesis = await sha256(kind('genesis'), label(env), label(mode), label(index), U64(e.genesisTick), U64(e.genesisUnits), fromHex(cfg.hash, 32));
+                    const factor = e.genesisUnits === prior.units * 10n ? 10n : e.genesisUnits === prior.units ? 1n : e.genesisUnits === prior.units / 10n ? -10n : null;
+                    if (factor === null) { mark(key, 'price_mismatch'); note('price_mismatch', `${index} resumes at ${e.genesisUnits}, which is not tick ${prior.tickNo}'s price ${prior.units} scaled by 10, 1 or 1/10`); }
+                    else if (t.prevUnits !== e.genesisUnits || !equal(t.prevHash, genesis)) { mark(key, 'broken_continuity'); note('broken_continuity', `${index} tick ${tickNo} does not chain to its resume genesis`); }
+                    else resumes.push({ index, after_tick_no: String(prior.tickNo), genesis_tick_no: String(e.genesisTick), factor: factor === -10n ? '1/10' : String(factor) });
                 } else {
                     if (tickNo !== prior.tickNo + 1n) { mark(key, 'broken_continuity'); note('broken_continuity', `${index} ticks ${prior.tickNo + 1n}..${tickNo - 1n} are missing`); }
                     if (t.prevUnits !== prior.units || !equal(t.prevHash, prior.hash)) { mark(key, 'broken_continuity'); note('broken_continuity', `${index} tick ${tickNo} does not chain to tick ${prior.tickNo}`); }
@@ -397,7 +407,7 @@ export async function verifyPackage(pkg, options = {}) {
     else if (states.includes('missing_history') || Object.values(anchored).some((a) => !a)) degrade('price_continuity', 'unanchored');
     if (states.includes('not_yet_revealable')) degrade('reveal', 'not_yet_revealable');
     if (components.witness === 'late' || components.witness === 'missing' || components.witness === 'no_roots') components.witness = components.witness === 'no_roots' ? 'unwitnessed' : components.witness;
-    const result = { status: states[0] || 'verified', states: states.length ? states : ['verified'], components, anchored, issues, ticks, contracts,
+    const result = { status: states[0] || 'verified', states: states.length ? states : ['verified'], components, anchored, resumes, issues, ticks, contracts,
         witness: components.witness === 'witnessed' ? 'witnessed' : components.witness === 'invalid' ? 'invalid' : 'unwitnessed', signatures: components.signatures };
     result.verdict = summarize(result);
     return result;

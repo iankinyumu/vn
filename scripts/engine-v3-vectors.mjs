@@ -1,6 +1,8 @@
 // Produces the frozen v3 known-answer vectors from the reference generator.
 //   node scripts/engine-v3-vectors.mjs          check engine/v3/vectors.json is unchanged
 //   node scripts/engine-v3-vectors.mjs --write  (re)write it; only with a new spec version
+// Spec v3.1 kept every v3.0 vector (the base series still uses v3.0's kappa) and
+// added the anchorless series, the move bound and a paused resume with a rescale.
 // tests/engine-v3.test.mjs checks the independent verifier against the same file.
 import { createHmac } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -15,7 +17,7 @@ const BOUNDARY = 1_790_035_200_000n; // 2026-09-22T00:00:00Z
 const T0 = BOUNDARY - 21_000n;       // tick 10 is the last of day one, tick 11 the first of day two
 
 export function buildVectors() {
-    const config = g.defaultConfig({ env: 'test', mode: 'DEMO', t0Ms: T0, genesisTickNo: 0n });
+    const config = g.defaultConfig({ env: 'test', mode: 'DEMO', t0Ms: T0, genesisTickNo: 0n, kappaE12: g.KAPPA_E12 });
     const ledger = g.createEpochLedger({ config, seedForEpoch: (start) => (start < BOUNDARY ? SEED_A : SEED_B) });
     const series = {};
     const rows = {};
@@ -49,7 +51,7 @@ export function buildVectors() {
     }
 
     return {
-        spec: 'v3.0',
+        spec: 'v3.1',
         note: 'Test-only seeds. Never use these values outside env=test.',
         rfc5869_case1: {
             ikm: '0b'.repeat(22), salt: '000102030405060708090a0b0c', info: 'f0f1f2f3f4f5f6f7f8f9',
@@ -73,6 +75,60 @@ export function buildVectors() {
         genesis_hash: Object.fromEntries(['SPI10', 'SPI100'].map((index) => [index, hex(g.genesisHash({ env: 'test', mode: 'DEMO', entry: config.indices.find((e) => e.index === index), configHash: ledger.configHash }))])),
         series,
         rejection,
+        ...buildV31Vectors(),
+    };
+}
+
+const plainTick = (tick) => ({
+    tick_no: tick.tick_no.toString(), prev_units: tick.prev_units.toString(), price_units: tick.price_units.toString(), digit: tick.digit,
+    config_hash: hex(tick.config_hash), prev_tick_hash: hex(tick.prev_tick_hash), tick_hash: hex(tick.tick_hash),
+});
+
+// v3.1 additions (ADR 0001 §3, §5.6, §5.7).
+function buildV31Vectors() {
+    const anchorless = g.defaultConfig({ env: 'test', mode: 'DEMO', t0Ms: T0, genesisTickNo: 0n });
+    const ledger = g.createEpochLedger({ config: anchorless, seedForEpoch: (start) => (start < BOUNDARY ? SEED_A : SEED_B) });
+    const series = {};
+    for (const index of ['SPI10', 'SPI100']) {
+        const s = g.createSeries({ ledger, index, generatedMs: (scheduled) => scheduled + 150n });
+        series[index] = Array.from({ length: 12 }, () => plainTick(s.next().tick));
+    }
+
+    const byIndex = (config, index) => config.indices.find((e) => e.index === index);
+    const moveBound = [];
+    for (const [cfg, label] of [[anchorless, 'anchorless'], [g.defaultConfig({ env: 'test', t0Ms: T0, kappaE12: g.KAPPA_E12 }), 'v3.0']]) {
+        for (const index of ['SPI10', 'SPI100']) {
+            for (const prev of [500_000n, 10_000_000n, 199_999_999n]) moveBound.push({ config: label, index, prev_units: prev.toString(), max_move_units: g.maxMoveUnits(byIndex(cfg, index), prev).toString() });
+        }
+    }
+
+    // SPI100 publishes ticks 1..5 on day one, pauses, and resumes at the first tick of
+    // day two from a configuration whose genesis is tick 10 at ten times tick 5's price.
+    const PAUSE_AFTER = 5n, GENESIS = 10n, EXPONENT = 1n;
+    const resumeLedgerSeries = (resumeConfig) => {
+        const rl = g.createEpochLedger({ config: anchorless, seedForEpoch: (start) => (start < BOUNDARY ? SEED_A : SEED_B), configForEpoch: (start) => (start < BOUNDARY ? anchorless : resumeConfig) });
+        return rl;
+    };
+    const before = g.createSeries({ ledger: g.createEpochLedger({ config: anchorless, seedForEpoch: () => SEED_A }), index: 'SPI100', generatedMs: (x) => x + 150n });
+    let last;
+    for (let n = 0n; n < PAUSE_AFTER; n++) last = before.next().tick;
+    const genesisUnits = g.rescaleUnits(last.price_units, EXPONENT);
+    const resumeConfig = { ...anchorless, indices: anchorless.indices.map((e) => (e.index === 'SPI100' ? { ...e, genesis_tick_no: GENESIS, genesis_units: genesisUnits } : e)) };
+    const rl = resumeLedgerSeries(resumeConfig);
+    const pre = g.createSeries({ ledger: rl, index: 'SPI100', generatedMs: (x) => x + 150n });
+    const paused = Array.from({ length: Number(PAUSE_AFTER) }, () => plainTick(pre.next().tick));
+    const post = g.createSeries({ ledger: rl, index: 'SPI100', generatedMs: (x) => x + 150n, startConfig: resumeConfig });
+    const resumed = Array.from({ length: 5 }, () => plainTick(post.next().tick));
+    return {
+        anchorless: { config_hash: hex(ledger.configHash), kappa_e12: '0', series },
+        move_bound: moveBound,
+        resume: {
+            index: 'SPI100', pause_after_tick_no: PAUSE_AFTER.toString(), genesis_tick_no: GENESIS.toString(), exponent: Number(EXPONENT),
+            last_units: last.price_units.toString(), genesis_units: genesisUnits.toString(),
+            config_hash_before: hex(rl.hashOf(anchorless)), config_hash_after: hex(rl.hashOf(resumeConfig)),
+            genesis_hash: hex(g.genesisHash({ env: 'test', mode: 'DEMO', entry: byIndex(resumeConfig, 'SPI100'), configHash: rl.hashOf(resumeConfig) })),
+            before: paused, after: resumed,
+        },
     };
 }
 

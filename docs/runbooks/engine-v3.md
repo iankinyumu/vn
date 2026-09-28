@@ -102,8 +102,9 @@ ENGINE_WITNESSES=digicert,sectigo npm run start:engine-v3-worker
 - a non-DEMO mode.
 
 The parameters file lists every index with `annual_vol_bp`, `anchor_units`, `kappa_e12`, `min_units`, `max_units`, `genesis_tick_no` and `genesis_units` (ADR 0001 §3).
+- `kappa_e12` is `0` for every index (specification v3.1: no anchor). `anchor_units` stays `10000000`; it defines the soft range.
 - `genesis_tick_no` is `floor((D_ms - 1 - t0_ms) / tick_interval_ms)` for the day `D` the index's v3 series starts.
-- A changed file creates a new configuration for epochs committed afterwards. Keep each live index's genesis values unchanged when rotating.
+- A changed file creates a new configuration for epochs committed afterwards. For a running index the worker keeps the genesis of its latest committed configuration, and the database refuses any other genesis change except a scheduled resume (section 11a).
 
 ## 7. Attestor
 
@@ -149,7 +150,9 @@ It verifies every submitted token against `verifier/v3/tsa-roots.json` and recor
 | TSA outage | Ticks continue. Purchases in an unwitnessed epoch or after a stale checkpoint fail. | The worker retries. A receipt that arrives after the deadline stays **late**, and that day remains untradable. Do not relax witnesses; production refuses. |
 | Attestor down | Submissions queue as pending. Purchases fail once checkpoints go stale. | Restart the attestor. It drains the queue. |
 | Worker crash or lost reply | None. A restart continues from the database. The stored tick is authoritative. | A `engine_v3_nondeterminism_detected` exit is severity 1. |
-| Price band breach | Index halted; unproducible contracts refunded | Investigate. Resuming needs a new cutover. |
+| Price band breach | Index halted; unproducible contracts refunded | Investigate, then schedule a resume (section 11a). |
+| Move limit breach (`engine_v3_move_out_of_bound`) | Index halted; unproducible contracts refunded. The model cannot produce such a tick, so this is a fault or a forged tick. | Severity 1. Investigate the worker and its inputs before scheduling a resume. |
+| Missed resume (`resume_missed:<index>` in the worker log) | The epoch was committed unchanged; the index continues from where it paused. | Schedule the rescale again for a later day. |
 | Suspected seed, worker or attestor compromise | — | Halt every index (`engine_v3_halt`) and refund (`engine_v3_void_unproducible`). Rotate the KMS policy and roles, retire the signing key (add a new key to the manifest), and rotate attestor credentials. Disclose. Recommit from a new cutover. History is never rewritten. |
 | Rollback before cutover | — | Turn shadow off. v2 is unaffected. |
 | Rollback after cutover | — | Announce a new cutover to a new configuration or version. v3 ticks stay immutable, and settled contracts are never re-settled. |
@@ -162,6 +165,21 @@ It verifies every submitted token against `verifier/v3/tsa-roots.json` and recor
 Keep old roots in the file for as long as history signed under them must verify.
 
 **Key rotation.** Add the new key to the manifest first, then switch the worker's signing key. Never remove an old key.
+
+## 11a. Rescale and resume (ADR 0001 §5.6)
+
+A rescale multiplies or divides an index's price by exactly 10 at a UTC midnight. It is due when the price leaves the soft range, 1000.000 to 100000.000. Without an anchor this mostly happens to SPI100 and SPI75, almost always downward (×10). See the drift table in ADR 0001 §3.
+
+1. **Check.** `select i.code, s.last_price from public.index_state s join public.engine_indices i on i.code = s.index_code and i.execution_mode = s.execution_mode where i.engine_generation = 3 and (s.last_price < 1000 or s.last_price > 100000);`
+2. **Schedule** at least one day ahead, for a UTC midnight whose epoch is not committed yet. The worker commits two days ahead, so pick a day at least three days out.
+   - Staff: `engine_v3_schedule_rescale('DEMO', '<index>', <epoch_start_ms>, '<reason>')`, as an engine manager with a fresh TOTP.
+   - Owner, SQL editor: `select engine_private.operator_schedule_rescale('DEMO', '<index>', <epoch_start_ms>, '<reason>');`
+   The direction is computed from the price. A running index inside the soft range is refused (`engine_v3_rescale_not_due`).
+3. **Announce.** The site reads `get_engine_v3_rescales()`. Tell customers the pause time (75 minutes before midnight) and the factor.
+4. **Pause.** At 22:45 UTC the index stops. Purchases whose ticks would fall in the pause are refused. The worker commits the new epoch with the paused price × 10 (or ÷ 10). Check `select status, genesis_units from public.engine_v3_resumes where status <> 'applied';` shows `committed`.
+5. **Resume.** At 00:00 UTC the index continues from the new price. The resume row becomes `applied`, and the proof verifier lists the resume with its factor.
+
+A halted index (band or move limit breach, fault) resumes the same way: schedule it for a future uncommitted day. If its price is inside the soft range it resumes unchanged.
 
 ## 12. Evidence
 

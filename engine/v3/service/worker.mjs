@@ -22,8 +22,8 @@ export class EngineWorker {
      * @param {Array}  o.witnesses providers with {name, witness(subject)}
      */
     constructor({ db, mode = 'DEMO', workerId = 'engine-v3-worker', params, custody, signer, witnesses, clock = () => Date.now(), log = () => {},
-        checkpointEvery = 150, commitAheadEpochs = 2, maxTicksPerCycle = 50, runtime = `node ${process.version}` }) {
-        Object.assign(this, { db, mode, workerId, params, custody, signer, witnesses, clock, log, checkpointEvery, commitAheadEpochs, maxTicksPerCycle, runtime });
+        checkpointEvery = 150, commitAheadEpochs = 2, maxTicksPerCycle = 50, resumeGiveUpMs = 120_000, runtime = `node ${process.version}` }) {
+        Object.assign(this, { db, mode, workerId, params, custody, signer, witnesses, clock, log, checkpointEvery, commitAheadEpochs, maxTicksPerCycle, resumeGiveUpMs, runtime });
         this.keys = new Map();      // `${epoch}:${index}` -> {move, digit}; current/past epochs only
         this.stopped = false;
     }
@@ -53,11 +53,12 @@ export class EngineWorker {
         }
         this.state = state;
         this.env = state.env;
-        const configHash = await this.ensureConfig(state);
-        await this.ensureCommitments(state, configHash, report);
+        this.plan = await this.rpc('engine_v3_resume_plan', [this.mode]);
+        await this.ensureCommitments(state, report);
         await this.ensureWitnesses(report);
         for (const index of this.state.indices) {
-            if (index.halted || !(index.generation === 3 || index.shadow)) continue;
+            const resuming = this.openResume(index.index)?.status === 'committed';
+            if ((index.halted && !resuming) || !(index.generation === 3 || index.shadow)) continue;
             try { await this.publishDue(index, report); } catch (error) { report.errors.push(`${index.index}:${sqlCode(error) || error.message}`); this.log('error', 'publish failed', { index: index.index, error: error.message }); }
         }
         await this.checkpoints(report);
@@ -67,35 +68,73 @@ export class EngineWorker {
         return report;
     }
 
-    entriesFor(state) {
-        return state.indices.map((row) => {
-            const p = this.params[row.index];
-            if (!p) throw new Error(`engine_v3_params_missing_${row.index}`);
-            return {
-                index: row.index, annual_vol_bp: p.annual_vol_bp, tick_interval_ms: row.tick_interval_ms, decimals: row.decimals,
-                anchor_units: String(p.anchor_units), sigma_e12: g.sigmaE12(p.annual_vol_bp, row.tick_interval_ms).toString(), kappa_e12: String(p.kappa_e12),
-                min_units: String(p.min_units), max_units: String(p.max_units), t0_ms: row.t0_ms, genesis_tick_no: String(p.genesis_tick_no), genesis_units: String(p.genesis_units),
-            };
-        });
+    // Open (scheduled or committed) resume for an index, if any (ADR 0001 §5.6).
+    openResume(index) { return (this.plan || []).find((r) => r.index === index) || null; }
+
+    // A running v3 index keeps the genesis of its latest committed configuration; the
+    // database refuses any other change except a scheduled resume, whose genesis is
+    // the paused price scaled by 10^exponent. Returns null while a resume in this
+    // epoch still waits for its pause tick.
+    genesisFor(row, epochStart, latestEntries) {
+        const resume = this.openResume(row.index);
+        if (resume?.status === 'scheduled' && BigInt(resume.epoch_start_ms) === epochStart) {
+            if (!row.last || row.last.tick_no !== resume.pause_after_tick_no) return null;
+            return { genesis_tick_no: resume.genesis_tick_no, genesis_units: g.rescaleUnits(BigInt(row.last.price_units), BigInt(resume.exponent)).toString() };
+        }
+        const current = row.generation === 3 ? latestEntries?.find((e) => e.index === row.index) : null;
+        const p = this.params[row.index];
+        return current ? { genesis_tick_no: String(current.genesis_tick_no), genesis_units: String(current.genesis_units) }
+            : { genesis_tick_no: String(p.genesis_tick_no), genesis_units: String(p.genesis_units) };
     }
 
-    async ensureConfig(state) {
-        const entries = this.entriesFor(state);
+    entriesFor(state, epochStart, committedEntries = null) {
+        const latest = [...(state.epochs || [])].sort((a, b) => (BigInt(a.epoch_start_ms) < BigInt(b.epoch_start_ms) ? -1 : 1)).at(-1);
+        const latestEntries = committedEntries || (latest ? state.configs?.[latest.config_hash] : null);
+        const entries = [];
+        for (const row of state.indices) {
+            const p = this.params[row.index];
+            if (!p) throw new Error(`engine_v3_params_missing_${row.index}`);
+            const genesis = this.genesisFor(row, epochStart, latestEntries);
+            if (!genesis) return null;
+            entries.push({
+                index: row.index, annual_vol_bp: p.annual_vol_bp, tick_interval_ms: row.tick_interval_ms, decimals: row.decimals,
+                anchor_units: String(p.anchor_units), sigma_e12: g.sigmaE12(p.annual_vol_bp, row.tick_interval_ms).toString(), kappa_e12: String(p.kappa_e12),
+                min_units: String(p.min_units), max_units: String(p.max_units), t0_ms: row.t0_ms, ...genesis,
+            });
+        }
+        return entries;
+    }
+
+    async registerConfig(state, entries) {
         const local = g.configHash({ env: state.env, mode: this.mode, indices: entries }).toString('hex');
         const remote = (await this.rpc('engine_v3_register_config', [this.mode, JSON.stringify(entries)])).toString('hex');
         if (local !== remote) throw new Error('engine_v3_config_hash_disagrees'); // SQL and Node must agree byte for byte
-        this.configEntries = entries;
         return local;
     }
 
-    async ensureCommitments(state, configHash, report) {
+    async ensureCommitments(state, report) {
         const now = BigInt(state.now_ms);
         const lead = BigInt(state.settings.min_commit_lead_ms);
         let latest = state.latest_commitment;
         const today = now / DAY * DAY;
         let next = latest ? BigInt(latest.epoch_start_ms) + DAY : (now <= today - lead ? today : today + DAY);
+        let committedEntries = null;
         for (; next <= today + DAY * BigInt(this.commitAheadEpochs); next += DAY) {
             if (now > next - lead) { this.log('error', 'epoch missed its commitment window', { epoch: String(next) }); report.errors.push(`missed_epoch:${next}`); break; }
+            let entries = this.entriesFor(state, next, committedEntries);
+            if (!entries) {
+                // A resume in this epoch is waiting for its pause tick. Give up on it shortly
+                // before the commitment window closes so every other index keeps running.
+                if (now <= next - lead - BigInt(this.resumeGiveUpMs)) break;
+                for (const r of this.plan.filter((item) => item.status === 'scheduled' && BigInt(item.epoch_start_ms) === next)) {
+                    await this.rpc('engine_v3_miss_resume', [this.mode, r.index, 'pause tick not published before the commitment window']);
+                    report.errors.push(`resume_missed:${r.index}`);
+                }
+                this.plan = await this.rpc('engine_v3_resume_plan', [this.mode]);
+                entries = this.entriesFor(state, next, committedEntries);
+                if (!entries) break;
+            }
+            const configHash = await this.registerConfig(state, entries);
             const seed = randomBytes(32);
             try {
                 const seedHash = g.seedHash(seed);
@@ -105,10 +144,12 @@ export class EngineWorker {
                 await this.rpc('engine_v3_commit_epoch', [this.mode, String(next), hexBuf(configHash), seedHash, prev, commitment,
                     this.signer.keyId, this.signer.sign('epoch-commitment', commitment), this.custody.provider, wrapped.keyRef, wrapped.ciphertext]);
                 latest = { epoch_start_ms: String(next), commitment: commitment.toString('hex') };
+                committedEntries = entries;
                 report.committed++;
             } finally { seed.fill(0); }
         }
         this.state = await this.rpc('engine_v3_writer_state', [this.mode]);
+        if (committedEntries) this.plan = await this.rpc('engine_v3_resume_plan', [this.mode]);
     }
 
     async witnessSubject(kind, subject, have, report) {
@@ -176,8 +217,23 @@ export class EngineWorker {
             lastNo = entry.genesis_tick_no; lastUnits = entry.genesis_units;
             lastHash = g.genesisHash({ env: this.env, mode: this.mode, entry, configHash: hexBuf(epoch.config_hash) });
         }
-        const limit = lastNo + BigInt(this.maxTicksPerCycle);
+        let limit = lastNo + BigInt(this.maxTicksPerCycle);
         for (let tickNo = lastNo + 1n; tickNo <= due && tickNo <= limit; tickNo++) {
+            const resume = this.openResume(row.index);
+            if (resume && row.generation === 3 && tickNo > BigInt(resume.pause_after_tick_no) && tickNo <= BigInt(resume.genesis_tick_no)) {
+                // Announced pause (ADR 0001 §5.6): nothing is produced until the resume's
+                // genesis, and only once its configuration is committed.
+                const genesisNo = BigInt(resume.genesis_tick_no);
+                if (resume.status !== 'committed' || lastNo !== BigInt(resume.pause_after_tick_no) || genesisNo + 1n > due) break;
+                const epoch = this.epochFor((t0 + (genesisNo + 1n) * interval) / DAY * DAY);
+                if (!epoch) break;
+                const entry = this.entryFor(epoch, row.index);
+                if (entry.genesis_tick_no !== genesisNo) break;
+                lastNo = genesisNo; lastUnits = entry.genesis_units;
+                lastHash = g.genesisHash({ env: this.env, mode: this.mode, entry, configHash: hexBuf(epoch.config_hash) });
+                tickNo = genesisNo + 1n;
+                limit = lastNo + BigInt(this.maxTicksPerCycle);
+            }
             const scheduled = t0 + tickNo * interval;
             const epochStart = scheduled / DAY * DAY;
             const epoch = this.epochFor(epochStart);
@@ -187,10 +243,12 @@ export class EngineWorker {
             let drawn;
             try { drawn = g.generateTick({ keys, entry, tickNo, prevUnits: lastUnits }); }
             catch (error) {
-                if (error.message !== 'engine_v3_price_out_of_band') throw error;
-                // Never reroll or clamp (ADR 0001 §5.4): halt, refund, report.
-                await this.rpc('engine_v3_halt', [this.mode, row.index, `price band breach at tick ${tickNo}`]);
-                if (row.generation === 3) await this.rpc('engine_v3_void_unproducible', [this.mode, row.index, 'price band breach']);
+                const reason = { engine_v3_price_out_of_band: 'price band breach', engine_v3_move_out_of_bound: 'move limit breach' }[error.message];
+                if (!reason) throw error;
+                // Never reroll or clamp (ADR 0001 §5.4, §5.7): halt, refund, report. A move
+                // limit breach cannot come from the model, so it means a fault.
+                await this.rpc('engine_v3_halt', [this.mode, row.index, `${reason} at tick ${tickNo}`]);
+                if (row.generation === 3) await this.rpc('engine_v3_void_unproducible', [this.mode, row.index, reason]);
                 throw error;
             }
             const tick = {

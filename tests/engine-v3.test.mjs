@@ -214,3 +214,96 @@ test('the verifier does not import the generator', () => {
     assert.doesNotMatch(source, /\bimport\s*\(|\brequire\s*\(/);
     assert.doesNotMatch(source, /['"]node:crypto['"]/);
 });
+
+// ---- spec v3.1: anchorless default, move bound, paused resume (ADR 0001 §3, §5.6, §5.7) ----
+test('v3.1: new configurations are anchorless, and the independent verifier reproduces the anchorless and resume vectors', async () => {
+    assert.equal(vectors.spec, 'v3.1');
+    assert.ok(g.defaultConfig().indices.every((e) => e.kappa_e12 === 0n), 'kappa defaults to 0');
+    const recompute = async (index, row, raw) => {
+        const start = BigInt(vectors.config.t0_ms) + BigInt(row.tick_no) * 2000n;
+        const epochStart = start / DAY * DAY;
+        const epoch = vectors.epochs.find((e) => BigInt(e.epoch_start_ms) === epochStart);
+        const keys = await v.epochKeys(v.fromHex(epoch.seed), 'test', 'DEMO', index, epochStart);
+        return (await v.expectedUnits(keys, { anchor: BigInt(raw.anchor_units), sigma: BigInt(raw.sigma_e12), kappa: 0n }, BigInt(row.tick_no), BigInt(row.prev_units))).toString();
+    };
+    for (const [index, rows] of Object.entries(vectors.anchorless.series)) {
+        const raw = vectors.config.indices.find((e) => e.index === index);
+        for (const row of rows) assert.equal(await recompute(index, row, raw), row.price_units, `${index} tick ${row.tick_no}`);
+    }
+    const r = vectors.resume;
+    assert.equal(BigInt(r.genesis_units), BigInt(r.last_units) * 10n);
+    assert.equal(r.after[0].prev_units, r.genesis_units);
+    assert.equal(r.after[0].prev_tick_hash, r.genesis_hash);
+    const raw = vectors.config.indices.find((e) => e.index === 'SPI100');
+    for (const row of r.after) assert.equal(await recompute('SPI100', row, raw), row.price_units, `resumed tick ${row.tick_no}`);
+});
+
+test('v3.1: the per-tick move bound is never exceeded and is reached at the extreme innovation', () => {
+    for (const row of vectors.move_bound) {
+        const cfg = row.config === 'v3.0' ? g.defaultConfig({ kappaE12: g.KAPPA_E12 }) : g.defaultConfig();
+        assert.equal(g.maxMoveUnits(cfg.indices.find((e) => e.index === row.index), BigInt(row.prev_units)).toString(), row.max_move_units);
+    }
+    for (const entry of g.defaultConfig().indices) {
+        for (const prev of [500_000n, 1_234_567n, 10_000_000n, 99_999_999n, 200_000_000n]) {
+            const bound = g.maxMoveUnits(entry, prev);
+            let widest = 0n;
+            for (const z of [-g.Z_MAX, -1n, 0n, 1n, g.Z_MAX]) for (const parity of [0n, 1n]) for (let residue = 0n; residue < 10n; residue++) {
+                const { next } = g.transition({ prevUnits: prev, anchorUnits: entry.anchor_units, sigmaE12: entry.sigma_e12, kappaE12: entry.kappa_e12, z, parity, residue });
+                const step = next > prev ? next - prev : prev - next;
+                assert.ok(step <= bound, `${entry.index} at ${prev}: step ${step} > bound ${bound}`);
+                if (step > widest) widest = step;
+            }
+            assert.equal(widest, bound, `${entry.index} at ${prev}: the bound is tight`);
+        }
+    }
+    // For SPI100 at 10000.000 the limit is 0.15 % of the price.
+    assert.equal(g.maxMoveUnits(g.defaultConfig().indices.find((e) => e.index === 'SPI100'), 10_000_000n), 15_115n);
+});
+
+test('v3.1: rescale helpers scale by 10, 1 or 1/10 and pick the direction from the soft range', () => {
+    assert.equal(g.rescaleUnits(987_654n, 1n), 9_876_540n);
+    assert.equal(g.rescaleUnits(987_654n, 0n), 987_654n);
+    assert.equal(g.rescaleUnits(987_654n, -1n), 98_765n);
+    assert.throws(() => g.rescaleUnits(1n, 2n), /engine_v3_rescale_exponent_invalid/);
+    const entry = g.defaultConfig().indices[0];
+    assert.equal(g.rescaleExponentFor(entry, 999_999n), 1n);
+    assert.equal(g.rescaleExponentFor(entry, 1_000_000n), 0n);
+    assert.equal(g.rescaleExponentFor(entry, 100_000_000n), 0n);
+    assert.equal(g.rescaleExponentFor(entry, 100_000_001n), -1n);
+});
+
+function resumePackage({ genesisUnits = null, exponent = 1n } = {}) {
+    const boundary = 1_790_035_200_000n, t0 = boundary - 21_000n;
+    const seeds = (start) => (start < boundary ? vectors.epochs[0].seed : vectors.epochs[1].seed);
+    const base = g.defaultConfig({ env: 'test', mode: 'DEMO', t0Ms: t0 });
+    const probe = g.createSeries({ ledger: g.createEpochLedger({ config: base, seedForEpoch: seeds }), index: 'SPI100' });
+    let last;
+    for (let n = 0; n < 5; n++) last = probe.next().tick;
+    const units = genesisUnits ?? g.rescaleUnits(last.price_units, exponent);
+    const resumed = { ...base, indices: base.indices.map((e) => (e.index === 'SPI100' ? { ...e, genesis_tick_no: 10n, genesis_units: units } : e)) };
+    const ledger = g.createEpochLedger({ config: base, seedForEpoch: seeds, configForEpoch: (start) => (start < boundary ? base : resumed) });
+    const ticks = [];
+    const before = g.createSeries({ ledger, index: 'SPI100' });
+    for (let n = 0; n < 5; n++) ticks.push(before.next().tick);
+    const after = g.createSeries({ ledger, index: 'SPI100', startConfig: resumed });
+    for (let n = 0; n < 5; n++) ticks.push(after.next().tick);
+    const pkg = g.proofPackage({ ledger, ticks, revealed: new Set(ledger.epochs.keys()) });
+    const plain = (cfg) => ({ indices: cfg.indices.map((e) => Object.fromEntries(Object.entries(e).map(([k, x]) => [k, typeof x === 'bigint' ? x.toString() : x]))) });
+    pkg.package_version = 2;
+    pkg.configs = { [ledger.hashOf(base).toString('hex')]: plain(base), [ledger.hashOf(resumed).toString('hex')]: plain(resumed) };
+    delete pkg.config;
+    return { pkg, last };
+}
+
+test('v3.1: a paused resume with a x10 rescale verifies; an arbitrary resume price is a price mismatch', async () => {
+    const { pkg, last } = resumePackage();
+    const ok = await v.verifyPackage(pkg);
+    assert.equal(ok.status, 'verified', JSON.stringify(ok.issues));
+    assert.deepEqual(ok.resumes, [{ index: 'SPI100', after_tick_no: '5', genesis_tick_no: '10', factor: '10' }]);
+    const down = await v.verifyPackage(resumePackage({ exponent: -1n }).pkg);
+    assert.equal(down.status, 'verified', JSON.stringify(down.issues));
+    assert.equal(down.resumes[0].factor, '1/10');
+    const forged = await v.verifyPackage(resumePackage({ genesisUnits: last.price_units * 10n + 7n }).pkg);
+    assert.ok(forged.states.includes('price_mismatch'), JSON.stringify(forged.issues));
+    assert.deepEqual(forged.resumes, []);
+});

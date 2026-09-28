@@ -14,7 +14,12 @@ export const INDICES = Object.freeze(['SPI10', 'SPI25', 'SPI50', 'SPI75', 'SPI10
 export const DAY_MS = 86_400_000n;
 export const Z_SCALE = 1n << 17n;
 export const E12 = 10n ** 12n;
+// v3.0's weak anchor (30-day half-life). v3.1 configurations are anchorless (ADR 0001 §3);
+// this value stays for the v3.0 known-answer vectors, which still hold.
 export const KAPPA_E12 = 534_835n;
+export const ANCHORLESS_KAPPA_E12 = 0n;
+// |Z| never exceeds 12 x 65535 (ADR §5.1): the structural bound behind the move limit.
+export const Z_MAX = 786_420n;
 export const ANNUAL_VOL_BP = Object.freeze({ SPI10: 1000, SPI25: 2500, SPI50: 5000, SPI75: 7500, SPI100: 10000 });
 
 const U64_MAX = (1n << 64n) - 1n;
@@ -120,21 +125,52 @@ export function transition({ prevUnits, anchorUnits, sigmaE12: sigma, kappaE12: 
     return { coarse, next, digit: ((next % 10n) + 10n) % 10n };
 }
 
+// ---- guard rails (ADR §5.6/§5.7) ----
+// Largest |next - prev| the transition can produce from `prevUnits`: the rounded
+// coarse move at |Z| = Z_MAX plus the widest jitter (5 units). The database
+// refuses any tick beyond it; the generator can never reach it.
+export function maxMoveUnits(entry, prevUnits) {
+    const P = BigInt(prevUnits), A = BigInt(entry.anchor_units);
+    const pull = BigInt(entry.kappa_e12) * (A > P ? A - P : P - A) * Z_SCALE;
+    const den = E12 * Z_SCALE;
+    return 10n * floorDiv(P * BigInt(entry.sigma_e12) * Z_MAX + pull + 5n * den, 10n * den) + 5n;
+}
+
+// A resume starts from the last published price scaled by 10^exponent,
+// exponent in {-1, 0, 1}; scaling down floors to whole units.
+export function rescaleUnits(units, exponent) {
+    const u = BigInt(units), k = BigInt(exponent);
+    if (k === 1n) return u * 10n;
+    if (k === 0n) return u;
+    if (k === -1n) return floorDiv(u, 10n);
+    return fail('engine_v3_rescale_exponent_invalid');
+}
+
+// Soft range: a tenth to ten times the anchor. Outside it a rescale is due (§5.6).
+export function rescaleExponentFor(entry, units) {
+    const A = BigInt(entry.anchor_units), u = BigInt(units);
+    if (u * 10n < A) return 1n;
+    if (u > A * 10n) return -1n;
+    return 0n;
+}
+
 export function generateTick({ keys, entry, tickNo, prevUnits }) {
     const move = innovation(prf(keys.move, tickNo, 0));
     const digitDraw = residue((counter) => prf(keys.digit, tickNo, counter));
     const result = transition({ prevUnits, anchorUnits: entry.anchor_units, sigmaE12: entry.sigma_e12, kappaE12: entry.kappa_e12, ...move, residue: digitDraw.residue });
+    const step = result.next - BigInt(prevUnits);
+    if ((step < 0n ? -step : step) > maxMoveUnits(entry, prevUnits)) fail('engine_v3_move_out_of_bound');
     if (result.next < BigInt(entry.min_units) || result.next > BigInt(entry.max_units)) fail('engine_v3_price_out_of_band');
     return { units: result.next, digit: Number(result.digit), coarse: result.coarse, z: move.z, parity: move.parity, residue: digitDraw.residue, digitCounter: digitDraw.counter };
 }
 
 // ---- configuration and commitments (ADR §4.3–§4.5) ----
-export function defaultConfig({ env = 'test', mode = 'DEMO', t0Ms = 0n, genesisTickNo = 0n } = {}) {
+export function defaultConfig({ env = 'test', mode = 'DEMO', t0Ms = 0n, genesisTickNo = 0n, kappaE12 = ANCHORLESS_KAPPA_E12 } = {}) {
     return {
         env, mode,
         indices: INDICES.map((index) => ({
             index, annual_vol_bp: ANNUAL_VOL_BP[index], tick_interval_ms: 2000, decimals: 3,
-            anchor_units: 10_000_000n, sigma_e12: sigmaE12(ANNUAL_VOL_BP[index], 2000), kappa_e12: KAPPA_E12,
+            anchor_units: 10_000_000n, sigma_e12: sigmaE12(ANNUAL_VOL_BP[index], 2000), kappa_e12: BigInt(kappaE12),
             min_units: 500_000n, max_units: 200_000_000n, t0_ms: BigInt(t0Ms),
             genesis_tick_no: BigInt(genesisTickNo), genesis_units: 10_000_000n,
         })),
@@ -207,11 +243,13 @@ export function createEpochLedger({ config, seedForEpoch, configForEpoch = () =>
     return { config, configHash: cfgHash, epochs, epoch, keys, hashOf };
 }
 
-export function createSeries({ ledger, index, generatedMs = (scheduled) => scheduled }) {
-    const { config, configHash: cfgHash } = ledger;
-    const entry = config.indices.find((item) => item.index === index) || fail('engine_v3_index_invalid');
+// `startConfig` starts the series at that configuration's genesis instead of the
+// ledger's first one: a resume (ADR §5.6) is a new series from a new genesis.
+export function createSeries({ ledger, index, generatedMs = (scheduled) => scheduled, startConfig = ledger.config }) {
+    const { config } = ledger;
+    const entry = startConfig.indices.find((item) => item.index === index) || fail('engine_v3_index_invalid');
     let tickNo = BigInt(entry.genesis_tick_no), prevUnits = BigInt(entry.genesis_units);
-    let prevHash = genesisHash({ env: config.env, mode: config.mode, entry, configHash: cfgHash });
+    let prevHash = genesisHash({ env: config.env, mode: config.mode, entry, configHash: ledger.hashOf(startConfig) });
     return {
         entry,
         next() {

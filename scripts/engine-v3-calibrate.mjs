@@ -26,6 +26,9 @@ const chiCritical = (df) => df * (1 - 2 / (9 * df) + Z4 * Math.sqrt(2 / (9 * df)
 const BANDS = {
     volFull: 0.01, volDay: 0.03, driftZ: 5, acfZ: 5, kurtosis: [-0.15, -0.05], maxAbsE: 6.0,
     digitChi: 33.72, pairChi: chiCritical(81), runPerMillion: 12, logDevSd: 8,
+    // Anchorless (v3.1, kappa = 0): the largest |ln(P / anchor)| over the run, in units
+    // of the walk's own spread sigma * sqrt(n). Exceeding 5 has probability about 1e-6.
+    walkDevSd: 5,
 };
 
 function seedFor(n) { return createHash('sha256').update(`calibration-${n}`).digest(); }
@@ -39,7 +42,10 @@ function run(index, seedNo) {
     const series = g.createSeries({ ledger, index });
     const sigma = Number(entry.sigma_e12) / 1e12, kappa = Number(entry.kappa_e12) / 1e12, anchor = Number(entry.anchor_units);
     const tpy = Number(g.ticksPerYear(entry.tick_interval_ms));
-    const stationarySd = sigma / Math.sqrt(2 * kappa);
+    // Anchored (v3.0): the stationary spread. Anchorless (v3.1): the walk's spread over the run.
+    const anchorless = kappa === 0;
+    const spreadSd = anchorless ? sigma * Math.sqrt(TICKS) : sigma / Math.sqrt(2 * kappa);
+    let softExits = 0, outsideSoft = false;
 
     let n = 0, sumR = 0, sumR2 = 0, sumE = 0, sumE2 = 0, sumE3 = 0, sumE4 = 0, sumEE = 0, prevE = null, maxAbsE = 0;
     let dayN = 0, daySum = 0, daySum2 = 0, worstDay = 0;
@@ -63,7 +69,11 @@ function run(index, seedNo) {
             dayN = 0; daySum = 0; daySum2 = 0;
         }
         minUnits = Math.min(minUnits, next); maxUnits = Math.max(maxUnits, next);
-        maxLogDev = Math.max(maxLogDev, Math.abs(Math.log(next / anchor)) / stationarySd);
+        maxLogDev = Math.max(maxLogDev, Math.abs(Math.log(next / anchor)) / spreadSd);
+        // Soft range (ADR §5.6): each exit from a tenth to ten times the anchor would make a rescale due.
+        const outside = next * 10 < anchor || next > anchor * 10;
+        if (outside && !outsideSoft) softExits++;
+        outsideSoft = outside;
         digits[tick.digit]++;
         if (prevDigit !== null) pairs[prevDigit * 10 + tick.digit]++;
         run = prevDigit === tick.digit ? run + 1 : 1;
@@ -91,7 +101,7 @@ function run(index, seedNo) {
         target_vol: targetVol, realised_vol: realisedVol, vol_ratio_error: realisedVol / targetVol - 1, worst_day_vol_error: worstDay,
         drift_z: meanE * Math.sqrt(n), lag1_acf_z: lag1 * Math.sqrt(n), excess_kurtosis: m4 / varE ** 2 - 3, max_abs_e: maxAbsE,
         digit_chi2: digitChi, pair_chi2: pairChi, longest_run_per_million: worstRun,
-        min_price: minUnits / 1000, max_price: maxUnits / 1000, max_log_dev_sd: maxLogDev, digits,
+        min_price: minUnits / 1000, max_price: maxUnits / 1000, max_log_dev_sd: maxLogDev, anchorless, soft_range_exits: softExits, digits,
     };
     const checks = {
         vol: n >= 1_000_000 ? Math.abs(metrics.vol_ratio_error) < BANDS.volFull : null,
@@ -103,7 +113,7 @@ function run(index, seedNo) {
         digits: digitChi < BANDS.digitChi,
         pairs: pairChi < BANDS.pairChi,
         runs: worstRun < BANDS.runPerMillion,
-        range: minUnits >= Number(entry.min_units) && maxUnits <= Number(entry.max_units) && maxLogDev < BANDS.logDevSd,
+        range: minUnits >= Number(entry.min_units) && maxUnits <= Number(entry.max_units) && maxLogDev < (anchorless ? BANDS.walkDevSd : BANDS.logDevSd),
     };
     return { metrics, checks, pass: Object.values(checks).every((value) => value !== false) };
 }
