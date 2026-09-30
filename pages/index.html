@@ -18,36 +18,35 @@
     <link href="../assets/css/public-shell.css" rel="stylesheet">
     <style>
         :root { --ink: var(--label); --muted: var(--label-2); --line: var(--separator); }
-        body.premium-theme::before { background: radial-gradient(circle at 74% 7%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 23%); }
-        .logo-primary { font-family: Manrope, sans-serif; font-size: 18px; letter-spacing: -.8px; }
-        .logo-secondary { color: var(--accent); font-size: 18px; font-weight: 700; letter-spacing: -.8px; }
+        body.premium-theme::before { content: none; }
+        .logo-primary { font-family: Manrope, sans-serif; font-size: 18px; letter-spacing: -.04em; }
+        .logo-secondary { color: var(--label); font-size: 18px; font-weight: 700; letter-spacing: -.04em; }
         .btn-premium-primary { background: var(--accent-fill); border: 1px solid var(--accent-fill); color: var(--on-accent); box-shadow: none; }
         .btn-premium-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--on-accent); box-shadow: none; transform: none; }
         .landing { position: relative; z-index: 1; }
-        .eyebrow { display: inline-flex; align-items: center; gap: 9px; color: var(--label-2); font: 500 12px/1 'DM Mono', monospace; letter-spacing: .05em; text-transform: uppercase; }
-        .eyebrow::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--accent-fill); box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 8%, transparent); }
         .hero { padding: 105px 0 72px; }
-        .hero h1 { max-width: 780px; color: var(--ink); font-size: clamp(3rem, 6.4vw, 5.6rem); font-weight: 800; letter-spacing: -.075em; line-height: .99; margin: 21px 0 25px; }
-        .hero h1 em { color: var(--accent); font-style: normal; }
+        .hero h1 { max-width: 780px; color: var(--ink); font-size: clamp(3rem, 6.4vw, 5.6rem); font-weight: 800; letter-spacing: -.04em; line-height: 1; margin: 0 0 25px; text-wrap: balance; }
+        .hero h1 em { color: var(--muted); font-style: normal; }
+        .hero-mascots { display: block; width: 100%; max-width: 520px; height: auto; margin-inline: auto; }
         .hero-copy { color: var(--muted); font-size: 1.05rem; line-height: 1.75; max-width: 590px; margin-bottom: 32px; }
         .hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
         .hero-actions .btn { padding: 13px 21px; font-weight: 700; }
         .quiet-link { display: inline-flex; align-items: center; min-height: var(--target); color: var(--label); font-weight: 600; font-size: 14px; text-decoration: none; padding: 12px 9px; }
-        .quiet-link:hover { color: var(--accent); }
+        .quiet-link:hover { color: var(--label); text-decoration: underline; text-underline-offset: .2em; }
         .hero-note { color: var(--label-2); font-size: 12px; line-height: 1.7; margin: 22px 0 0; max-width: 560px; }
-        .digit-card { background: var(--bg-2); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
-        .digit-top { display: flex; align-items: center; justify-content: space-between; padding: 19px 20px 15px; border-bottom: 1px solid var(--line); }
+        .digit-card { border-block: 1px solid var(--line); }
+        .digit-top { display: flex; align-items: center; justify-content: space-between; padding: 19px 0 15px; border-bottom: 1px solid var(--line); }
         .digit-title { color: var(--ink); font-size: 14px; font-weight: 700; margin: 0; }
         .digit-scope { color: var(--label-2); font: 400 11px/1 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .04em; margin-inline-start: 6px; }
-        .digit-body { padding: 20px; }
+        .digit-body { padding: 20px 0; }
         .digit-strip { display: flex; gap: 8px; flex-wrap: wrap; }
-        .digit-strip span { align-items: center; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); display: inline-flex; font: 500 18px/1 'DM Mono', monospace; height: 42px; justify-content: center; width: 34px; }
-        .digit-strip span.settled { border-color: color-mix(in srgb, var(--accent) 50%, transparent); color: var(--accent); }
-        .digit-status { color: var(--accent); font: 500 11px/1 'DM Mono', monospace; text-transform: uppercase; }
-        .digit-status i { font-size: 7px; vertical-align: 1px; margin-inline-end: 5px; }
+        .digit-strip span { align-items: center; border: 1px solid var(--line); border-radius: var(--radius-control); color: var(--muted); display: inline-flex; font: 500 18px/1 'DM Mono', monospace; height: 44px; justify-content: center; width: 36px; }
+        .digit-strip span.settled { border: 2px solid var(--ink); color: var(--ink); font-weight: 700; }
+        .digit-status { color: var(--muted); font: 500 11px/1 'DM Mono', monospace; text-transform: uppercase; }
         .digit-legend { color: var(--muted); font-size: 12px; line-height: 1.7; margin: 16px 0 0; }
         .digit-detail { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--line); }
-        .digit-detail div { padding: 15px 20px; }
+        .digit-detail div { padding: 15px 20px 15px 0; }
+        .digit-detail div + div { padding-inline-start: 20px; }
         .digit-detail div + div { border-inline-start: 1px solid var(--line); }
         .digit-detail span { display: block; color: var(--label-2); font: 400 11px/1.4 'DM Mono', monospace; text-transform: uppercase; }
         .digit-detail strong { display: block; color: var(--label); font: 600 15px/1.4 'DM Mono', monospace; margin-top: 4px; }
@@ -57,25 +56,26 @@
         .credibility-item b { display: block; color: var(--ink); font-size: 14px; }
         .credibility-item span { color: var(--muted); font-size: 13px; }
         .section { padding: 100px 0; }
-        .section-kicker { color: var(--accent); font: 500 12px/1 'DM Mono', monospace; letter-spacing: .06em; text-transform: uppercase; }
-        .section h2 { color: var(--ink); font-size: clamp(2rem, 4vw, 3.35rem); font-weight: 800; letter-spacing: -.055em; line-height: 1.05; margin: 16px 0; max-width: 640px; }
+        .section h2 { color: var(--ink); font-size: clamp(2rem, 4vw, 3.35rem); font-weight: 800; letter-spacing: -.04em; line-height: 1.05; margin: 0 0 16px; max-width: 640px; text-wrap: balance; }
         .section-intro { color: var(--muted); font-size: 16px; line-height: 1.7; max-width: 520px; }
         .workflow { margin-top: 50px; border-top: 1px solid var(--line); }
         .workflow-step { padding: 27px 0; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 48px 1fr auto; gap: 20px; align-items: center; }
-        .step-number { color: var(--accent); font: 500 13px 'DM Mono', monospace; }
+        .step-number { color: var(--muted); font: 500 13px 'DM Mono', monospace; }
+        .workflow-step:hover h3 { text-decoration: underline; text-underline-offset: .2em; }
+        .workflow-step:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 4px; }
         .workflow-step h3 { color: var(--ink); font-size: 18px; font-weight: 700; margin: 0 0 4px; }
         .workflow-step p { color: var(--muted); font-size: 14px; margin: 0; max-width: 470px; }
         .workflow-step i { color: var(--label-2); font-size: 15px; }
-        .feature-stack { display: grid; gap: 12px; }
-        .feature { display: grid; grid-template-columns: 42px 1fr; gap: 16px; align-items: start; padding: 20px; background: var(--fill-subtle); border: 1px solid var(--line); border-radius: 12px; }
-        .feature-icon { width: 42px; height: 42px; display: grid; place-items: center; color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); border-radius: 10px; }
+        .feature-stack { display: grid; border-top: 1px solid var(--line); }
+        .feature { display: grid; grid-template-columns: 24px 1fr; gap: 16px; align-items: start; padding: 22px 0; border-bottom: 1px solid var(--line); }
+        .feature-icon { width: 24px; padding-top: 2px; color: var(--muted); }
         .feature h3 { color: var(--ink); font-size: 15px; font-weight: 700; margin: 1px 0 5px; }
         .feature p { color: var(--muted); font-size: 13px; line-height: 1.55; margin: 0; }
         .closing { padding: 66px 0 86px; }
-        .closing-panel { padding: clamp(30px, 6vw, 70px); border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent); border-radius: 20px; background: color-mix(in srgb, var(--accent) 6%, var(--bg-2)); }
-        .closing h2 { color: var(--ink); font-size: clamp(2rem, 4vw, 3.5rem); letter-spacing: -.06em; font-weight: 800; line-height: 1.04; max-width: 600px; margin: 16px 0; }
+        .closing-panel { padding: clamp(30px, 6vw, 70px) 0 0; border-top: 1px solid var(--line); }
+        .closing h2 { color: var(--ink); font-size: clamp(2rem, 4vw, 3.5rem); letter-spacing: -.04em; font-weight: 800; line-height: 1.04; max-width: 600px; margin: 0 0 16px; text-wrap: balance; }
         .closing p { color: var(--label-2); max-width: 540px; margin: 0 0 26px; }
-        @media (max-width: 991px) { .hero { padding-top: 70px; } .digit-card { margin-top: 8px; } }
+        @media (max-width: 991px) { .hero { padding-top: 70px; } .hero-mascots { max-width: 380px; } }
         @media (max-width: 767px) { .hero { padding: 58px 0; } .hero h1 { font-size: 2.9rem; } .credibility-item + .credibility-item { border-inline-start: 0; border-top: 1px solid var(--line); } .workflow-step { grid-template-columns: 34px 1fr; gap: 12px; } .workflow-step i { display: none; } .section { padding: 68px 0; } .digit-strip span { height: 38px; width: 30px; font-size: 16px; } }
     </style>
 </head>
@@ -89,16 +89,32 @@
                 <h1>One digit decides.<br><em>Everything else is published.</em></h1>
                 <p class="hero-copy">SmartProfit generates its own indices and settles each contract on the final digit of a future tick. Each final digit is equally likely, the payout is quoted before you buy, and past results can be checked against a committed seed.</p>
                 <div class="hero-actions">
-                    <a href="register.html" class="btn btn-premium-primary rounded-pill">Create your account <i class="fas fa-arrow-right ms-2"></i></a>
+                    <a href="register.html" class="btn btn-premium-primary">Create your account <i class="fas fa-arrow-right ms-2" aria-hidden="true"></i></a>
                     <a href="login.html" class="quiet-link">Sign in to your account <i class="fas fa-arrow-right ms-1"></i></a>
                 </div>
                 <p class="hero-note">Practice mode only. Balances are virtual USD credits with no cash value and no withdrawal path. Past digits do not predict the next one, and no result is guaranteed.</p>
             </div>
             <div class="col-lg-5">
+                <img class="hero-mascots" src="../assets/img/mascots/trio.webp" width="960" height="381" alt="" aria-hidden="true" decoding="async" fetchpriority="high">
+            </div>
+        </div></div></section>
+
+        <section class="credibility"><div class="container px-4"><div class="row g-0">
+            <div class="col-md-4 credibility-item"><b>Self-generated indices</b><span>SPI10 to SPI100 are produced inside the platform. No third-party price feed decides a digit.</span></div>
+            <div class="col-md-4 credibility-item"><b>Payouts shown before you buy</b><span>Each quote states the stake, the payout and the win probability from the published margin.</span></div>
+            <div class="col-md-4 credibility-item"><b>Results you can re-check</b><span>Revealed epochs let you recompute digits yourself in the fairness verifier.</span></div>
+        </div></div></section>
+
+        <section class="section settle-example"><div class="container px-4"><div class="row g-5 align-items-center">
+            <div class="col-lg-5">
+                <h2>How settlement reads.</h2>
+                <p class="section-intro">A contract ends on one future tick. Its price is published first; the final decimal digit of that price is the outcome.</p>
+            </div>
+            <div class="col-lg-7">
                 <section class="digit-card" aria-label="Illustration of a settled digit contract">
                     <div class="digit-top">
                         <p class="digit-title">SPI10 <span class="digit-scope">illustration</span></p>
-                        <span class="digit-status"><i class="fas fa-circle"></i>How settlement reads</span>
+                        <span class="digit-status">Settled</span>
                     </div>
                     <div class="digit-body">
                         <div class="digit-strip" aria-hidden="true">
@@ -114,15 +130,8 @@
             </div>
         </div></div></section>
 
-        <section class="credibility"><div class="container px-4"><div class="row g-0">
-            <div class="col-md-4 credibility-item"><b>Self-generated indices</b><span>SPI10 to SPI100 are produced inside the platform. No third-party price feed decides a digit.</span></div>
-            <div class="col-md-4 credibility-item"><b>Payouts shown before you buy</b><span>Each quote states the stake, the payout and the win probability from the published margin.</span></div>
-            <div class="col-md-4 credibility-item"><b>Results you can re-check</b><span>Revealed epochs let you recompute digits yourself in the fairness verifier.</span></div>
-        </div></div></section>
-
-        <section class="section"><div class="container px-4"><div class="row g-5 align-items-start">
+        <section class="section pt-0"><div class="container px-4"><div class="row g-5 align-items-start">
             <div class="col-lg-6">
-                <div class="section-kicker">How it works</div>
                 <h2>Three steps from a tick to a settled contract.</h2>
                 <p class="section-intro">No funding, no deposits and no withdrawal path. A practice account carries virtual USD credits and runs the same quote, purchase and settlement path as any other account type. <a href="blog.html">Read the guides</a> for the full rules.</p>
             </div>
@@ -137,24 +146,22 @@
 
         <section class="section pt-0"><div class="container px-4"><div class="row g-5 align-items-center">
             <div class="col-lg-5">
-                <div class="section-kicker">Built around the essentials</div>
                 <h2>Independent draws, published economics.</h2>
                 <p class="section-intro">Two rules carry the product: outcomes are independent, and everything that decides money is visible before the contract is bought.</p>
             </div>
             <div class="col-lg-7">
                 <div class="feature-stack">
-                    <article class="feature"><div class="feature-icon"><i class="fas fa-dice"></i></div><div><h3>Price decides the digit</h3><p>Each new tick has a generated price, and its last decimal digit settles the contract. Every final digit is equally likely; past results do not predict the next one.</p></div></article>
-                    <article class="feature"><div class="feature-icon"><i class="fas fa-percent"></i></div><div><h3>The house margin is public</h3><p>Payouts are computed from the published margin, 3.5% in policy version 1, and the number of winning digits. Payouts are floored to the cent, so rounding always favours the house, never you.</p></div></article>
-                    <article class="feature"><div class="feature-icon"><i class="fas fa-shield-halved"></i></div><div><h3>Commitments are chained</h3><p>Each epoch publishes its seed commitment before use and chains it to the previous one, so a changed seed is detectable after the fact.</p></div></article>
+                    <article class="feature"><div class="feature-icon" aria-hidden="true"><i class="fas fa-dice"></i></div><div><h3>Price decides the digit</h3><p>Each new tick has a generated price, and its last decimal digit settles the contract. Every final digit is equally likely; past results do not predict the next one.</p></div></article>
+                    <article class="feature"><div class="feature-icon" aria-hidden="true"><i class="fas fa-percent"></i></div><div><h3>The house margin is public</h3><p>Payouts are computed from the published margin, 3.5% in policy version 1, and the number of winning digits. Payouts are floored to the cent, so rounding always favours the house, never you.</p></div></article>
+                    <article class="feature"><div class="feature-icon" aria-hidden="true"><i class="fas fa-shield-halved"></i></div><div><h3>Commitments are chained</h3><p>Each epoch publishes its seed commitment before use and chains it to the previous one, so a changed seed is detectable after the fact.</p></div></article>
                 </div>
             </div>
         </div></div></section>
 
         <section class="closing"><div class="container px-4"><div class="closing-panel">
-            <div class="section-kicker">Ready when you are</div>
             <h2>See the whole settlement cycle with virtual funds.</h2>
             <p>Open a practice account to see live ticks, standing quotes and settled history — with virtual funds and a verifier you can run yourself.</p>
-            <a href="register.html" class="btn btn-premium-primary rounded-pill px-4 py-3">Create account <i class="fas fa-arrow-right ms-2"></i></a>
+            <a href="register.html" class="btn btn-premium-primary px-4 py-3">Create account <i class="fas fa-arrow-right ms-2" aria-hidden="true"></i></a>
         </div></div></section>
     </main>
 
