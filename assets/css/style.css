@@ -58,7 +58,7 @@
 }
 
 .rounded-pill {
-    border-radius: 50px
+    border-radius: var(--radius-control)
 }
 
 .btn-sm {

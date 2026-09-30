@@ -79,7 +79,7 @@
 
     // Chart colours come from the --chart-* tokens (tokens.css), so the chart follows the
     // light or dark appearance. The fallbacks are the dark values, for a canvas outside a themed page.
-    const FALLBACK = Object.freeze({ up: '#64d9a0', down: '#ff7885', line: '#80d7ff', area: 'rgba(128,215,255,.55)', grid: 'rgba(255,255,255,.055)', edge: 'rgba(255,255,255,.12)', axis: 'rgba(214,224,235,.66)', crosshair: 'rgba(255,255,255,.4)', tag: '#2c3947', tagInk: '#eef4fa', onTrend: '#0b111a' });
+    const FALLBACK = Object.freeze({ up: '#64d9a0', down: '#ff7885', line: '#f2f2f2', area: 'rgba(242,242,242,.35)', grid: 'rgba(255,255,255,.055)', edge: 'rgba(255,255,255,.12)', axis: 'rgba(224,224,224,.66)', crosshair: 'rgba(255,255,255,.4)', tag: '#333333', tagInk: '#f2f2f2', onTrend: '#0a0a0a' });
     function palette(canvas) {
         let style = null;
         try { style = window.getComputedStyle(canvas); } catch (_) { style = null; }

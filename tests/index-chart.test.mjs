@@ -180,10 +180,10 @@ test('the whole trade line follows only the latest tick direction without changi
     log.strokes.length = 0;
     const flat = series(4, (n) => [1000, 1001, 1002, 1002][n - 1]);
     assert.equal(window.drawIndexChart(canvas, flat, { decimals: 2, directionColors: true }).direction, 'flat');
-    assert.deepEqual(log.strokes, ['#80d7ff'], 'an unchanged price should use the neutral line color');
+    assert.deepEqual(log.strokes, ['#f2f2f2'], 'an unchanged price should use the neutral line color');
     log.strokes.length = 0;
     window.drawIndexChart(canvas, ticks, { decimals: 2 });
-    assert.deepEqual(log.strokes, ['#80d7ff'], 'the shared dashboard chart gained trade-only colors');
+    assert.deepEqual(log.strokes, ['#f2f2f2'], 'the shared dashboard chart gained trade-only colors');
 });
 
 test('candles group ticks on tick-number boundaries with open, high, low and close, and the last one can still be forming', () => {

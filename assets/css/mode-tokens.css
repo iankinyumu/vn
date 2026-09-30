@@ -1,4 +1,4 @@
-:root { --mode-accent: var(--info); --mode-surface: rgba(34, 119, 163, .18); }
-body[data-mode="demo"], .mode-switch[data-mode="demo"] { --mode-accent: var(--info); --mode-surface: rgba(34, 119, 163, .18); }
-body[data-mode="real"], .mode-switch[data-mode="real"] { --mode-accent: var(--caution); --mode-surface: rgba(159, 107, 23, .18); }
-.restriction-banner { background: var(--alert-bg); color: #fff; padding: .75rem 1rem; text-align: center; }
+/* Practice and Real are told apart by the words "PRACTICE" and "REAL" (DESIGN.md), not by
+   a hue. The mode tokens stay so components keep their hooks, but both modes are neutral. */
+:root, body[data-mode="demo"], .mode-switch[data-mode="demo"], body[data-mode="real"], .mode-switch[data-mode="real"] { --mode-accent: var(--label); --mode-surface: var(--fill-hover); }
+.restriction-banner { background: var(--alert-bg); color: #ffffff; padding: .75rem 1rem; text-align: center; }

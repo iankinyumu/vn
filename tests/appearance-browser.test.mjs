@@ -22,7 +22,7 @@ test('appearance follows the system setting, including a change while the page i
     await page.waitForSelector('[data-app-rail]');
     assert.equal(await page.evaluate(() => document.documentElement.dataset.bsTheme), 'light');
     assert.ok(await luminance(page, 'body') > 0.9, 'the light page background is light');
-    assert.equal(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--chart-line').trim()), '#0a64a0', 'charts read the light palette');
+    assert.equal(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--chart-line').trim()), '#0a0a0a', 'charts read the light palette');
     await page.emulateMedia({ colorScheme: 'dark' });
     await page.waitForFunction(() => document.documentElement.dataset.bsTheme === 'dark');
     assert.ok(await luminance(page, 'body') < 0.1, 'the page switched to dark without a reload');
@@ -79,7 +79,7 @@ test('the Appearance menu overrides the system setting, persists, and works from
     assert.equal(await menu.isHidden(), true, 'choosing closes the menu');
     assert.equal(await page.evaluate(() => document.activeElement?.classList.contains('appearance-toggle')), true, 'focus returns to the button');
     assert.equal(await toggle.getAttribute('aria-label'), 'Appearance: Light');
-    assert.equal(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()), '#0066cc', 'the light accent is blue');
+    assert.equal(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--label').trim()), '#0a0a0a', 'the light label is near-black');
     await page.reload();
     await page.waitForSelector('.app-rail .appearance-toggle');
     assert.equal(await page.evaluate(() => document.documentElement.dataset.bsTheme), 'light', 'the choice survives a reload while the device is dark');
