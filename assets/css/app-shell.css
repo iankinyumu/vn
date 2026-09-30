@@ -32,8 +32,8 @@ body.app-shell::before, .app-shell .animated-bg, .app-shell .live-ticker-bar { d
 .app-shell .stat-label { color: var(--label-2); font-size: var(--text-caption); margin: 3px 0 7px; }
 .app-shell .stat-change, .app-shell .balance-change { background: none; border-radius: 0; color: var(--positive); padding: 0; font: 500 var(--text-caption-2) var(--font-mono); font-variant-numeric: tabular-nums; }
 .app-shell .card-header-clean { border-bottom-color: var(--separator); padding-bottom: 14px; margin-bottom: 14px; }
-.app-shell .card-header-clean h5, .app-shell .section-title, .app-shell .settings-title { color: var(--label); font-size: var(--text-subhead); font-weight: 700; letter-spacing: -.1px; }
-.app-shell .card-header-clean h5 i, .app-shell .section-title i, .app-shell .settings-title i { color: var(--label-2); }
+.app-shell .card-header-clean :is(h3, h5), .app-shell .section-title, .app-shell .settings-title { margin: 0; color: var(--label); font-size: var(--text-subhead); font-weight: 700; letter-spacing: -.1px; }
+.app-shell .card-header-clean :is(h3, h5) i, .app-shell .section-title i, .app-shell .settings-title i { color: var(--label-2); }
 .app-shell .btn-timeframe, .app-shell .order-type-btn { border-radius: 0; border: 0; border-bottom: 2px solid transparent; min-height: var(--target); padding: 6px 9px; color: var(--label-2); font: 500 var(--text-caption-2) var(--font-mono); }
 .app-shell .btn-timeframe:hover { background: transparent; color: var(--label); }
 .app-shell .btn-timeframe.active, .app-shell .order-type-btn.active { background: transparent; color: var(--label); border-bottom-color: var(--label); }
@@ -51,7 +51,7 @@ body.app-shell::before, .app-shell .animated-bg, .app-shell .live-ticker-bar { d
 .app-shell .tx-dot { display: none; }
 .app-shell .news-body h6, .app-shell .news-meta a { color: var(--label); }
 .app-shell .news-body p, .app-shell .news-meta { color: var(--label-2); }
-.app-shell .balance-card { padding: var(--space-4); min-height: 95px; }
+.app-shell .balance-card { padding: var(--space-4) 0; min-height: 95px; }
 .app-shell .balance-label { color: var(--label-2); font: 500 var(--text-caption-2) var(--font-mono); text-transform: uppercase; }
 .app-shell .balance-value, .app-shell .live-price, .app-shell .spread-price { color: var(--label); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .app-shell .balance-sub { color: var(--label-2); }
@@ -300,3 +300,17 @@ body.has-rail.rail-expanded { padding-inline-start: calc(var(--rail-w-open) + va
 @media (prefers-reduced-motion: reduce) { .fund-sheet[open] { animation: none; } }
 /* Placeholders at 4.5:1 or better (WCAG 1.4.3): secondary label colour, full opacity. */
 .app-shell ::placeholder, .fund-sheet ::placeholder { color: var(--label-2); opacity: 1; }
+
+/* Dashboard (DESIGN.md, Impeccable critique). */
+.app-shell .dash-mascot { flex: none; width: 56px; height: 56px; object-fit: contain; }
+.app-shell .dash-section-title { margin: 0 0 var(--space-2); color: var(--label-2); font: 600 var(--text-caption) var(--font-text); letter-spacing: .06em; text-transform: uppercase; }
+.app-shell [data-contract-types] { font: 600 var(--text-subhead)/1.5 var(--font-text); letter-spacing: 0; }
+.app-shell .transaction-table { width: 100%; border-collapse: collapse; }
+.app-shell .transaction-table th, .app-shell .transaction-table td { padding: 10px 12px 10px 0; border-bottom: 1px solid var(--separator); text-align: start; }
+.app-shell .premium-table .table { --bs-table-bg: transparent; --bs-table-color: var(--label-table); --bs-table-hover-bg: var(--fill-hover); --bs-table-hover-color: var(--label); --bs-table-border-color: var(--separator); }
+/* Even and odd digits carry a text mark, not a tint; screen readers hear the word. */
+.app-shell .digit-row::after { margin-inline-start: var(--space-2); min-width: 1ch; color: var(--label-2); font: 600 var(--text-caption-2) var(--font-mono); }
+.app-shell .digit-row.digit-even::after { content: "E" / "even"; }
+.app-shell .digit-row.digit-odd::after { content: "O" / "odd"; }
+.app-shell .digit-row { align-items: baseline; }
+.app-shell .digit-row > span:last-of-type { margin-inline-start: auto; }

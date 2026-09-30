@@ -8,6 +8,7 @@
 .sp-loader-art svg { display: block; }
 /* The animation file draws in the old lime; the accent token recolours it for either appearance. */
 .sp-loader-art svg [stroke]:not([stroke="none"]) { stroke: var(--accent); }
+.sp-loader-art svg [fill]:not([fill="none"]) { fill: var(--accent); }
 .sp-loader-art[data-fallback] { --sp-loader-ink: var(--app-accent, var(--accent)); background:
     linear-gradient(var(--sp-loader-ink), var(--sp-loader-ink)) 22% 100% / 12px 40% no-repeat,
     linear-gradient(var(--sp-loader-ink), var(--sp-loader-ink)) 50% 100% / 12px 70% no-repeat,

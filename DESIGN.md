@@ -60,6 +60,23 @@ tokens and never introduces its own hex values.
 - **Selected and current items** use weight, an underline or an edge line in
   the text colour, not a tint.
 
+## Imagery: the plush mascots
+
+The fluffy mascots in `assets/img/mascots/` (WebP, resized from the owner's
+originals in `assets/img/`) are illustration, not interface, so they are the
+only colour a page may carry outside green and red.
+
+- One mascot per page at most, in a hero or an empty state, where it matches
+  the page's job (support, reading, verifying, welcome, "not found").
+- Never beside a price, balance, result, payout or buy button, and never on the
+  trade page: a mascot must not read as a win or loss signal or make trading
+  feel like a game.
+- Decorative, so `alt=""` and `aria-hidden="true"` unless it carries meaning;
+  explicit `width` and `height`, `loading="lazy"` below the fold,
+  `decoding="async"`.
+- Transparent on the page background: no frame, circle, card, shadow or glow
+  behind it.
+
 ## Kept from Apple HIG (non-visual)
 
 These rules still apply. They are about structure and access, not appearance.
