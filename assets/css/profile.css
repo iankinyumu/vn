@@ -9,11 +9,9 @@
 
 .profile-header-card {
     background: var(--glass-bg);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--glass-border);
-    border-radius: 24px;
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+    border-radius: var(--radius-control);
+    box-shadow: none;
     padding: 35px;
     margin-bottom: 24px;
     display: flex;
@@ -30,7 +28,7 @@
 .avatar-img {
     width: 100px;
     height: 100px;
-    border-radius: 50%;
+    border-radius: var(--radius-control);
     object-fit: cover;
     border: 3px solid var(--accent);
     padding: 3px;
@@ -55,7 +53,7 @@ div.avatar-img {
     width: 32px;
     height: 32px;
     background: var(--purple-grad);
-    border-radius: 50%;
+    border-radius: var(--radius-control);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -68,7 +66,7 @@ div.avatar-img {
 
 .avatar-edit:hover {
     transform: scale(1.1);
-    box-shadow: 0 5px 15px color-mix(in srgb, var(--accent) 40%, transparent)
+    box-shadow: none
 }
 
 .profile-info {
@@ -90,7 +88,7 @@ div.avatar-img {
     color: var(--on-accent);
     font-size: 11px;
     padding: 4px 12px;
-    border-radius: 20px;
+    border-radius: var(--radius-control);
     font-weight: 600;
     letter-spacing: 0.5px
 }
@@ -129,7 +127,7 @@ div.avatar-img {
 
 .btn-action {
     padding: 10px 22px;
-    border-radius: 12px;
+    border-radius: var(--radius-control);
     font-weight: 500;
     font-size: 14px;
     transition: all 0.3s;
@@ -164,9 +162,8 @@ div.avatar-img {
     margin-bottom: 24px;
     flex-wrap: wrap;
     background: var(--bg-2);
-    backdrop-filter: blur(15px);
     border: 1px solid var(--glass-border);
-    border-radius: 16px;
+    border-radius: var(--radius-control);
     padding: 6px
 }
 
@@ -174,7 +171,7 @@ div.avatar-img {
     flex: 1;
     min-width: 120px;
     padding: 12px 20px;
-    border-radius: 12px;
+    border-radius: var(--radius-control);
     border: none;
     background: transparent;
     color: var(--text-secondary);
@@ -196,7 +193,7 @@ div.avatar-img {
 .tab-btn.active {
     background: var(--purple-grad);
     color: var(--on-accent);
-    box-shadow: 0 5px 15px color-mix(in srgb, var(--accent) 30%, transparent)
+    box-shadow: none
 }
 
 .tab-btn:hover:not(.active) {
@@ -214,11 +211,9 @@ div.avatar-img {
 
 .settings-card {
     background: var(--glass-bg);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--glass-border);
-    border-radius: 20px;
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+    border-radius: var(--radius-control);
+    box-shadow: none;
     padding: 28px;
     margin-bottom: 20px
 }
@@ -269,7 +264,7 @@ div.avatar-img {
     width: 100%;
     background: var(--fill-hover);
     border: 1px solid var(--glass-border);
-    border-radius: 14px;
+    border-radius: var(--radius-control);
     padding: 12px 16px 12px 42px;
     color: var(--text-primary);
     font-size: 14px;
@@ -280,7 +275,7 @@ div.avatar-img {
 .form-input:focus {
     border-color: var(--accent);
     background: var(--fill-hover);
-    box-shadow: 0 0 20px color-mix(in srgb, var(--accent) 15%, transparent)
+    box-shadow: none
 }
 
 .form-input::placeholder {
@@ -336,7 +331,7 @@ div.avatar-img {
     right: 0;
     bottom: 0;
     background: var(--fill-pressed);
-    border-radius: 26px;
+    border-radius: var(--radius-control);
     transition: 0.3s
 }
 
@@ -348,7 +343,7 @@ div.avatar-img {
     left: 3px;
     bottom: 3px;
     background: var(--bg-2);
-    border-radius: 50%;
+    border-radius: var(--radius-control);
     transition: 0.3s
 }
 
@@ -362,7 +357,7 @@ div.avatar-img {
 
 .badge-status {
     padding: 4px 12px;
-    border-radius: 20px;
+    border-radius: var(--radius-control);
     font-size: 11px;
     font-weight: 600
 }
@@ -383,7 +378,7 @@ div.avatar-img {
     align-items: center;
     padding: 14px 16px;
     background: var(--fill-subtle);
-    border-radius: 12px;
+    border-radius: var(--radius-control);
     margin-bottom: 8px;
     flex-wrap: wrap;
     gap: 10px
@@ -407,7 +402,7 @@ div.avatar-img {
     color: var(--text-secondary);
     background: var(--fill-hover);
     padding: 4px 10px;
-    border-radius: 6px
+    border-radius: var(--radius-control)
 }
 
 .api-key-actions {
@@ -458,7 +453,7 @@ div.avatar-img {
 .tx-dot {
     width: 8px;
     height: 8px;
-    border-radius: 50%
+    border-radius: var(--radius-control)
 }
 
 .tx-dot.deposit {
@@ -504,7 +499,7 @@ div.avatar-img {
 .kyc-step-circle {
     width: 38px;
     height: 38px;
-    border-radius: 50%;
+    border-radius: var(--radius-control);
     background: var(--fill-hover);
     border: 2px solid var(--glass-border);
     display: flex;
@@ -526,7 +521,7 @@ div.avatar-img {
     background: color-mix(in srgb, var(--accent) 20%, transparent);
     border-color: var(--accent);
     color: var(--accent);
-    box-shadow: 0 0 15px color-mix(in srgb, var(--accent) 30%, transparent)
+    box-shadow: none
 }
 
 .kyc-step-label {

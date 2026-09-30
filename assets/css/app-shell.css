@@ -314,3 +314,6 @@ body.has-rail.rail-expanded { padding-inline-start: calc(var(--rail-w-open) + va
 .app-shell .digit-row.digit-odd::after { content: "O" / "odd"; }
 .app-shell .digit-row { align-items: baseline; }
 .app-shell .digit-row > span:last-of-type { margin-inline-start: auto; }
+/* Profile (DESIGN.md, Impeccable critique): outlined initial, not a filled tile; room under section titles. */
+.app-shell .avatar-img { background: transparent !important; color: var(--label) !important; }
+.app-shell .settings-title { margin-bottom: var(--space-4); }
