@@ -7,7 +7,9 @@
     <title>Trade indices — SmartProfit</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#000000">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="../assets/css/glassmorphism.css" rel="stylesheet">
     <link href="../assets/css/style.css" rel="stylesheet">
     <link href="../assets/css/app-shell.css" rel="stylesheet">
@@ -20,8 +22,8 @@
     <header class="premium-header">
         <nav class="navbar navbar-expand">
             <div class="container-fluid trade-header-inner">
-                <a class="navbar-brand premium-logo" href="dashboard.html">SmartProfit</a>
-                <div class="navbar-nav ms-auto">
+                <a class="navbar-brand premium-logo" href="dashboard.html" aria-label="SmartProfit home"><span class="logo-text"><span class="logo-primary">Smart</span><span class="logo-secondary">Profit</span></span></a>
+                <div class="navbar-nav ms-auto flex-row align-items-center">
                     <a class="nav-link" href="dashboard.html">Dashboard</a>
                     <a class="nav-link active" href="trade.html" aria-current="page">Trade</a>
                     <a class="nav-link" href="fairness.html">Fairness</a>
@@ -46,12 +48,12 @@
             <div class="chart-frame"><canvas class="index-chart" data-index-chart aria-label="Recent index prices with a price axis" role="img"></canvas></div>
         </section>
         <section class="digits-panel" aria-labelledby="digits-heading">
-            <div class="panel-title"><div><p class="trade-eyebrow">Live results</p><h2 id="digits-heading">Latest digit</h2></div></div>
+            <div class="panel-title"><h2 id="digits-heading">Latest digit</h2></div>
             <div class="digits" role="group" aria-labelledby="digits-heading" aria-describedby="current-digit" data-digits><span data-digit="0" class="even">0</span><span data-digit="1" class="odd">1</span><span data-digit="2" class="even">2</span><span data-digit="3" class="odd">3</span><span data-digit="4" class="even">4</span><span data-digit="5" class="odd">5</span><span data-digit="6" class="even">6</span><span data-digit="7" class="odd">7</span><span data-digit="8" class="even">8</span><span data-digit="9" class="odd">9</span></div>
             <p id="current-digit" class="visually-hidden" data-current-digit>No digit yet</p>
         </section>
         <section class="order-panel" aria-labelledby="order-heading">
-            <div class="panel-title"><div><p class="trade-eyebrow">Order ticket</p><h2 id="order-heading">Set up your contract</h2></div></div>
+            <div class="panel-title"><h2 id="order-heading">Set up your contract</h2></div>
             <form id="trade-form" data-trade-form>
                 <div class="order-fields">
                     <label class="trade-field">Contract type<select name="type" class="form-select"></select></label>

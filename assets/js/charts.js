@@ -80,7 +80,7 @@
         const decimals = Number.isInteger(options.decimals) && options.decimals >= 0 ? options.decimals : null;
         const withAxis = decimals !== null;
         const format = (price) => `$${price.toFixed(decimals)}`;
-        if (withAxis) { context.font = `500 ${11 * ratio}px 'DM Mono', monospace`; context.textBaseline = 'middle'; }
+        if (withAxis) { context.font = `500 ${11 * ratio}px -apple-system, BlinkMacSystemFont, 'SF Pro Text', Inter, 'Segoe UI', sans-serif`; context.textBaseline = 'middle'; }
         // The axis fits the longest price label, so the plot only narrows when the index gains a digit.
         const axisWidth = withAxis ? Math.ceil(context.measureText('8'.repeat(Math.max(format(low).length, format(high).length))).width + 14 * ratio) : 0;
         const plotWidth = Math.max(1, width - axisWidth);

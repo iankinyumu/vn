@@ -1,5 +1,7 @@
-:root { --mode-accent: #80d7ff; --mode-surface: rgba(34, 119, 163, .18); }
-body[data-mode="demo"] { --mode-accent: #80d7ff; --mode-surface: rgba(34, 119, 163, .18); }
-body[data-mode="real"] { --mode-accent: #f2b95b; --mode-surface: rgba(159, 107, 23, .18); }
-.account-switcher { background: rgba(255,255,255,.08); border: 1px solid var(--mode-accent); border-radius: .4rem; color: inherit; padding: .35rem .5rem; }
-.restriction-banner { background: #7f2d2d; color: #fff; padding: .75rem 1rem; text-align: center; }
+/* Demo and real accounts must never look alike: the mode accent colours the account switcher ring,
+   the feed status and the chart bars. Demo is cool; real is warm. */
+:root { --mode-accent: #80d7ff; --mode-surface: rgba(128, 215, 255, .18); }
+body[data-mode="demo"] { --mode-accent: #80d7ff; --mode-surface: rgba(128, 215, 255, .18); }
+body[data-mode="real"] { --mode-accent: #ff9f0a; --mode-surface: rgba(255, 159, 10, .2); }
+.account-switcher { background: rgba(120, 120, 128, .24); border: 1px solid var(--mode-accent); border-radius: 8px; color: inherit; padding: .3rem .5rem; }
+.restriction-banner { background: rgba(255, 69, 58, .14); color: #ff9a93; padding: .65rem 1rem; text-align: center; }

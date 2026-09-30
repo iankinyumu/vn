@@ -8,7 +8,9 @@
     <title>Profile — SmartProfit</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#000000">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="../assets/css/glassmorphism.css" rel="stylesheet">
     <link href="../assets/css/profile.css" rel="stylesheet">
     <link href="../assets/css/app-shell.css" rel="stylesheet">
@@ -18,15 +20,6 @@
 <body class="premium-theme app-shell" data-shell-surface="app" data-shell-active="profile">
     <script src="../assets/js/auth.js"></script>
     <script>requireAuth()</script>
-
-    <div class="animated-bg">
-        <div class="particle particle-1"></div>
-        <div class="particle particle-2"></div>
-        <div class="particle particle-3"></div>
-        <div class="particle particle-4"></div>
-        <div class="particle particle-5"></div>
-        <div class="particle particle-6"></div>
-    </div>
 
     <div data-shell-header></div>
 
@@ -39,17 +32,17 @@
             </div>
             <div class="profile-info">
                 <h3 class="profile-name" data-profile-name>Loading account…</h3>
-                <p class="profile-email"><i class="fas fa-envelope me-1"></i> <span data-profile-email></span></p>
+                <p class="profile-email"><span data-profile-email></span></p>
                 <div class="profile-meta">
-                    <span><i class="fas fa-calendar-alt"></i> Joined: <b class="meta-value" data-profile-created>—</b></span>
-                    <span><i class="fas fa-layer-group"></i> Active account: <b class="meta-value" data-account-mode>—</b></span>
-                    <span><i class="fas fa-shield-halved"></i> Email: <b class="meta-value" data-profile-verified>—</b></span>
+                    <span>Joined <b class="meta-value" data-profile-created>—</b></span>
+                    <span>Active account <b class="meta-value" data-account-mode>—</b></span>
+                    <span>Email <b class="meta-value" data-profile-verified>—</b></span>
                 </div>
             </div>
             <div class="profile-actions">
-                <a href="dashboard.html" class="btn-action"><i class="fas fa-gauge-high"></i> Dashboard</a>
-                <a href="trade.html" class="btn-action"><i class="fas fa-chart-simple"></i> Trade</a>
-                <button type="button" data-profile-logout class="btn-action danger"><i class="fas fa-sign-out-alt"></i> Log out</button>
+                <a href="dashboard.html" class="btn-action">Dashboard</a>
+                <a href="trade.html" class="btn-action">Trade</a>
+                <button type="button" data-profile-logout class="btn-action danger">Log out</button>
             </div>
         </div>
 
@@ -64,10 +57,10 @@
                 <h5 class="settings-title"><i class="fas fa-user-edit"></i> Personal Information</h5>
                 <form id="profileForm">
                     <div><label class="form-label" for="profileDisplayName">Display name</label>
-                        <div class="input-wrapper"><i class="fas fa-user form-icon"></i><input type="text" id="profileDisplayName" class="form-input" required maxlength="120" data-profile-display-name></div>
+                        <div class="input-wrapper"><input type="text" id="profileDisplayName" class="form-input" required maxlength="120" data-profile-display-name></div>
                     </div>
                     <div><label class="form-label" for="profileEmailInput">Email</label>
-                        <div class="input-wrapper"><i class="fas fa-envelope form-icon"></i><input type="email" id="profileEmailInput" class="form-input" data-profile-email-input readonly></div>
+                        <div class="input-wrapper"><input type="email" id="profileEmailInput" class="form-input" data-profile-email-input readonly></div>
                     </div>
                     <button type="submit" class="btn btn-premium-primary mt-3">Save changes</button>
                     <p class="strength-text mt-2" data-profile-save-status role="status" aria-live="polite"></p>
