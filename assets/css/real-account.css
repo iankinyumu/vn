@@ -1,21 +1,23 @@
 .real-main { max-width: 980px; margin: 0 auto; padding: 24px 20px 48px; min-height: calc(100vh - var(--topbar-h) - 60px); }
-.real-panel { margin-bottom: 12px; padding: 18px 20px; border: 1px solid var(--app-line); border-radius: 6px; background: var(--app-panel); }
+/* No card panels (DESIGN.md): each block sits on the page under a 1px line. */
+.real-panel { margin-bottom: 12px; padding: 18px 0; border-top: 1px solid var(--app-line); }
 .real-balance-panel { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
 .real-label { margin: 0 0 6px; color: var(--app-muted); font: 500 11px 'DM Mono', monospace; letter-spacing: .06em; text-transform: uppercase; }
-.real-env { margin-inline-start: 8px; color: var(--mode-accent); }
-.real-balance { margin: 0; color: var(--app-ink); font: 500 30px 'DM Mono', monospace; line-height: 1; }
+.real-env { margin-inline-start: 8px; color: var(--app-ink); }
+.real-balance { margin: 0; color: var(--app-ink); font: 500 30px 'DM Mono', monospace; font-variant-numeric: tabular-nums; line-height: 1; }
 .real-heading { margin: 0 0 12px; font-size: 15px; font-weight: 700; }
 .real-table-wrap { overflow-x: auto; }
 .real-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.real-table th { padding: 8px 10px 8px 0; border-bottom: 1px solid var(--app-line); color: var(--app-muted); font: 500 10px 'DM Mono', monospace; text-align: start; text-transform: uppercase; white-space: nowrap; }
-.real-table td { padding: 10px 10px 10px 0; border-bottom: 1px solid var(--app-line); color: var(--app-ink); white-space: nowrap; }
+.real-table th { padding: 8px 10px 8px 0; border-bottom: 1px solid var(--app-line); color: var(--app-muted); font: 500 var(--text-caption-2) 'DM Mono', monospace; letter-spacing: .04em; text-align: start; white-space: nowrap; }
+.real-table td { padding: 10px 10px 10px 0; border-bottom: 1px solid var(--app-line); color: var(--app-ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .real-table tr:last-child td { border-bottom: 0; }
 .real-empty { color: var(--app-muted) !important; margin: 0; }
-.real-state { display: inline-block; padding: 2px 8px; border-radius: 4px; font: 600 11px 'DM Mono', monospace; }
-.real-state[data-tone="pending"] { background: color-mix(in srgb, var(--info) 12%, transparent); color: var(--accent); }
-.real-state[data-tone="ok"] { background: color-mix(in srgb, var(--positive) 12%, transparent); color: var(--app-green); }
-.real-state[data-tone="bad"] { background: color-mix(in srgb, var(--negative) 12%, transparent); color: var(--app-red); }
-.real-state[data-tone="review"] { background: color-mix(in srgb, var(--caution) 12%, transparent); color: var(--caution); }
+/* Deposit state is plain text (DESIGN.md: no badges). Completed and failed are safe/danger, so
+   they may use green and red; the word itself always carries the meaning. */
+.real-state { display: inline; padding: 0; font: 600 11px 'DM Mono', monospace; color: var(--app-ink); }
+.real-state[data-tone="pending"], .real-state[data-tone="review"] { color: var(--app-muted); }
+.real-state[data-tone="ok"] { color: var(--app-green); }
+.real-state[data-tone="bad"] { color: var(--app-red); }
 .real-status { margin: 0 0 12px; color: var(--app-ink); font-size: 13px; }
 .real-status:empty { display: none; }
 @media (max-width: 575.98px) { .real-main { padding: 16px 12px 40px; } .real-balance-panel { align-items: stretch; flex-direction: column; } }
