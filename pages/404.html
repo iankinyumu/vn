@@ -16,9 +16,6 @@
     <link href="../assets/css/style.css" rel="stylesheet">
     <link href="../assets/css/404.css" rel="stylesheet">
     <link href="../assets/css/public-shell.css" rel="stylesheet">
-    <style>
-        .public-shell .error-coin { background: color-mix(in srgb, var(--accent) 8%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent); color: var(--flat-accent); }
-    </style>
 </head>
 
 <body class="premium-theme public-shell" data-shell-surface="public">
@@ -27,43 +24,27 @@
     <main class="error-wrapper">
         <div class="error-content">
 
-            <div class="error-illustration" aria-hidden="true">
-                <div class="error-circle">
-                    <span class="error-digit">4</span>
-                    <div class="error-coin">
-                        <i class="fas fa-dice"></i>
-                    </div>
-                    <span class="error-digit">4</span>
-                </div>
-                <div class="error-shadow"></div>
-            </div>
+            <img class="error-mascot" src="../assets/img/mascots/violet-heart-binoculars.webp" width="160" height="160" alt="" aria-hidden="true" decoding="async">
 
             <div class="error-card">
-                <div class="error-icon-wrapper">
-                    <i class="fas fa-triangle-exclamation"></i>
-                </div>
+                <p class="error-code">Error 404</p>
                 <h1 class="error-title">Page Not Found</h1>
                 <p class="error-message">This page does not exist or has been moved. The links below cover everything a visitor can reach.</p>
-                <div class="error-divider"></div>
-                <div class="error-suggestions">
-                    <h6><i class="fas fa-lightbulb me-2"></i>Try one of these:</h6>
-                    <div class="error-links">
-                        <a href="index.html" class="error-link"><i class="fas fa-house"></i> Home</a>
-                        <a href="about.html" class="error-link"><i class="fas fa-circle-info"></i> About</a>
-                        <a href="faq.html" class="error-link"><i class="fas fa-circle-question"></i> FAQ</a>
-                        <a href="blog.html" class="error-link"><i class="fas fa-book-open"></i> Guides</a>
-                        <a href="fairness.html" class="error-link"><i class="fas fa-scale-balanced"></i> Fairness</a>
-                        <a href="contact.html" class="error-link"><i class="fas fa-headset"></i> Support</a>
-                    </div>
-                </div>
                 <div class="error-actions">
-                    <a href="index.html" class="btn btn-premium-primary btn-lg">
-                        <i class="fas fa-house me-2"></i> Back to the homepage
-                    </a>
-                    <a href="trade.html" class="btn btn-glass-premium btn-lg">
-                        <i class="fas fa-chart-simple me-2"></i> Trading page
-                    </a>
+                    <a href="index.html" class="btn btn-premium-primary">Back to the homepage</a>
+                    <a href="trade.html" class="btn btn-glass-premium">Trading page</a>
                 </div>
+                <nav class="error-suggestions" aria-labelledby="errorLinksTitle">
+                    <h2 id="errorLinksTitle">Or try one of these</h2>
+                    <ul class="error-links">
+                        <li><a href="index.html" class="error-link">Home</a></li>
+                        <li><a href="about.html" class="error-link">About</a></li>
+                        <li><a href="faq.html" class="error-link">FAQ</a></li>
+                        <li><a href="blog.html" class="error-link">Guides</a></li>
+                        <li><a href="fairness.html" class="error-link">Fairness</a></li>
+                        <li><a href="contact.html" class="error-link">Support</a></li>
+                    </ul>
+                </nav>
             </div>
 
         </div>
