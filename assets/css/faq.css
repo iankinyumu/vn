@@ -9,31 +9,31 @@
 .faq-hero {
     padding: 40px 30px;
     text-align: center;
-    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 6%, transparent), color-mix(in srgb, var(--accent) 3%, transparent))
+    background: transparent
 }
 
 .faq-hero-icon {
     width: 64px;
     height: 64px;
     background: var(--purple-grad);
-    border-radius: 18px;
+    border-radius: var(--radius-control);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 28px;
     margin: 0 auto 16px;
-    animation: pulse-glow 3s ease-in-out infinite
+    animation: none
 }
 
 @keyframes pulse-glow {
 
     0%,
     100% {
-        box-shadow: 0 0 15px color-mix(in srgb, var(--accent) 20%, transparent)
+        box-shadow: none
     }
 
     50% {
-        box-shadow: 0 0 30px color-mix(in srgb, var(--accent) 40%, transparent)
+        box-shadow: none
     }
 }
 
@@ -78,7 +78,7 @@
 .faq-cat-btn {
     white-space: nowrap;
     padding: 10px 18px;
-    border-radius: 12px;
+    border-radius: var(--radius-control);
     border: 1px solid var(--glass-border);
     background: var(--fill-subtle);
     color: var(--text-secondary);
@@ -133,10 +133,8 @@
 
 .faq-item {
     background: var(--glass-bg);
-    backdrop-filter: blur(var(--blur));
-    -webkit-backdrop-filter: blur(var(--blur));
     border: 1px solid var(--glass-border);
-    border-radius: 14px;
+    border-radius: var(--radius-control);
     margin-bottom: 6px;
     overflow: hidden;
     transition: all 0.3s
@@ -148,7 +146,7 @@
 
 .faq-item.active {
     border-color: color-mix(in srgb, var(--accent) 30%, transparent);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3)
+    box-shadow: none
 }
 
 .faq-question {
@@ -180,7 +178,7 @@
     flex-shrink: 0;
     width: 28px;
     height: 28px;
-    border-radius: 50%;
+    border-radius: var(--radius-control);
     background: var(--fill-hover);
     display: flex;
     align-items: center;
@@ -232,7 +230,7 @@
 .faq-answer-inner .faq-note {
     background: color-mix(in srgb, var(--accent) 8%, transparent);
     border: 1px solid color-mix(in srgb, var(--accent) 15%, transparent);
-    border-radius: 10px;
+    border-radius: var(--radius-control);
     padding: 10px 14px;
     font-size: 12px;
     margin-top: 8px
@@ -294,7 +292,7 @@
     gap: 12px;
     align-items: center;
     padding: 10px 12px;
-    border-radius: 10px;
+    border-radius: var(--radius-control);
     transition: all 0.3s
 }
 
@@ -305,7 +303,7 @@
 .qh-icon {
     width: 38px;
     height: 38px;
-    border-radius: 10px;
+    border-radius: var(--radius-control);
     background: color-mix(in srgb, var(--accent) 10%, transparent);
     display: flex;
     align-items: center;
@@ -328,14 +326,14 @@
 }
 
 .highlight-card {
-    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 8%, transparent), color-mix(in srgb, var(--accent) 3%, transparent))
+    background: transparent
 }
 
 .sidebar-cta-icon {
     width: 50px;
     height: 50px;
     background: var(--purple-grad);
-    border-radius: 14px;
+    border-radius: var(--radius-control);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -367,7 +365,7 @@
     align-items: center;
     gap: 8px;
     padding: 10px 12px;
-    border-radius: 8px;
+    border-radius: var(--radius-control);
     color: var(--text-secondary);
     text-decoration: none;
     font-size: 13px;
@@ -422,3 +420,18 @@
         font-size: 13px
     }
 }
+/* FAQ (DESIGN.md, Impeccable critique): mascot hero, questions as a ruled list, no icon tiles. */
+.faq-mascot { display: block; width: 120px; height: 120px; margin: 0 auto 12px; object-fit: contain; }
+.public-shell .faq-item { margin: 0; border: 0; border-bottom: 1px solid var(--separator); border-radius: 0; background: transparent; }
+.public-shell .faq-section { border-top: 1px solid var(--separator); }
+.public-shell .faq-question { min-height: var(--target); padding-inline: 0; }
+.public-shell .faq-question:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
+.public-shell .faq-answer { padding-inline: 0; }
+.qh-icon, .sidebar-cta-icon { display: none; }
+.public-shell .quick-help-item { padding: 10px 0; border-bottom: 1px solid var(--separator); }
+.public-shell .quick-help-item h3 { margin: 0 0 2px; color: var(--label); font-size: var(--text-subhead); font-weight: 700; }
+.public-shell .quick-help-item p { margin: 0; font-size: var(--text-caption); }
+.public-shell .faq-side-heading { margin: 0 0 12px; color: var(--label); font-size: var(--text-headline); font-weight: 700; }
+.public-shell .pop-q-item { display: flex; align-items: center; gap: 8px; min-height: var(--target); color: var(--label-2); text-decoration: none; }
+.public-shell .pop-q-item:hover { color: var(--label); text-decoration: underline; }
+.public-shell .faq-contact-btns .btn { font-size: 1rem; padding: 12px 20px; }
