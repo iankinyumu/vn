@@ -66,7 +66,16 @@
         if (!user) return;
         showName(user.user_metadata?.display_name || user.user_metadata?.full_name || user.email);
         let avatar = avatars()?.forUser(user);
-        if (avatar) showAvatar(avatar);
+        if (avatar) { showAvatar(avatar); avatars().markShown(avatar); }
+        // A character picked on another device (or tab) arrives here: show it and tick it in the picker.
+        document.addEventListener('smartprofit:avatar-changed', (event) => {
+            const id = event.detail?.avatar;
+            if (!avatars()?.valid(id) || id === avatar) return;
+            avatar = id;
+            showAvatar(id);
+            const radio = find(`[data-avatar-options] input[value="${id}"]`);
+            if (radio) radio.checked = true;
+        });
         text('[data-profile-email]', user.email);
         const emailInput = find('[data-profile-email-input]');
         if (emailInput) emailInput.value = user.email || '';
@@ -79,6 +88,7 @@
         if (profile?.display_name) showName(profile.display_name);
         if (profile?.created_at) text('[data-profile-created]', new Intl.DateTimeFormat(undefined, { month: 'short', year: 'numeric' }).format(new Date(profile.created_at)));
 
+        avatars()?.sync(true);
         renderPicker(avatar, async (choice) => {
             const status = find('[data-avatar-status]');
             const previous = avatar;

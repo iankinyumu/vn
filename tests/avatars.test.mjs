@@ -48,3 +48,26 @@ test('the side panel shows the character on the Profile link and follows a new p
         assert.equal(image().getAttribute('src'), 'https://example.test/assets/img/avatars/blue-star.webp');
     } finally { window.close(); }
 });
+
+test('a character picked on another device reaches this page: sync() asks the server and announces only real changes', async () => {
+    const window = load();
+    let serverAvatar = 'violet-bow', calls = 0;
+    window.getSupabaseClient = async () => ({ auth: { getUser: async () => { calls += 1; return { data: { user: { id: 'user-1', user_metadata: { avatar: serverAvatar } } }, error: null }; } } });
+    const heard = [];
+    window.document.addEventListener('smartprofit:avatar-changed', (event) => heard.push(event.detail.avatar));
+    const avatars = window.smartProfitAvatars;
+    avatars.markShown('blue-star');                 // the page drew the cached, stale character
+    await avatars.sync(true);
+    assert.deepEqual(heard, ['violet-bow'], 'the server copy wins');
+    await avatars.sync(true);
+    assert.deepEqual(heard, ['violet-bow'], 'no repeat when nothing changed');
+    serverAvatar = 'rose-pearls';
+    await avatars.sync();                           // within 15 seconds: throttled, no request
+    assert.equal(calls, 2);
+    await avatars.sync(true);
+    assert.deepEqual(heard, ['violet-bow', 'rose-pearls']);
+    window.getSupabaseClient = async () => ({ auth: { getUser: async () => ({ data: null, error: new Error('offline') }) } });
+    await avatars.sync(true);
+    assert.deepEqual(heard, ['violet-bow', 'rose-pearls'], 'offline keeps what is shown');
+    window.close();
+});

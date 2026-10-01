@@ -99,3 +99,13 @@ test('tapping it explains the selected contract type; the first visit gets a tou
         assert.equal(first.$('[data-companion-show]').hidden, false);
     } finally { first.close(); }
 });
+
+test('the companion follows a character picked on another device', async () => {
+    const page = await open();
+    try {
+        page.window.document.dispatchEvent(new page.window.CustomEvent('smartprofit:avatar-changed', { detail: { avatar: 'violet-bow' } }));
+        await page.settle();
+        assert.equal(page.$('[data-companion-img]').getAttribute('src'), 'https://example.test/assets/img/characters/violet-bow.svg');
+        assert.match(page.$('[data-companion]').getAttribute('aria-label'), /^Violet bow, your trading companion$/);
+    } finally { page.close(); }
+});

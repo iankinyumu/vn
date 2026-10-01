@@ -27,11 +27,13 @@
         'Take profit and Stop loss end your session when it reaches either amount. I will tell you when that happens, and suggest breaks on long sessions.',
     ]);
 
-    function start(avatarId) {
+    function start(initialAvatar) {
+        let avatarId = initialAvatar;
         const avatars = window.smartProfitAvatars;
         const base = new URL('../img/characters/', document.querySelector('script[src$="trade-companion.js"]')?.src || new URL('../assets/js/', window.location.href)).href;
         const art = (pose) => `${base}${avatarId}${pose === 'asleep' ? '-asleep' : reduceMotion() ? '-still' : ''}.svg`;
-        const name = avatars?.nameOf(avatarId) || 'Your character';
+        const nameNow = () => avatars?.nameOf(avatarId) || 'Your character';
+        const name = nameNow();
 
         // ---- DOM ----------------------------------------------------------------------------
         const root = document.createElement('aside');
@@ -76,7 +78,7 @@
             const next = art(pose);
             if (img.getAttribute('src') !== next) img.src = next;
             root.dataset.pose = pose;
-            label.textContent = pose === 'asleep' ? `${name} is asleep: the price feed is not live. Open help.` : `${name}. Open help.`;
+            label.textContent = pose === 'asleep' ? `${nameNow()} is asleep: the price feed is not live. Open help.` : `${nameNow()}. Open help.`;
         };
         const button = (caption, onClick, primary = false) => {
             const node = Object.assign(document.createElement('button'), { type: 'button', className: primary ? 'companion-action is-primary' : 'companion-action', textContent: caption });
@@ -208,6 +210,17 @@
         document.addEventListener('change', () => { observe(); evaluate(); });
         window.matchMedia?.('(prefers-reduced-motion: reduce)').addEventListener?.('change', () => evaluate());
         setInterval(evaluate, 60000);
+
+        // Follow a character picked on another device or tab.
+        document.addEventListener('smartprofit:avatar-changed', (event) => {
+            if (!window.smartProfitAvatars?.valid(event.detail?.avatar) || event.detail.avatar === avatarId) return;
+            avatarId = event.detail.avatar;
+            img.removeAttribute('src');
+            root.setAttribute('aria-label', `${nameNow()}, your trading companion`);
+            evaluate();
+        });
+        window.smartProfitAvatars?.markShown(avatarId);
+        window.smartProfitAvatars?.sync(true);
 
         applyHidden();
         evaluate();

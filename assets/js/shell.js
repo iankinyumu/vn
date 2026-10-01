@@ -530,8 +530,15 @@
             script.onerror = reject;
             document.head.append(script);
         });
+        // Draw the cached character at once, then confirm it with the server (another device may have changed it).
         ready.then(() => window.getAuthenticatedUser?.())
-            .then((user) => { if (user) show(window.smartProfitAvatars.forUser(user)); })
+            .then((user) => {
+                if (!user) return;
+                const id = window.smartProfitAvatars.forUser(user);
+                show(id);
+                window.smartProfitAvatars.markShown(id);
+                window.smartProfitAvatars.sync(true);
+            })
             .catch(() => { /* Without the list or a session, the Profile icon stays. */ });
     }
 

@@ -48,6 +48,11 @@ test('the profile page shows identity and account types, switches tabs and saves
         await wait(() => $('[data-avatar-status]').textContent.startsWith('Character saved'));
         assert.deepEqual(JSON.parse(JSON.stringify(avatarSaves)), [{ data: { avatar: other.value } }]);
         assert.equal($('[data-profile-avatar]').dataset.avatar, other.value);
+        // A pick from another device arrives as an event: the picture and the picker follow it.
+        const remote = radios.find((radio) => radio.value !== assigned && radio.value !== other.value).value;
+        dom.window.document.dispatchEvent(new dom.window.CustomEvent('smartprofit:avatar-changed', { detail: { avatar: remote } }));
+        assert.equal($('[data-profile-avatar]').dataset.avatar, remote);
+        assert.equal(dom.window.document.querySelector(`[data-avatar-options] input[value="${remote}"]`).checked, true);
         assert.equal($('[data-profile-verified]').textContent, 'Verified');
         assert.notEqual($('[data-profile-created]').textContent, '—');
         assert.deepEqual([...dom.window.document.querySelectorAll('[data-profile-accounts] tr')].map((row) => row.textContent), ['PracticeUSDACTIVE', 'RealUSDNot available yet']);
