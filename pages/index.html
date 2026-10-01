@@ -34,22 +34,6 @@
         .quiet-link { display: inline-flex; align-items: center; min-height: var(--target); color: var(--label); font-weight: 600; font-size: 14px; text-decoration: none; padding: 12px 9px; }
         .quiet-link:hover { color: var(--label); text-decoration: underline; text-underline-offset: .2em; }
         .hero-note { color: var(--label-2); font-size: 12px; line-height: 1.7; margin: 22px 0 0; max-width: 560px; }
-        .digit-card { border-block: 1px solid var(--line); }
-        .digit-top { display: flex; align-items: center; justify-content: space-between; padding: 19px 0 15px; border-bottom: 1px solid var(--line); }
-        .digit-title { color: var(--ink); font-size: 14px; font-weight: 700; margin: 0; }
-        .digit-scope { color: var(--label-2); font: 400 11px/1 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .04em; margin-inline-start: 6px; }
-        .digit-body { padding: 20px 0; }
-        .digit-strip { display: flex; gap: 8px; flex-wrap: wrap; }
-        .digit-strip span { align-items: center; border: 1px solid var(--line); border-radius: var(--radius-control); color: var(--muted); display: inline-flex; font: 500 18px/1 'DM Mono', monospace; height: 44px; justify-content: center; width: 36px; }
-        .digit-strip span.settled { border: 2px solid var(--ink); color: var(--ink); font-weight: 700; }
-        .digit-status { color: var(--muted); font: 500 11px/1 'DM Mono', monospace; text-transform: uppercase; }
-        .digit-legend { color: var(--muted); font-size: 12px; line-height: 1.7; margin: 16px 0 0; }
-        .digit-detail { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--line); }
-        .digit-detail div { padding: 15px 20px 15px 0; }
-        .digit-detail div + div { padding-inline-start: 20px; }
-        .digit-detail div + div { border-inline-start: 1px solid var(--line); }
-        .digit-detail span { display: block; color: var(--label-2); font: 400 11px/1.4 'DM Mono', monospace; text-transform: uppercase; }
-        .digit-detail strong { display: block; color: var(--label); font: 600 15px/1.4 'DM Mono', monospace; margin-top: 4px; }
         .credibility { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
         .credibility-item { padding: 22px 15px; }
         .credibility-item + .credibility-item { border-inline-start: 1px solid var(--line); }
@@ -76,7 +60,31 @@
         .closing h2 { color: var(--ink); font-size: clamp(2rem, 4vw, 3.5rem); letter-spacing: -.04em; font-weight: 800; line-height: 1.04; max-width: 600px; margin: 0 0 16px; text-wrap: balance; }
         .closing p { color: var(--label-2); max-width: 540px; margin: 0 0 26px; }
         @media (max-width: 991px) { .hero { padding-top: 70px; } .hero-mascots { max-width: 380px; } }
-        @media (max-width: 767px) { .hero { padding: 58px 0; } .hero h1 { font-size: 2.9rem; } .credibility-item + .credibility-item { border-inline-start: 0; border-top: 1px solid var(--line); } .workflow-step { grid-template-columns: 34px 1fr; gap: 12px; } .workflow-step i { display: none; } .section { padding: 68px 0; } .digit-strip span { height: 38px; width: 30px; font-size: 16px; } }
+        @media (max-width: 767px) { .hero { padding: 58px 0; } .hero h1 { font-size: 2.9rem; } .credibility-item + .credibility-item { border-inline-start: 0; border-top: 1px solid var(--line); } .workflow-step { grid-template-columns: 34px 1fr; gap: 12px; } .workflow-step i { display: none; } .section { padding: 68px 0; } }
+        /* How a digit contract settles: static explainer; settle-story.js adds the scroll sequence. */
+        .settle-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 56px; align-items: center; }
+        .settle-steps { list-style: none; margin: 28px 0 0; padding: 0; border-top: 1px solid var(--line); }
+        .settle-step { display: grid; grid-template-columns: 28px 1fr; gap: 12px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+        .settle-num { color: var(--muted); font: 500 13px/1.6 'DM Mono', monospace; font-variant-numeric: tabular-nums; }
+        .settle-step h3 { margin: 0 0 4px; color: var(--ink); font-size: 17px; font-weight: 700; }
+        .settle-step p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
+        .settle-ledger { margin: 0; border-block: 1px solid var(--line); }
+        .settle-ledger-head { display: flex; justify-content: space-between; gap: 12px; padding: 16px 0 12px; border-bottom: 1px solid var(--line); color: var(--ink); font: 600 14px var(--font-text); }
+        .settle-ledger-head .digit-scope { color: var(--muted); font: 400 11px/1.6 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .04em; }
+        .settle-ticks { width: 100%; border-collapse: collapse; font: 500 15px 'DM Mono', monospace; font-variant-numeric: tabular-nums; }
+        .settle-ticks th { padding: 10px 0; color: var(--muted); font: 500 11px 'DM Mono', monospace; letter-spacing: .04em; text-align: start; text-transform: uppercase; }
+        .settle-ticks th:last-child, .settle-ticks td:last-child { text-align: end; }
+        .settle-ticks td { padding: 11px 0; border-top: 1px solid var(--line); color: var(--muted); }
+        .settle-ticks td b { color: var(--ink); font-weight: 600; }
+        .settle-ticks small { margin-inline-start: 6px; color: var(--muted); font: 400 11px var(--font-text); }
+        .settle-tick.is-settle td { color: var(--ink); }
+        .settle-digit { position: relative; display: inline-grid; place-items: center; min-width: 32px; height: 32px; font-weight: 700; color: var(--ink); }
+        .settle-ring { position: absolute; inset: 0; border: 2px solid var(--ink); border-radius: var(--radius-control); }
+        .settle-outcome { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0; padding: 14px 0 6px; border-top: 1px solid var(--line); color: var(--ink); font-size: 14px; font-weight: 600; }
+        .settle-won { color: var(--positive); }
+        .settle-lost { color: var(--negative); }
+        .settle-verify { margin: 0; padding: 0 0 16px; color: var(--muted); font-size: 13px; }
+        @media (max-width: 991px) { .settle-grid { grid-template-columns: 1fr; gap: 32px; } }
     </style>
 </head>
 
@@ -105,29 +113,31 @@
             <div class="col-md-4 credibility-item"><b>Results you can re-check</b><span>Revealed epochs let you recompute digits yourself in the fairness verifier.</span></div>
         </div></div></section>
 
-        <section class="section settle-example"><div class="container px-4"><div class="row g-5 align-items-center">
-            <div class="col-lg-5">
-                <h2>How settlement reads.</h2>
-                <p class="section-intro">A contract ends on one future tick. Its price is published first; the final decimal digit of that price is the outcome.</p>
+        <section class="section settle-story" id="how-settlement-works" aria-labelledby="settleTitle" data-settle-story><div class="container px-4"><div class="settle-grid">
+            <div class="settle-copy">
+                <h2 id="settleTitle">How a digit contract settles.</h2>
+                <ol class="settle-steps">
+                    <li class="settle-step"><span class="settle-num" aria-hidden="true">1</span><div><h3>Buy a contract</h3><p>Even on SPI10, stake 1.00, five ticks. The server fixes the entry tick (#1001) and the settle tick (#1005) before either exists.</p></div></li>
+                    <li class="settle-step"><span class="settle-num" aria-hidden="true">2</span><div><h3>Ticks arrive</h3><p>Each tick publishes a price. The digits in between are shown, but they play no part in the result.</p></div></li>
+                    <li class="settle-step"><span class="settle-num" aria-hidden="true">3</span><div><h3>The settle tick decides</h3><p>Tick #1005 prints 1004.238. Its final digit is 8, and 8 is even.</p></div></li>
+                    <li class="settle-step"><span class="settle-num" aria-hidden="true">4</span><div><h3>Check it later</h3><p>When the day's seed is revealed, the fairness verifier recomputes tick #1005 and gets the same 8.</p></div></li>
+                </ol>
             </div>
-            <div class="col-lg-7">
-                <section class="digit-card" aria-label="Illustration of a settled digit contract">
-                    <div class="digit-top">
-                        <p class="digit-title">SPI10 <span class="digit-scope">illustration</span></p>
-                        <span class="digit-status">Settled</span>
-                    </div>
-                    <div class="digit-body">
-                        <div class="digit-strip" aria-hidden="true">
-                            <span>4</span><span>0</span><span>7</span><span>1</span><span>9</span><span>2</span><span>5</span><span class="settled">8</span>
-                        </div>
-                        <p class="digit-legend">The contract above settled on the highlighted final price digit. Every digit is equally likely, regardless of earlier results.</p>
-                    </div>
-                    <div class="digit-detail">
-                        <div><span>Settlement</span><strong>Final digit</strong></div>
-                        <div><span>Verification</span><strong>Commit · reveal</strong></div>
-                    </div>
-                </section>
-            </div>
+            <figure class="settle-ledger" aria-labelledby="settleLedgerCaption">
+                <figcaption class="settle-ledger-head" id="settleLedgerCaption"><span>SPI10 · Even · 5 ticks</span><span class="digit-scope">Illustration</span></figcaption>
+                <table class="settle-ticks">
+                    <thead><tr><th scope="col">Tick</th><th scope="col">Price</th><th scope="col">Digit</th></tr></thead>
+                    <tbody>
+                        <tr class="settle-tick"><td>#1001 <small>entry</small></td><td>1004.23<b>1</b></td><td>1</td></tr>
+                        <tr class="settle-tick"><td>#1002</td><td>1004.22<b>6</b></td><td>6</td></tr>
+                        <tr class="settle-tick"><td>#1003</td><td>1004.23<b>9</b></td><td>9</td></tr>
+                        <tr class="settle-tick"><td>#1004</td><td>1004.23<b>3</b></td><td>3</td></tr>
+                        <tr class="settle-tick is-settle"><td>#1005 <small>settle</small></td><td>1004.23<b>8</b></td><td><span class="settle-digit">8<span class="settle-ring" aria-hidden="true"></span></span></td></tr>
+                    </tbody>
+                </table>
+                <p class="settle-outcome"><span>8 is even.</span> <span class="settle-won">Even: Won +0.93</span> <span class="settle-lost">Odd: Lost −1.00</span></p>
+                <p class="settle-verify">After the reveal, the verifier recomputes #1005 to 8. It matches.</p>
+            </figure>
         </div></div></section>
 
         <section class="section pt-0"><div class="container px-4"><div class="row g-5 align-items-start">
@@ -170,6 +180,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <script src="../assets/js/auth.js"></script>
     <script src="../assets/js/shell.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script defer src="../assets/js/settle-story.js"></script>
 </body>
 
 </html>
