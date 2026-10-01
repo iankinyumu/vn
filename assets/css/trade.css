@@ -215,3 +215,28 @@ body.trade-page { margin: 0; }
     .side-name { font-size: 17px; }
 }
 @media (prefers-reduced-motion: reduce) { .digit-ring, .digit-pointer, .family-tab span, .trade-side, .trade-toast { transition: none; animation: none; } }
+
+/* Companion (trade-companion.js): the profile character standing free under the order ticket, with its
+   text bubble beside it. It explains blocks, keeps session limits, sleeps when the feed is not live,
+   and helps on request. In the page flow, so it never covers the chart, the fields or the buy bar. */
+.companion { position: relative; display: grid; grid-template-columns: 64px minmax(0, 1fr); align-items: end; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--trade-line); }
+.companion[hidden], .companion-show[hidden], .companion-bubble[hidden] { display: none; }
+.companion-figure { grid-column: 1; grid-row: 1; display: grid; place-items: center; width: 64px; height: 64px; padding: 0; border: 0; border-radius: var(--radius-control); background: transparent; cursor: pointer; }
+.companion-figure img { display: block; width: 64px; height: 64px; }
+.companion-bubble { grid-column: 2; grid-row: 1; align-self: center; padding: 10px 12px; border: 1px solid var(--separator-strong); border-radius: var(--radius-control); background: var(--bg-3); color: var(--label); font-size: var(--text-footnote); line-height: 1.5; }
+.companion-text { margin: 0; }
+.companion-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.companion-action { min-height: 36px; padding: 0 12px; border: 1px solid var(--separator-strong); border-radius: var(--radius-control); background: transparent; color: var(--label); font: 600 var(--text-caption) var(--font-text); cursor: pointer; }
+.companion-action.is-primary { border-color: var(--accent-fill); background: var(--accent-fill); color: var(--on-accent); }
+.companion-action:active { background: var(--fill-pressed); }
+.companion-action.is-primary:active { background: var(--accent-pressed); }
+.companion-figure:active { transform: scale(.96); }
+.companion-figure, .companion-action { transition: transform 160ms var(--ease-out), background-color var(--dur-fast) ease; }
+.companion-hide, .companion-show { min-height: var(--target); padding: 0 4px; border: 0; background: transparent; color: var(--label-2); font: 600 var(--text-caption) var(--font-text); text-decoration: underline; text-underline-offset: .18em; cursor: pointer; }
+.companion-hide { grid-column: 1; grid-row: 2; justify-self: center; min-height: 32px; }
+.companion-show { margin-top: 12px; }
+.companion :focus-visible, .companion-show:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) { .companion-action:hover { background: var(--fill-hover); } .companion-action.is-primary:hover { background: var(--accent-hover); } .companion-hide:hover, .companion-show:hover { color: var(--label); } }
+/* On phones the ticket ends with the sticky buy bar; the companion follows it in the flow. */
+@media (max-width: 1099.98px) { .companion { margin-top: 24px; } }
+@media (prefers-reduced-motion: reduce) { .companion-figure, .companion-action { transition: none; } .companion-figure:active { transform: none; } }

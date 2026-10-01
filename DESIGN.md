@@ -68,9 +68,9 @@ only colour a page may carry outside green and red.
 
 - One mascot per page at most, in a hero or an empty state, where it matches
   the page's job (support, reading, verifying, welcome, "not found").
-- Never beside a price, balance, result, payout or buy button, and never on the
-  trade page: a mascot must not read as a win or loss signal or make trading
-  feel like a game.
+- Never beside a price, balance, result, payout or buy button: a mascot must
+  not read as a win or loss signal or make trading feel like a game. The one
+  exception is the trade companion below.
 - Decorative, so `alt=""` and `aria-hidden="true"` unless it carries meaning;
   explicit `width` and `height`, `loading="lazy"` below the fold,
   `decoding="async"`.
@@ -80,6 +80,28 @@ only colour a page may carry outside green and red.
   Sign-up assigns a random one (auth metadata `avatar`); the profile page lets
   the person choose another. They stand free like every mascot: no frame,
   circle or border. Accounts without one get a stable pick from their user id.
+
+## The trade companion
+
+On the trade page, the character the person picked on their profile stands
+under the order ticket (`assets/js/trade-companion.js`, 2D art from
+`assets/img/characters`). It is the same in Practice and Real, and has four
+jobs only:
+
+1. Explain why buying is blocked (feed, engine gate, stake, purchase errors)
+   and what to do.
+2. Keep the session limits: say when take-profit or stop-loss ends the
+   session, and suggest a break every 25 contracts or 30 minutes.
+3. Show the feed at a glance: awake while live, asleep (eyes closed, "z z")
+   when not, always alongside the existing feed text.
+4. Help on request: tapping it explains the selected contract type; a
+   three-step tour runs once on the first visit.
+
+It never reacts to wins, losses, payouts or the session result, and never
+prompts anyone to trade. It sits in the page flow, so it never covers the
+chart, the fields or the buy bar, and it can be hidden (remembered per
+browser). Its own news (limits, breaks) is announced politely; page messages
+it repeats are not announced twice. Under reduced motion it uses the still art.
 
 ## Kept from Apple HIG (non-visual)
 
