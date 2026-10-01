@@ -1,0 +1,8 @@
+# Source art and tooling that the site does not serve.
+# The mascot PNGs are originals; pages use the WebP copies in assets/img/mascots.
+assets/img/*.png
+.agents
+.claude
+skills-lock.json
+tests
+docs
