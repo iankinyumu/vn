@@ -25,18 +25,6 @@
     animation: none
 }
 
-@keyframes pulse-glow {
-
-    0%,
-    100% {
-        box-shadow: none
-    }
-
-    50% {
-        box-shadow: none
-    }
-}
-
 .about-hero-title {
     font-size: 1.8em;
     font-weight: 700;
@@ -55,11 +43,11 @@
     align-items: center;
     gap: 18px;
     padding: 24px 22px;
-    transition: all 0.3s
+    transition: color var(--dur-fast) ease, background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, opacity var(--dur-fast) ease
 }
 
 .stat-card-horizontal:hover {
-    transform: translateY(-3px)
+    transform: none
 }
 
 .stat-icon-wrap {
@@ -151,11 +139,11 @@
 
 .value-card {
     padding: 25px 20px;
-    transition: all 0.3s
+    transition: color var(--dur-fast) ease, background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, opacity var(--dur-fast) ease
 }
 
 .value-card:hover {
-    transform: translateY(-4px);
+    transform: none;
     border-color: color-mix(in srgb, var(--accent) 30%, transparent)
 }
 
@@ -170,7 +158,7 @@
     font-size: 22px;
     color: var(--accent);
     margin: 0 auto 14px;
-    transition: all 0.3s
+    transition: color var(--dur-fast) ease, background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, opacity var(--dur-fast) ease
 }
 
 .value-card:hover .value-icon-wrap {
@@ -253,11 +241,11 @@
 
 .team-card {
     padding: 25px 20px;
-    transition: all 0.3s
+    transition: color var(--dur-fast) ease, background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, opacity var(--dur-fast) ease
 }
 
 .team-card:hover {
-    transform: translateY(-4px)
+    transform: none
 }
 
 .team-img-wrap {
@@ -278,12 +266,7 @@
     position: absolute;
     inset: -4px;
     border-radius: var(--radius-control);
-    border: 3px solid transparent;
-    background: var(--purple-grad) border-box;
-    -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
-    mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: destination-out;
-    mask-composite: exclude
+    border: 1px solid var(--separator-strong)
 }
 
 .team-card h5 {
@@ -324,7 +307,7 @@
     color: var(--text-secondary);
     text-decoration: none;
     font-size: 13px;
-    transition: all 0.3s
+    transition: color var(--dur-fast) ease, background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, opacity var(--dur-fast) ease
 }
 
 .team-social a:hover {
@@ -335,11 +318,11 @@
 
 .partner-card {
     padding: 20px;
-    transition: all 0.3s
+    transition: color var(--dur-fast) ease, background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, opacity var(--dur-fast) ease
 }
 
 .partner-card:hover {
-    transform: translateY(-4px)
+    transform: none
 }
 
 .partner-card h6 {

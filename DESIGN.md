@@ -105,3 +105,26 @@ Search the CSS for any hex or `rgb()` colour that isn't grey, green or red,
 and for `box-shadow`, `backdrop-filter`, `blur(`, `gradient(`, `border-radius`
 values above 4px, and class names containing `pill`, `badge`, `chip` or `dot`.
 Anything found is either fixed or listed here with the reason it stays.
+
+Known exceptions, each kept on purpose:
+
+- `var(--shadow-float)` and `var(--shadow-sheet)` are `none`; the names stay so components keep
+  their hooks.
+- The loading spinner on forgot-password (`.loading-spinner` in `auth.css`) is a circle that
+  rotates: the shape and the motion are the loading state.
+- The CSS loader fallback (`.sp-loader-art[data-fallback]` in `loader.css`) draws three flat bars
+  with `linear-gradient()` used as a solid fill, not a visible gradient.
+- The MFA QR code in `admin.html` sits on white so phones can scan it in dark mode.
+
+## Motion
+
+Reviewed with the Emil design-engineering principles. Motion stays only where it marks a state
+or explains something, and all of it switches off under `prefers-reduced-motion`:
+
+- Short state changes: 150 to 200ms, ease-out, named properties only (never `transition: all`).
+- Press feedback on the buy buttons: `scale(.97)` for 160ms.
+- Toasts use a transition with `@starting-style`, so stacked toasts stay interruptible.
+- The fund sheet slides in; the digit pointer slides to the latest digit; the rail expands.
+- The scroll-driven "How a digit contract settles" section on the home page (GSAP ScrollTrigger,
+  `assets/js/settle-story.js`) explains settlement; it is fully readable without the script.
+- No hover lifts, glows, floating shapes, pulses or shimmering text.

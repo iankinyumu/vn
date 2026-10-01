@@ -25,18 +25,6 @@
     animation: none
 }
 
-@keyframes pulse-glow {
-
-    0%,
-    100% {
-        box-shadow: none
-    }
-
-    50% {
-        box-shadow: none
-    }
-}
-
 .faq-hero-title {
     font-size: 1.8em;
     font-weight: 700;
@@ -85,7 +73,7 @@
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: color var(--dur-fast) ease, background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, opacity var(--dur-fast) ease;
     display: flex;
     align-items: center;
     gap: 6px
@@ -137,7 +125,7 @@
     border-radius: var(--radius-control);
     margin-bottom: 6px;
     overflow: hidden;
-    transition: all 0.3s
+    transition: color var(--dur-fast) ease, background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, opacity var(--dur-fast) ease
 }
 
 .faq-item:hover {
@@ -163,7 +151,7 @@
     cursor: pointer;
     text-align: start;
     gap: 12px;
-    transition: all 0.3s
+    transition: color var(--dur-fast) ease, background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, opacity var(--dur-fast) ease
 }
 
 .faq-question:hover {
@@ -184,7 +172,7 @@
     align-items: center;
     justify-content: center;
     font-size: 12px;
-    transition: all 0.3s;
+    transition: color var(--dur-fast) ease, background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, opacity var(--dur-fast) ease;
     color: var(--text-secondary)
 }
 
@@ -293,7 +281,7 @@
     align-items: center;
     padding: 10px 12px;
     border-radius: var(--radius-control);
-    transition: all 0.3s
+    transition: color var(--dur-fast) ease, background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, opacity var(--dur-fast) ease
 }
 
 .quick-help-item:hover {
@@ -369,7 +357,7 @@
     color: var(--text-secondary);
     text-decoration: none;
     font-size: 13px;
-    transition: all 0.3s
+    transition: color var(--dur-fast) ease, background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, opacity var(--dur-fast) ease
 }
 
 .pop-q-item:hover {

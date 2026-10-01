@@ -134,11 +134,12 @@ body.trade-page { margin: 0; }
 /* The two-sided action bar. */
 .trade-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 /* The two sides are the buy actions, so they are the one place green and red fill a control. */
-.trade-side { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; height: 64px; padding: 0 14px; border: 0; border-radius: 4px; font-family: Manrope, sans-serif; text-align: start; cursor: pointer; transition: filter .12s, opacity .12s; }
+.trade-side { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; height: 64px; padding: 0 14px; border: 0; border-radius: 4px; font-family: Manrope, sans-serif; text-align: start; cursor: pointer; transition: filter .12s, opacity .12s, transform 160ms var(--ease-out); }
 .trade-side-a { background: var(--up); color: var(--on-positive); }
 .trade-side-b { background: var(--down); color: var(--on-negative); }
 .trade-side:hover:not(:disabled) { filter: brightness(1.08); }
-.trade-side:active:not(:disabled) { filter: brightness(.92); }
+/* Press feedback: the buy action confirms it heard the tap. */
+.trade-side:active:not(:disabled) { filter: brightness(.92); transform: scale(.97); }
 .trade-side:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
 .trade-side:disabled { opacity: .4; cursor: not-allowed; }
 .trade-side[data-busy] { opacity: .75; cursor: progress; }
@@ -172,10 +173,9 @@ body.trade-page { margin: 0; }
 
 /* Result toasts. */
 .trade-toast-stack { position: fixed; z-index: 1200; top: calc(var(--topbar-h) + 12px); right: 16px; display: grid; gap: 8px; width: min(320px, calc(100vw - 32px)); pointer-events: none; }
-.trade-toast { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--separator-strong); border-inline-start: 4px solid var(--app-muted); border-radius: 4px; background: var(--app-panel-raised); color: var(--app-ink); pointer-events: auto; animation: toast-in .18s ease-out; }
-@keyframes toast-in { from { opacity: 0; transform: translateY(-6px); } }
-.trade-toast-won { border-inline-start-color: var(--up); }
-.trade-toast-lost { border-inline-start-color: var(--down); }
+.trade-toast { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--separator-strong); border-radius: 4px; background: var(--app-panel-raised); color: var(--app-ink); pointer-events: auto; transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out); }
+/* Toasts arrive in quick succession: a transition (interruptible) rather than keyframes. */
+@starting-style { .trade-toast { opacity: 0; transform: translateY(-6px); } }
 .trade-toast > div { display: grid; gap: 3px; min-width: 0; }
 .trade-toast strong { font: 700 15px 'DM Mono', monospace; }
 .trade-toast-won strong { color: var(--up); }
