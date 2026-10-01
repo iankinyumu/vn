@@ -18,20 +18,7 @@
     <link href="../assets/css/login.css" rel="stylesheet">
     <link href="../assets/css/public-shell.css" rel="stylesheet">
     <style>
-        .staff-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 14px;
-            padding: 6px 14px;
-            border: 1px solid var(--separator-strong);
-            border-radius: 999px;
-            color: var(--label);
-            font-family: 'DM Mono', monospace;
-            font-size: 11px;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-        }
+        .staff-title-icon { margin-inline-end: 10px; color: var(--label-2); font-size: .8em; }
 
         .staff-login-status {
             min-height: 20px;
@@ -48,7 +35,7 @@
             padding-top: 16px;
             border-top: 1px solid var(--separator);
             color: var(--label-2);
-            font-size: 11px;
+            font-size: var(--text-caption);
             line-height: 1.6;
             text-align: center;
         }
@@ -71,8 +58,7 @@
     <div class="auth-wrapper">
         <div class="auth-card">
 
-            <div class="staff-badge"><i class="fas fa-user-shield"></i> Staff access</div>
-            <h2 class="auth-title">Staff Sign In</h2>
+            <h1 class="auth-title"><i class="fas fa-user-shield staff-title-icon" aria-hidden="true"></i>Staff Sign In</h1>
             <p class="auth-subtitle">Sign in with your staff account to open the operations console.</p>
 
             <form id="staffLoginForm" onsubmit="handleStaffLogin(event)">

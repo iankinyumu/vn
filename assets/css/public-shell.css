@@ -90,3 +90,7 @@ body.public-shell::before, body.auth-shell::before, .public-shell .animated-bg, 
 @media (min-width: 1200px) { .public-shell .appearance-nav-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } }
 /* Placeholders at 4.5:1 or better (WCAG 1.4.3): secondary label colour, full opacity. */
 .public-shell ::placeholder, .auth-shell ::placeholder { color: var(--label-2); opacity: 1; }
+/* Auth pages (DESIGN.md, Impeccable critique): a mascot above the title, no icon tile or badge. */
+.auth-shell .auth-mascot { display: block; width: 96px; height: 96px; margin: 0 auto 8px; object-fit: contain; }
+.auth-shell .auth-done-title { margin: 12px 0 8px; font-size: var(--text-title-3); font-weight: 700; }
+.auth-shell .success-icon { background: transparent !important; color: var(--positive) !important; border: 0 !important; }
