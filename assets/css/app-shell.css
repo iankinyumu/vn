@@ -347,3 +347,5 @@ body.has-rail.rail-expanded { padding-inline-start: calc(var(--rail-w-open) + va
     .app-shell .settings-card { padding: 20px 0; }
     .app-shell .avatar-options { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); }
 }
+/* Side panel Profile link: the person's character instead of a generic icon, free-standing. */
+.app-rail-link .app-rail-avatar { flex: none; width: 24px; height: 24px; margin-inline: -3px; object-fit: contain; }

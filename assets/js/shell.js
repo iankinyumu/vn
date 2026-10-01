@@ -6,6 +6,9 @@
 (function () {
     'use strict';
 
+    // Where this script lives, so the avatar list (avatars.js) can be loaded beside it on demand.
+    const SHELL_SRC = document.currentScript?.src || '';
+
     const PUBLIC_LINKS = Object.freeze([
         { href: 'index.html', label: 'Home', icon: 'fa-house', key: 'home' },
         { href: 'about.html', label: 'About', icon: 'fa-circle-info', key: 'about' },
@@ -310,6 +313,7 @@
             const item = element('li');
             const anchor = element('a', 'app-rail-link');
             anchor.href = link.href;
+            if (link.key === 'profile') anchor.dataset.railProfile = '';
             if (link.key === activeKey) { anchor.classList.add('active'); anchor.setAttribute('aria-current', 'page'); }
             anchor.append(icon(link.icon), element('span', 'app-rail-text', link.label));
             item.append(anchor);
@@ -489,6 +493,7 @@
             const topbar = buildTopbar();
             headerMount.replaceChildren(rail, wireRail(rail, topbar), topbar, buildRestrictionBanner(), buildEngineNotice(), appearance.menu);
             document.body.classList.add('has-rail');
+            paintRailAvatar(rail);
         } else if (headerMount) {
             const appearance = buildAppearance('nav');
             const header = buildHeader(active, appearance.button);
@@ -500,6 +505,34 @@
         if (surface === 'public' && !document.body.classList.contains('public-shell')) document.body.classList.add('public-shell');
         mounted = true;
         return { surface, active };
+    }
+
+    // The side panel's Profile link shows the person's character (avatars.js) instead of a generic
+    // icon. The icon stays until the character is known, and the profile picker updates it live.
+    function paintRailAvatar(rail) {
+        const anchor = rail.querySelector('[data-rail-profile]');
+        if (!anchor) return;
+        const show = (id) => {
+            const avatars = window.smartProfitAvatars;
+            if (!avatars?.valid(id)) return;
+            let image = anchor.querySelector('.app-rail-avatar');
+            if (!image) {
+                image = element('img', 'app-rail-avatar');
+                Object.assign(image, { alt: '', width: 24, height: 24, decoding: 'async' });
+                anchor.querySelector('i')?.replaceWith(image);
+            }
+            image.src = avatars.src(id);
+        };
+        document.addEventListener('smartprofit:avatar-changed', (event) => show(event.detail?.avatar));
+        const ready = window.smartProfitAvatars ? Promise.resolve() : new Promise((resolve, reject) => {
+            const script = Object.assign(document.createElement('script'), { src: new URL('avatars.js', SHELL_SRC || window.location.href).href });
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.append(script);
+        });
+        ready.then(() => window.getAuthenticatedUser?.())
+            .then((user) => { if (user) show(window.smartProfitAvatars.forUser(user)); })
+            .catch(() => { /* Without the list or a session, the Profile icon stays. */ });
     }
 
     function fillSessionAction(header) {

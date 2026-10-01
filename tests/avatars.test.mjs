@@ -31,3 +31,20 @@ test('sign-up assigns a random character, and both pages load the avatar list fi
         assert.ok(html.indexOf('assets/js/avatars.js') > 0 && html.indexOf('assets/js/avatars.js') < html.indexOf(page === 'register.html' ? 'assets/js/register.js' : 'assets/js/profile-identity.js'), `${page} loads avatars.js first`);
     }
 });
+
+test('the side panel shows the character on the Profile link and follows a new pick', async () => {
+    const dom = new JSDOM('<!doctype html><body data-shell-surface="app" data-shell-active="dashboard"><div data-shell-header></div><div data-shell-footer></div></body>', { runScripts: 'outside-only', url: 'https://example.test/pages/dashboard.html' });
+    const { window } = dom;
+    window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} });
+    window.getAuthenticatedUser = async () => ({ id: 'user-1', user_metadata: { avatar: 'violet-bow' } });
+    window.eval(fs.readFileSync('assets/js/avatars.js', 'utf8'));
+    window.eval(fs.readFileSync('assets/js/shell.js', 'utf8'));
+    const image = () => window.document.querySelector('[data-rail-profile] .app-rail-avatar');
+    for (let i = 0; i < 50 && !image(); i += 1) await new Promise((resolve) => setTimeout(resolve, 10));
+    try {
+        assert.equal(image()?.getAttribute('src'), 'https://example.test/assets/img/avatars/violet-bow.webp');
+        assert.equal(window.document.querySelector('[data-rail-profile] i'), null, 'the generic icon is replaced');
+        window.document.dispatchEvent(new window.CustomEvent('smartprofit:avatar-changed', { detail: { avatar: 'blue-star' } }));
+        assert.equal(image().getAttribute('src'), 'https://example.test/assets/img/avatars/blue-star.webp');
+    } finally { window.close(); }
+});

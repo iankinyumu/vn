@@ -94,6 +94,7 @@
                 return;
             }
             avatar = choice;
+            document.dispatchEvent(new CustomEvent('smartprofit:avatar-changed', { detail: { avatar: choice } }));
             if (status) status.textContent = `Character saved: ${avatars().nameOf(choice)}.`;
         });
 
