@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200"><title>Peach Bucket Hat</title><style>
+.breathe{transform-box:fill-box;transform-origin:50% 100%;animation:breathe 4.2s ease-in-out -2.4s infinite}
+.blink{transform-box:fill-box;transform-origin:50% 50%;animation:blink 8s ease-in-out 0.7s infinite}
+.sway{transform-box:fill-box;transform-origin:50% 0;animation:sway 3.6s ease-in-out -2.5s infinite}
+@keyframes breathe{0%,100%{transform:scale(1,1)}50%{transform:scale(1.02,.975)}}
+@keyframes blink{0%,94%,100%{transform:scaleY(1)}96.5%{transform:scaleY(.1)}}
+@keyframes sway{0%,100%{rotate:-4deg}50%{rotate:4deg}}
+@media (prefers-reduced-motion:reduce){.breathe,.blink,.sway{animation:none}}
+</style><g class="breathe"><path d="M100 172C46 136 26 104 40 72 52 46 88 44 100 70 112 44 148 46 160 72 174 104 154 136 100 172Z" fill="#f5b69a" stroke="#f5b69a" stroke-width="16" stroke-linejoin="round" stroke-linecap="round"/><ellipse cx="70" cy="96" rx="16" ry="10" fill="#fff" opacity=".22"/><path d="M67 118q11 3 22 0" fill="none" stroke="#1b1b1b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/><path d="M111 118q11 3 22 0" fill="none" stroke="#1b1b1b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/><g class="sway" transform="rotate(10 112 60)"><ellipse cx="112" cy="72" rx="74" ry="16" fill="#1b1b1b"/><path d="M68 70q4-44 46-44 40 0 42 44z" fill="#262626"/><path d="M70 64q42 8 84 0" stroke="#3d3d3d" stroke-width="3" fill="none"/></g></g></svg>

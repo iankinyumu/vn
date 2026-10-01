@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200"><title>Sage Camera</title><style>
+.breathe{transform-box:fill-box;transform-origin:50% 100%;animation:breathe 4.2s ease-in-out -1.2s infinite}
+.blink{transform-box:fill-box;transform-origin:50% 50%;animation:blink 5s ease-in-out 0.7s infinite}
+.sway{transform-box:fill-box;transform-origin:50% 0;animation:sway 3.6s ease-in-out -2s infinite}
+@keyframes breathe{0%,100%{transform:scale(1,1)}50%{transform:scale(1.02,.975)}}
+@keyframes blink{0%,94%,100%{transform:scaleY(1)}96.5%{transform:scaleY(.1)}}
+@keyframes sway{0%,100%{rotate:-4deg}50%{rotate:4deg}}
+@media (prefers-reduced-motion:reduce){.breathe,.blink,.sway{animation:none}}
+</style><g class="breathe"><rect x="44" y="52" width="112" height="112" rx="30" fill="#8ebd79" transform="rotate(45 100 108)"/><ellipse cx="84" cy="72" rx="18" ry="11" fill="#fff" opacity=".22"/><g class="blink"><ellipse cx="84" cy="100" rx="6.5" ry="9" fill="#1b1b1b"/><circle cx="86" cy="96.5" r="2" fill="#fff"/><ellipse cx="116" cy="100" rx="6.5" ry="9" fill="#1b1b1b"/><circle cx="118" cy="96.5" r="2" fill="#fff"/></g><path d="M58 92L92 140M142 92L108 140" stroke="#1b1b1b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/><g class="sway"><rect x="76" y="132" width="48" height="34" rx="7" fill="#262626"/><rect x="84" y="127" width="14" height="7" rx="2" fill="#262626"/><circle cx="100" cy="149" r="11" fill="#111" stroke="#555" stroke-width="3"/><circle cx="97" cy="146" r="3" fill="#fff" opacity=".4"/></g></g></svg>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200"><title>Coral Sunglasses</title><style>
+.breathe{transform-box:fill-box;transform-origin:50% 100%;animation:breathe 4.2s ease-in-out -1.7999999999999998s infinite}
+.blink{transform-box:fill-box;transform-origin:50% 50%;animation:blink 8s ease-in-out 2.0999999999999996s infinite}
+.sway{transform-box:fill-box;transform-origin:50% 0;animation:sway 3.6s ease-in-out -1.5s infinite}
+@keyframes breathe{0%,100%{transform:scale(1,1)}50%{transform:scale(1.02,.975)}}
+@keyframes blink{0%,94%,100%{transform:scaleY(1)}96.5%{transform:scaleY(.1)}}
+@keyframes sway{0%,100%{rotate:-4deg}50%{rotate:4deg}}
+@media (prefers-reduced-motion:reduce){.breathe,.blink,.sway{animation:none}}
+</style><g class="breathe"><ellipse cx="100" cy="112" rx="68" ry="60" fill="#ef6f6c" transform="rotate(-8 100 112)"/><ellipse cx="74" cy="80" rx="22" ry="12" fill="#fff" opacity=".22"/><path d="M64 102L42 96M136 102L158 96" stroke="#1b1b1b" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/><path d="M90 101q10 -6 20 0" fill="none" stroke="#1b1b1b" stroke-width="3.5"/><circle cx="78" cy="104" r="14" fill="#1b1b1b"/><circle cx="122" cy="104" r="14" fill="#1b1b1b"/><circle cx="73" cy="99" r="3" fill="#fff" opacity=".35"/><circle cx="117" cy="99" r="3" fill="#fff" opacity=".35"/></g></svg>

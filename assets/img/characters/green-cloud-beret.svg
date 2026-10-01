@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200"><title>Green Cloud Beret</title><style>
+.breathe{transform-box:fill-box;transform-origin:50% 100%;animation:breathe 4.2s ease-in-out -3.5999999999999996s infinite}
+.blink{transform-box:fill-box;transform-origin:50% 50%;animation:blink 7s ease-in-out 0.7s infinite}
+.sway{transform-box:fill-box;transform-origin:50% 0;animation:sway 3.6s ease-in-out 0s infinite}
+@keyframes breathe{0%,100%{transform:scale(1,1)}50%{transform:scale(1.02,.975)}}
+@keyframes blink{0%,94%,100%{transform:scaleY(1)}96.5%{transform:scaleY(.1)}}
+@keyframes sway{0%,100%{rotate:-4deg}50%{rotate:4deg}}
+@media (prefers-reduced-motion:reduce){.breathe,.blink,.sway{animation:none}}
+</style><g class="breathe"><circle cx="58" cy="118" r="36" fill="#a7d889"/><circle cx="100" cy="98" r="46" fill="#a7d889"/><circle cx="142" cy="118" r="36" fill="#a7d889"/><circle cx="78" cy="140" r="34" fill="#a7d889"/><circle cx="122" cy="140" r="34" fill="#a7d889"/><circle cx="100" cy="128" r="40" fill="#a7d889"/><ellipse cx="80" cy="104" rx="20" ry="10" fill="#fff" opacity=".22"/><g class="blink"><ellipse cx="90" cy="124" rx="6.5" ry="9" fill="#1b1b1b"/><circle cx="92" cy="120.5" r="2" fill="#fff"/><ellipse cx="126" cy="124" rx="6.5" ry="9" fill="#1b1b1b"/><circle cx="128" cy="120.5" r="2" fill="#fff"/></g><g class="sway" transform="rotate(-12 92 70)"><ellipse cx="92" cy="70" rx="58" ry="24.36" fill="#1b1b1b"/><ellipse cx="92" cy="66" rx="46.400000000000006" ry="13.92" fill="#2c2c2c"/><circle cx="71.7" cy="45.64" r="9" fill="#1b1b1b"/></g></g></svg>
