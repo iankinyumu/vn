@@ -76,6 +76,10 @@ only colour a page may carry outside green and red.
   `decoding="async"`.
 - Transparent on the page background: no frame, circle, card, shadow or glow
   behind it.
+- Profile pictures are the same characters (`assets/img/avatars`, 160px WebP).
+  Sign-up assigns a random one (auth metadata `avatar`); the profile page lets
+  the person choose another. They stand free like every mascot: no frame,
+  circle or border. Accounts without one get a stable pick from their user id.
 
 ## Kept from Apple HIG (non-visual)
 

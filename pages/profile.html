@@ -39,7 +39,7 @@
 
         <div class="profile-header-card">
             <div class="avatar-wrapper">
-                <div class="avatar-img" data-profile-avatar aria-label="Profile initials">—</div>
+                <div class="avatar-img" data-profile-avatar role="img" aria-label="Your character"><img data-profile-avatar-img alt="" width="112" height="112" decoding="async" hidden></div>
             </div>
             <div class="profile-info">
                 <h3 class="profile-name" data-profile-name>Loading account…</h3>
@@ -62,6 +62,12 @@
         </div>
 
         <div class="tab-content active" id="tab-settings" role="tabpanel">
+            <section class="settings-card avatar-picker" aria-labelledby="avatarPickerTitle">
+                <h5 class="settings-title" id="avatarPickerTitle"><i class="fas fa-face-smile" aria-hidden="true"></i> Character</h5>
+                <p class="avatar-picker-hint">The character shown as your profile picture. Choosing one saves it straight away.</p>
+                <div class="avatar-options" role="radiogroup" aria-labelledby="avatarPickerTitle" data-avatar-options></div>
+                <p class="strength-text mt-2" data-avatar-status role="status" aria-live="polite"></p>
+            </section>
             <div class="settings-card">
                 <h5 class="settings-title"><i class="fas fa-user-edit"></i> Personal Information</h5>
                 <form id="profileForm">
@@ -107,6 +113,7 @@
     <script src="../assets/js/account-switcher.js"></script>
     <script src="../assets/js/deposit-sheet.js"></script>
     <script src="../assets/js/restriction-banner.js"></script>
+    <script src="../assets/js/avatars.js"></script>
     <script src="../assets/js/profile-identity.js"></script>
 </body>
 

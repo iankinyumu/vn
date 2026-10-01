@@ -95,7 +95,8 @@ async function handleRegister(e) {
             email,
             password,
             options: {
-                data: { display_name: `${firstName} ${lastName}`, username }
+                // A random plush character becomes the profile picture; it can be changed on the profile page.
+                data: { display_name: `${firstName} ${lastName}`, username, ...(window.smartProfitAvatars ? { avatar: window.smartProfitAvatars.random() } : {}) }
             }
         });
         if (error) throw error;

@@ -19,7 +19,8 @@ test('the profile page shows identity and account types, switches tabs and saves
     const dom = new JSDOM(fs.readFileSync('pages/profile.html', 'utf8'), { runScripts: 'outside-only', url: 'https://example.test/pages/profile.html' });
     const updates = [];
     const reads = { select() { return this; }, eq() { return this; }, maybeSingle: async () => ({ data: { display_name: 'Ada Lovelace', created_at: '2026-09-01T00:00:00Z' }, error: null }) };
-    const client = { from: () => ({ ...reads, update: (values) => ({ eq: async (column, value) => { updates.push({ values, column, value }); return { error: null }; } }) }) };
+    const avatarSaves = [];
+    const client = { from: () => ({ ...reads, update: (values) => ({ eq: async (column, value) => { updates.push({ values, column, value }); return { error: null }; } }) }), auth: { updateUser: async (attributes) => { avatarSaves.push(attributes); return { data: {}, error: null }; } } };
     dom.window.getAuthenticatedUser = async () => ({ id: 'user-1', email: 'ada@example.test', email_confirmed_at: '2026-09-01T00:00:00Z', user_metadata: {} });
     dom.window.getSupabaseClient = async () => client;
     dom.window.smartProfitAccount = { get: () => ({ accountId: 'practice-id', mode: 'DEMO', currency: 'USD' }) };
@@ -28,11 +29,25 @@ test('the profile page shows identity and account types, switches tabs and saves
     const $ = (selector) => dom.window.document.querySelector(selector);
     const wait = async (predicate) => { const started = Date.now(); while (!predicate() && Date.now() - started < 2000) await new Promise((resolve) => setTimeout(resolve, 5)); };
     assert.equal(dom.window.document.readyState, 'loading');
+    dom.window.eval(fs.readFileSync('assets/js/avatars.js', 'utf8'));
     dom.window.eval(fs.readFileSync('assets/js/profile-identity.js', 'utf8'));
     await wait(() => $('[data-account-mode]').textContent === 'Practice');
     try {
         assert.equal($('[data-profile-name]').textContent, 'Ada Lovelace');
-        assert.equal($('[data-profile-avatar]').textContent, 'AL');
+        // No stored character yet: a stable pick from the user id, shown as a free-standing image.
+        const assigned = dom.window.smartProfitAvatars.fromSeed('user-1');
+        assert.equal($('[data-profile-avatar-img]').getAttribute('src'), `https://example.test/assets/img/avatars/${assigned}.webp`);
+        assert.equal($('[data-profile-avatar-img]').hidden, false);
+        assert.equal($('[data-profile-avatar]').textContent, '', 'no initials');
+        const radios = [...dom.window.document.querySelectorAll('[data-avatar-options] input[type="radio"]')];
+        assert.equal(radios.length, 20);
+        assert.deepEqual(radios.filter((radio) => radio.checked).map((radio) => radio.value), [assigned]);
+        const other = radios.find((radio) => radio.value !== assigned);
+        other.checked = true;
+        other.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+        await wait(() => $('[data-avatar-status]').textContent.startsWith('Character saved'));
+        assert.deepEqual(JSON.parse(JSON.stringify(avatarSaves)), [{ data: { avatar: other.value } }]);
+        assert.equal($('[data-profile-avatar]').dataset.avatar, other.value);
         assert.equal($('[data-profile-verified]').textContent, 'Verified');
         assert.notEqual($('[data-profile-created]').textContent, '—');
         assert.deepEqual([...dom.window.document.querySelectorAll('[data-profile-accounts] tr')].map((row) => row.textContent), ['PracticeUSDACTIVE', 'RealUSDNot available yet']);

@@ -317,3 +317,33 @@ body.has-rail.rail-expanded { padding-inline-start: calc(var(--rail-w-open) + va
 /* Profile (DESIGN.md, Impeccable critique): outlined initial, not a filled tile; room under section titles. */
 .app-shell .avatar-img { background: transparent !important; color: var(--label) !important; }
 .app-shell .settings-title { margin-bottom: var(--space-4); }
+/* Profile character (avatars.js): the plush character stands free, with no frame, border or fill. */
+.app-shell .avatar-img { width: 112px; height: 112px; padding: 0 !important; border: 0 !important; border-radius: 0 !important; background: none !important; box-shadow: none !important; }
+.app-shell .avatar-img img { display: block; width: 100%; height: 100%; object-fit: contain; }
+/* Character picker: a radio group of every character; the chosen one carries an underline and bold name. */
+.app-shell .avatar-picker-hint { margin: -6px 0 14px; color: var(--label-2); font-size: var(--text-footnote); }
+.app-shell .avatar-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 6px; }
+.app-shell .avatar-option { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; min-height: var(--target); margin: 0; padding: 8px 4px 6px; border-bottom: 2px solid transparent; border-radius: var(--radius-control); cursor: pointer; transition: background-color var(--dur-fast) ease, border-color var(--dur-fast) ease; }
+.app-shell .avatar-option input { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); border: 0; white-space: nowrap; }
+.app-shell .avatar-option img { width: 64px; height: 64px; object-fit: contain; }
+.app-shell .avatar-option-name { color: var(--label-2); font-size: var(--text-caption); text-align: center; line-height: 1.3; }
+.app-shell .avatar-option:has(input:checked) { border-bottom-color: var(--label); }
+.app-shell .avatar-option:has(input:checked) .avatar-option-name { color: var(--label); font-weight: 700; }
+.app-shell .avatar-option:has(input:focus-visible) { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
+.app-shell .avatar-option:active { background: var(--fill-pressed); }
+@media (hover: hover) and (pointer: fine) { .app-shell .avatar-option:hover { background: var(--fill-hover); } }
+/* Profile header on phones: one left-aligned column (avatar, name, email, meta, action), tab labels kept. */
+@media (max-width: 576px) {
+    .app-shell .profile-header-card { flex-direction: column; align-items: flex-start; text-align: start; gap: 14px; padding: 20px 0; }
+    .app-shell .avatar-img { width: 88px; height: 88px; }
+    .app-shell .profile-info { min-width: 0; width: 100%; }
+    .app-shell .profile-name { font-size: var(--text-title-2); overflow-wrap: anywhere; justify-content: flex-start; }
+    .app-shell .profile-email { justify-content: flex-start; overflow-wrap: anywhere; }
+    .app-shell .profile-meta { flex-direction: column; align-items: flex-start; gap: 6px; }
+    .app-shell .profile-actions { width: auto; justify-content: flex-start; }
+    .app-shell .tab-nav { overflow-x: auto; }
+    .app-shell .tab-btn { padding: 12px 12px; white-space: nowrap; }
+    .app-shell .tab-btn span { display: inline; }
+    .app-shell .settings-card { padding: 20px 0; }
+    .app-shell .avatar-options { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); }
+}
