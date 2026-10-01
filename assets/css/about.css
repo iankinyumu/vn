@@ -9,31 +9,31 @@
 .about-hero {
     padding: 40px 30px;
     text-align: center;
-    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 6%, transparent), color-mix(in srgb, var(--accent) 3%, transparent))
+    background: transparent
 }
 
 .about-hero-icon {
     width: 64px;
     height: 64px;
     background: var(--purple-grad);
-    border-radius: 18px;
+    border-radius: var(--radius-control);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 28px;
     margin: 0 auto 16px;
-    animation: pulse-glow 3s ease-in-out infinite
+    animation: none
 }
 
 @keyframes pulse-glow {
 
     0%,
     100% {
-        box-shadow: 0 0 15px color-mix(in srgb, var(--accent) 20%, transparent)
+        box-shadow: none
     }
 
     50% {
-        box-shadow: 0 0 30px color-mix(in srgb, var(--accent) 40%, transparent)
+        box-shadow: none
     }
 }
 
@@ -65,7 +65,7 @@
 .stat-icon-wrap {
     width: 56px;
     height: 56px;
-    border-radius: 14px;
+    border-radius: var(--radius-control);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -79,9 +79,9 @@
     font-weight: 800;
     margin-bottom: 2px;
     line-height: 1.1;
-    background: linear-gradient(135deg, var(--label), var(--label-2));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent
+    background: transparent;
+    
+    
 }
 
 .stat-desc-horizontal {
@@ -97,7 +97,7 @@
 .mission-icon {
     width: 50px;
     height: 50px;
-    border-radius: 14px;
+    border-radius: var(--radius-control);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -162,7 +162,7 @@
 .value-icon-wrap {
     width: 55px;
     height: 55px;
-    border-radius: 16px;
+    border-radius: var(--radius-control);
     background: color-mix(in srgb, var(--accent) 10%, transparent);
     display: flex;
     align-items: center;
@@ -224,7 +224,7 @@
     top: 4px;
     width: 18px;
     height: 18px;
-    border-radius: 50%;
+    border-radius: var(--radius-control);
     background: var(--purple-grad);
     border: 3px solid var(--bg);
     z-index: 1
@@ -270,14 +270,14 @@
 .team-img-wrap img {
     width: 90px;
     height: 90px;
-    border-radius: 50%;
+    border-radius: var(--radius-control);
     object-fit: cover
 }
 
 .team-img-border {
     position: absolute;
     inset: -4px;
-    border-radius: 50%;
+    border-radius: var(--radius-control);
     border: 3px solid transparent;
     background: var(--purple-grad) border-box;
     -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
@@ -316,7 +316,7 @@
 .team-social a {
     width: 32px;
     height: 32px;
-    border-radius: 8px;
+    border-radius: var(--radius-control);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -356,7 +356,7 @@
 
 .cta-card {
     padding: 40px 30px;
-    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, transparent), color-mix(in srgb, var(--accent) 5%, transparent))
+    background: transparent
 }
 
 .cta-card h2 {

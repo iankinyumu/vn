@@ -18,8 +18,11 @@
     <link href="../assets/css/about.css" rel="stylesheet">
     <link href="../assets/css/public-shell.css" rel="stylesheet">
     <style>
-        .public-shell .mission-icon { background: color-mix(in srgb, var(--accent) 8%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent); color: var(--flat-accent); }
-        .public-shell .mission-list li i { color: var(--flat-accent); }
+        /* About (DESIGN.md, Impeccable critique): mascot hero, no icon tiles, a plain ruled list. */
+        .about-mascot { display: block; width: 120px; height: 120px; margin: 0 auto 12px; object-fit: contain; }
+        .public-shell .mission-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--separator); }
+        .public-shell .mission-list li { display: block; padding: 12px 0; border-bottom: 1px solid var(--separator); color: var(--label-table); }
+        .public-shell .cta-card .btn { font-size: 1rem; padding: 12px 20px; }
     </style>
 </head>
 
@@ -29,15 +32,14 @@
     <main class="about-wrapper">
         <div class="container-fluid px-4 py-4">
             <section class="premium-glass-card about-hero text-center mb-4" aria-labelledby="aboutTitle">
-                <div class="about-hero-icon"><i class="fas fa-scale-balanced" aria-hidden="true"></i></div>
-                <h1 class="about-hero-title" id="aboutTitle">About <span class="text-gradient-animated">SmartProfit</span></h1>
+                <img class="about-mascot" src="../assets/img/mascots/cloud-pencil.webp" width="120" height="120" alt="" aria-hidden="true" decoding="async">
+                <h1 class="about-hero-title" id="aboutTitle">About SmartProfit</h1>
                 <p class="about-hero-subtitle">A practice workspace for digit contracts, built so that every settled outcome can be re-checked afterwards.</p>
             </section>
 
             <section class="row g-3 mb-4" aria-label="How the product works">
                 <div class="col-md-6">
                     <div class="premium-glass-card mission-card h-100">
-                        <div class="mission-icon"><i class="fas fa-chart-simple" aria-hidden="true"></i></div>
                         <h2 class="h4">From an index to a digit</h2>
                         <p>SmartProfit runs five self-generated indices, SPI10 to SPI100. Each one ticks on a fixed cadence and publishes a price with three decimal places.</p>
                         <p class="mb-0">A contract settles on the final digit of the tick that closes it. New ticks come from a seeded price generator: the price is published first, and its final decimal digit is the outcome. Each possible final digit remains equally likely.</p>
@@ -45,7 +47,6 @@
                 </div>
                 <div class="col-md-6">
                     <div class="premium-glass-card mission-card h-100">
-                        <div class="mission-icon"><i class="fas fa-coins" aria-hidden="true"></i></div>
                         <h2 class="h4">Practice now, real later</h2>
                         <p>A practice account carries virtual USD credits and runs the identical engine path a funded account would use: the same quote, the same purchase, the same settlement and the same ledger.</p>
                         <p class="mb-0">Practice credits have no cash value, cannot be withdrawn and are not a forecast of any funded result. A funded account type is designed for but deliberately not built yet.</p>
@@ -56,11 +57,11 @@
             <section class="premium-glass-card mission-card mb-4" aria-labelledby="expectTitle">
                 <h2 class="h4" id="expectTitle">What to expect</h2>
                 <ul class="mission-list">
-                    <li><i class="fas fa-circle-info" aria-hidden="true"></i><span>Only practice trading is available. There is no deposit, withdrawal, payment or identity-verification path in the product.</span></li>
-                    <li><i class="fas fa-circle-info" aria-hidden="true"></i><span>Every quote is computed on the server from the published policy version. The browser never sends a price, a payout or an outcome.</span></li>
-                    <li><i class="fas fa-circle-info" aria-hidden="true"></i><span>Payouts are floored to the cent and a small stake can round slightly above the nominal margin. That rounding always favours the house.</span></li>
-                    <li><i class="fas fa-circle-info" aria-hidden="true"></i><span>Accounts can carry restrictions that limit stake size, open contracts or daily losses. When one applies, the reason and any expiry are shown on the page.</span></li>
-                    <li><i class="fas fa-circle-info" aria-hidden="true"></i><span>Commit–reveal proves a seed was not swapped after it was committed. It does not prove the operator picked that seed in good faith, and it does not make outcomes predictable.</span></li>
+                    <li><span>Only practice trading is available. There is no deposit, withdrawal, payment or identity-verification path in the product.</span></li>
+                    <li><span>Every quote is computed on the server from the published policy version. The browser never sends a price, a payout or an outcome.</span></li>
+                    <li><span>Payouts are floored to the cent and a small stake can round slightly above the nominal margin. That rounding always favours the house.</span></li>
+                    <li><span>Accounts can carry restrictions that limit stake size, open contracts or daily losses. When one applies, the reason and any expiry are shown on the page.</span></li>
+                    <li><span>Commit–reveal proves a seed was not swapped after it was committed. It does not prove the operator picked that seed in good faith, and it does not make outcomes predictable.</span></li>
                 </ul>
             </section>
 
@@ -68,8 +69,8 @@
                 <h2 id="continueTitle">Look at the engine yourself</h2>
                 <p>Open the trading page to watch ticks and standing quotes, or run the verifier against a revealed epoch.</p>
                 <div class="cta-buttons">
-                    <a href="trade.html" class="btn btn-premium-primary btn-lg">Open the trading page</a>
-                    <a href="fairness.html" class="btn btn-glass-premium btn-lg">Verify a tick range</a>
+                    <a href="trade.html" class="btn btn-premium-primary">Open the trading page</a>
+                    <a href="fairness.html" class="btn btn-glass-premium">Verify a tick range</a>
                 </div>
             </section>
         </div>
