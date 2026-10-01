@@ -220,7 +220,7 @@
             evaluate();
         });
         window.smartProfitAvatars?.markShown(avatarId);
-        window.smartProfitAvatars?.sync(true);
+        window.smartProfitAvatars?.listen();
 
         applyHidden();
         evaluate();

@@ -27,44 +27,45 @@
     const forUser = (user) => (valid(user?.user_metadata?.avatar) ? user.user_metadata.avatar : fromSeed(user?.id || user?.email));
     const nameOf = (id) => LIST.find((item) => item.id === id)?.name || 'Character';
 
-    // Cross-device sync. The cached session holds a copy of the user that only refreshes with the
-    // session (up to an hour), so a character picked on another device would look stale. sync()
-    // asks the server for the current account and, when the character differs from what this page
-    // shows, announces it with `smartprofit:avatar-changed`. It runs on load and whenever the
-    // person comes back to the tab, at most every 15 seconds.
+    // Cross-device sync, pushed rather than polled. A trigger (migration 20261001100000) copies the
+    // saved character into public.profiles.avatar, and listen() subscribes this page to its own row
+    // over Supabase Realtime (RLS limits it to the signed-in user). A change made on any device or tab
+    // arrives as one message and is announced with `smartprofit:avatar-changed`. The only read is one
+    // catch-up query each time the channel connects, for changes made while this device was asleep
+    // or offline. One channel per page, however many components call listen().
     let shown = null;
-    let lastCheck = 0;
-    let syncing = null;
+    let listening = null;
     const announce = (id) => {
         if (!valid(id) || id === shown) return;
         shown = id;
         document.dispatchEvent(new CustomEvent('smartprofit:avatar-changed', { detail: { avatar: id } }));
     };
-    // Records what a page has just drawn (from the cached user), so sync() only announces real changes.
+    // Records what a page has just drawn (from the cached user), so only real changes are announced.
     const markShown = (id) => { if (valid(id)) shown = id; };
-    async function sync(force = false) {
-        if (syncing) return syncing;
-        if (!force && Date.now() - lastCheck < 15000) return shown;
-        lastCheck = Date.now();
-        syncing = (async () => {
+    function listen() {
+        if (listening) return listening;
+        listening = (async () => {
             try {
                 const client = await window.getSupabaseClient?.();
-                const { data, error } = (await client?.auth?.getUser?.()) || {};
-                if (!error && data?.user) {
-                    const current = forUser(data.user);
-                    // Refresh the stored session too, so the next page on this device draws the new character first.
-                    if (valid(current) && current !== shown) client.auth.refreshSession?.().catch?.(() => {});
-                    announce(current);
-                }
+                const user = await window.getAuthenticatedUser?.();
+                if (!client?.channel || !user?.id) return;
+                const receive = (id) => {
+                    if (!valid(id) || id === shown) return;
+                    // The stored session still carries the old metadata: refresh it so the next page draws the new character first.
+                    client.auth?.refreshSession?.()?.catch?.(() => {});
+                    announce(id);
+                };
+                const catchUp = () => client.from('profiles').select('avatar').eq('id', user.id).maybeSingle()
+                    .then(({ data }) => receive(data?.avatar), () => {});
+                client.channel(`avatar:${user.id}`)
+                    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` }, (payload) => receive(payload.new?.avatar))
+                    .subscribe((status) => { if (status === 'SUBSCRIBED') catchUp(); });
             } catch (_) { /* Offline or signed out: keep what is shown. */ }
-            return shown;
-        })().finally(() => { syncing = null; });
-        return syncing;
+        })();
+        return listening;
     }
-    // Another page on this device saved a new character: follow it without waiting for the server.
+    // Another component on this page saved a new character: keep the record in step.
     document.addEventListener('smartprofit:avatar-changed', (event) => { if (valid(event.detail?.avatar)) shown = event.detail.avatar; });
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') sync(); });
-    window.addEventListener('focus', () => sync());
 
-    window.smartProfitAvatars = Object.freeze({ list: LIST, src, random, fromSeed, valid, forUser, nameOf, sync, markShown });
+    window.smartProfitAvatars = Object.freeze({ list: LIST, src, random, fromSeed, valid, forUser, nameOf, listen, markShown });
 })();

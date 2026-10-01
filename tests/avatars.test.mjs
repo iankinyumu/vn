@@ -49,25 +49,33 @@ test('the side panel shows the character on the Profile link and follows a new p
     } finally { window.close(); }
 });
 
-test('a character picked on another device reaches this page: sync() asks the server and announces only real changes', async () => {
+test('a character picked on another device is pushed to this page over realtime, with one catch-up read and no polling', async () => {
     const window = load();
-    let serverAvatar = 'violet-bow', calls = 0;
-    window.getSupabaseClient = async () => ({ auth: { getUser: async () => { calls += 1; return { data: { user: { id: 'user-1', user_metadata: { avatar: serverAvatar } } }, error: null }; } } });
+    let rowAvatar = 'violet-bow', reads = 0, refreshes = 0, channels = 0, push = null, connect = null;
+    const query = { select() { return this; }, eq() { return this; }, maybeSingle: async () => { reads += 1; return { data: { avatar: rowAvatar }, error: null }; } };
+    const channel = {
+        on(type, filter, handler) { assert.equal(type, 'postgres_changes'); assert.equal(JSON.stringify(filter), JSON.stringify({ event: 'UPDATE', schema: 'public', table: 'profiles', filter: 'id=eq.user-1' })); push = handler; return this; },
+        subscribe(callback) { connect = callback; return this; },
+    };
+    window.getAuthenticatedUser = async () => ({ id: 'user-1', user_metadata: { avatar: 'blue-star' } });
+    window.getSupabaseClient = async () => ({ from: () => query, channel: () => { channels += 1; return channel; }, auth: { refreshSession: async () => { refreshes += 1; } } });
     const heard = [];
     window.document.addEventListener('smartprofit:avatar-changed', (event) => heard.push(event.detail.avatar));
     const avatars = window.smartProfitAvatars;
-    avatars.markShown('blue-star');                 // the page drew the cached, stale character
-    await avatars.sync(true);
-    assert.deepEqual(heard, ['violet-bow'], 'the server copy wins');
-    await avatars.sync(true);
+    avatars.markShown('blue-star');                         // the page drew the cached, stale character
+    await Promise.all([avatars.listen(), avatars.listen()]);
+    assert.equal(channels, 1, 'one channel per page');
+    connect('SUBSCRIBED');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.deepEqual(heard, ['violet-bow'], 'the catch-up read wins over the cached copy');
+    assert.equal(refreshes, 1, 'the stored session is refreshed');
+    push({ new: { avatar: 'violet-bow' } });
     assert.deepEqual(heard, ['violet-bow'], 'no repeat when nothing changed');
-    serverAvatar = 'rose-pearls';
-    await avatars.sync();                           // within 15 seconds: throttled, no request
-    assert.equal(calls, 2);
-    await avatars.sync(true);
-    assert.deepEqual(heard, ['violet-bow', 'rose-pearls']);
-    window.getSupabaseClient = async () => ({ auth: { getUser: async () => ({ data: null, error: new Error('offline') }) } });
-    await avatars.sync(true);
-    assert.deepEqual(heard, ['violet-bow', 'rose-pearls'], 'offline keeps what is shown');
+    push({ new: { avatar: 'rose-pearls' } });
+    push({ new: { avatar: 'not-a-character' } });
+    assert.deepEqual(heard, ['violet-bow', 'rose-pearls'], 'pushed changes arrive; unknown ids are ignored');
+    window.dispatchEvent(new window.Event('focus'));
+    window.document.dispatchEvent(new window.Event('visibilitychange'));
+    assert.equal(reads, 1, 'focus and tab switches cause no reads');
     window.close();
 });

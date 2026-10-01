@@ -537,7 +537,7 @@
                 const id = window.smartProfitAvatars.forUser(user);
                 show(id);
                 window.smartProfitAvatars.markShown(id);
-                window.smartProfitAvatars.sync(true);
+                window.smartProfitAvatars.listen();
             })
             .catch(() => { /* Without the list or a session, the Profile icon stays. */ });
     }

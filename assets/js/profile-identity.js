@@ -88,7 +88,7 @@
         if (profile?.display_name) showName(profile.display_name);
         if (profile?.created_at) text('[data-profile-created]', new Intl.DateTimeFormat(undefined, { month: 'short', year: 'numeric' }).format(new Date(profile.created_at)));
 
-        avatars()?.sync(true);
+        avatars()?.listen();
         renderPicker(avatar, async (choice) => {
             const status = find('[data-avatar-status]');
             const previous = avatar;
