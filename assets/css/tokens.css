@@ -236,3 +236,9 @@
         scroll-behavior: auto !important;
     }
 }
+
+/* Alerts (Bootstrap) are plain status text, never a tinted box (DESIGN.md). Success and danger
+   are safe/danger states, so their text may be green or red; the words carry the meaning. */
+.alert { padding: 8px 0; border: 0; border-radius: 0; background: transparent; color: var(--label); }
+.alert-success { color: var(--positive); }
+.alert-danger { color: var(--negative); }

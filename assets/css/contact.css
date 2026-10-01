@@ -9,31 +9,31 @@
 .contact-hero {
     padding: 40px 30px;
     text-align: center;
-    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 6%, transparent), color-mix(in srgb, var(--accent) 3%, transparent))
+    background: transparent
 }
 
 .contact-hero-icon {
     width: 64px;
     height: 64px;
     background: var(--purple-grad);
-    border-radius: 18px;
+    border-radius: var(--radius-control);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 28px;
     margin: 0 auto 16px;
-    animation: pulse-glow 3s ease-in-out infinite
+    animation: none
 }
 
 @keyframes pulse-glow {
 
     0%,
     100% {
-        box-shadow: 0 0 15px color-mix(in srgb, var(--accent) 20%, transparent)
+        box-shadow: none
     }
 
     50% {
-        box-shadow: 0 0 30px color-mix(in srgb, var(--accent) 40%, transparent)
+        box-shadow: none
     }
 }
 
@@ -62,7 +62,7 @@
 .contact-card-icon {
     width: 50px;
     height: 50px;
-    border-radius: 14px;
+    border-radius: var(--radius-control);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -87,7 +87,7 @@
 .contact-card-badge {
     font-size: 10px;
     padding: 4px 10px;
-    border-radius: 12px;
+    border-radius: var(--radius-control);
     background: color-mix(in srgb, var(--positive) 10%, transparent);
     color: var(--positive);
     font-weight: 500
@@ -144,7 +144,7 @@
     width: 100%;
     background: var(--fill-hover);
     border: 1px solid var(--glass-border);
-    border-radius: 14px;
+    border-radius: var(--radius-control);
     padding: 12px 16px 12px 42px;
     color: var(--text-primary);
     font-size: 14px;
@@ -156,7 +156,7 @@
 .form-input:focus {
     border-color: var(--accent);
     background: var(--fill-hover);
-    box-shadow: 0 0 20px color-mix(in srgb, var(--accent) 15%, transparent)
+    box-shadow: none
 }
 
 .form-input::placeholder {
@@ -198,7 +198,7 @@
     align-items: center;
     padding: 10px 18px;
     border: 1px dashed var(--glass-border);
-    border-radius: 12px;
+    border-radius: var(--radius-control);
     color: var(--text-secondary);
     font-size: 13px;
     cursor: pointer;
@@ -271,7 +271,7 @@
 }
 
 .map-container {
-    border-radius: 12px;
+    border-radius: var(--radius-control);
     overflow: hidden
 }
 
@@ -317,7 +317,7 @@
     color: var(--text-secondary);
     background: color-mix(in srgb, var(--accent) 6%, transparent);
     padding: 10px 14px;
-    border-radius: 10px;
+    border-radius: var(--radius-control);
     line-height: 1.5
 }
 
@@ -351,7 +351,7 @@
     align-items: center;
     gap: 10px;
     padding: 12px 14px;
-    border-radius: 12px;
+    border-radius: var(--radius-control);
     border: 1px solid var(--glass-border);
     color: var(--text-secondary);
     text-decoration: none;
@@ -397,7 +397,7 @@
 }
 
 .social-link.instagram:hover {
-    background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+    background: transparent;
     border-color: #e6683c
 }
 
@@ -427,3 +427,9 @@
 #contactFields { min-width: 0; }
 #contactFields:disabled { opacity: .65; }
 #contactStatus { overflow-wrap: anywhere; }
+
+/* Contact (DESIGN.md, Impeccable critique): mascot hero; title steps up clearly from section headings. */
+.contact-mascot { display: block; width: 120px; height: 120px; margin: 0 auto 12px; object-fit: contain; }
+.public-shell .contact-hero-title { font-size: clamp(1.75rem, 3vw, 2.25rem); letter-spacing: -.03em; }
+.public-shell .form-hint, .public-shell .contact-form small { font-size: var(--text-caption); }
+.public-shell #messageHint { font-size: var(--text-caption); line-height: 1.5; }
