@@ -227,10 +227,10 @@ async function capabilitiesFor(role) {
         const db = await createTestDatabase();
         try {
             // The shared test database stops before the funding migrations; apply the
-            // capability registry exactly as 20260926100000 defines it (funding.read, funding.manage).
-            const funding = fs.readFileSync('supabase/migrations/20260926100000_funding_foundation.sql', 'utf8');
-            const registry = funding.match(/create or replace function admin_private\.role_capabilities\(p_role text\)[\s\S]*?\n\$\$;/);
-            assert.ok(registry, 'the funding migration defines the capability registry');
+            // capability registry exactly as the latest migration defines it (20261003100000: notifications.send, announcements.manage).
+            const source = fs.readFileSync('supabase/migrations/20261003100000_notifications.sql', 'utf8');
+            const registry = source.match(/create or replace function admin_private\.role_capabilities\(p_role text\)[\s\S]*?\n\$\$;/);
+            assert.ok(registry, 'the notifications migration defines the capability registry');
             await db.query(registry[0]);
             roleCapabilities = {};
             for (const name of ['support_agent', 'administrator', 'owner']) roleCapabilities[name] = (await db.query('select admin_private.role_capabilities($1) caps', [name])).rows[0].caps;
