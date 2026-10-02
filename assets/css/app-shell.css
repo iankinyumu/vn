@@ -349,3 +349,77 @@ body.has-rail.rail-expanded { padding-inline-start: calc(var(--rail-w-open) + va
 }
 /* Side panel Profile link: the person's character instead of a generic icon, free-standing. */
 .app-rail-link .app-rail-avatar { flex: none; width: 24px; height: 24px; margin-inline: -3px; object-fit: contain; }
+
+/* Shared toasts (shell.js smartProfitNotify): a solid floating layer, newest on top. Green and red only
+   tint a result's title, which already says Won or Lost with a sign. */
+.app-toast-stack { position: fixed; z-index: 1200; top: calc(var(--topbar-h) + 12px); right: 16px; display: grid; gap: 8px; width: min(320px, calc(100vw - 32px)); pointer-events: none; }
+body:not(.has-rail) .app-toast-stack { top: 12px; }
+.app-toast { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--separator-strong); border-radius: var(--radius-control); background: var(--bg-3); color: var(--label); pointer-events: auto; transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out); }
+@starting-style { .app-toast { opacity: 0; transform: translateY(-6px); } }
+.app-toast > div { display: grid; gap: 3px; min-width: 0; }
+.app-toast strong { font: 700 15px 'DM Mono', monospace; font-variant-numeric: tabular-nums; }
+.app-toast-won strong { color: var(--positive); }
+.app-toast-lost strong, .app-toast-error strong { color: var(--negative); }
+.app-toast span { color: var(--label-2); font: 500 11px 'DM Mono', monospace; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.app-toast-close { flex: none; display: inline-grid; place-items: center; width: var(--target); height: var(--target); margin: -12px -14px -12px 0; border: 0; border-radius: var(--radius-control); padding: 0; background: transparent; color: var(--label-2); font-size: 20px; line-height: 1; cursor: pointer; }
+.app-toast-close:hover { color: var(--label); }
+.app-toast-close:active { color: var(--label); background: var(--separator); }
+.app-toast-close:focus-visible { color: var(--label); outline: 2px solid var(--label); outline-offset: -2px; }
+.app-toast-live { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+@media (prefers-reduced-motion: reduce) { .app-toast { transition: none; } }
+
+/* Notification centre (notifications.js). The unread count is plain text beside the bell, never a
+   badge or dot; unread items carry an edge line, a heavier title and the word "Unread". */
+.app-topbar-notify { display: flex; margin-inline-start: auto; }
+.app-topbar-notify + .app-topbar-actions { margin-inline-start: 0; }
+.app-notify-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: var(--target); height: var(--target); padding: 0 var(--space-2); border: 0; border-radius: var(--radius-control); background: transparent; color: var(--label); font: 700 var(--text-footnote) var(--font-mono); font-variant-numeric: tabular-nums; cursor: pointer; transition: background-color var(--dur-fast); }
+.app-notify-btn i { font-size: var(--text-callout); }
+.app-notify-btn:active { background: var(--fill-pressed); }
+.app-notify-btn:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
+.app-notify-btn:disabled { opacity: .5; cursor: not-allowed; }
+.app-notify-count[hidden] { display: none; }
+
+.notify-sheet { width: min(420px, 100%); max-width: 100%; height: 100%; max-height: 100%; margin: 0; margin-inline-start: auto; padding: 0; border: 0; border-inline-start: 1px solid var(--separator-strong); border-radius: 0; background: var(--bg-3); color: var(--label); font-family: var(--font-text); }
+.notify-sheet[open] { display: flex; flex-direction: column; animation: notify-in var(--dur-base) var(--ease-out); }
+.notify-sheet::backdrop { background: var(--scrim-strong); }
+@keyframes notify-in { from { transform: translateX(calc(24px * var(--start-sign, 1))); opacity: 0; } }
+.notify-sheet :focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
+.notify-head { display: flex; align-items: center; gap: var(--space-2); padding: calc(var(--space-2) + var(--safe-top)) var(--space-2) var(--space-2) var(--space-4); border-bottom: 1px solid var(--separator); }
+.notify-heading { flex: 1; margin: 0; font: 800 var(--text-headline) var(--font-text); }
+.notify-close { flex: none; width: var(--target); height: var(--target); border: 0; border-radius: var(--radius-control); background: transparent; color: var(--label-2); font-size: var(--text-headline); cursor: pointer; }
+.notify-close:active { background: var(--fill-pressed); }
+.notify-scroll { flex: 1; overflow-y: auto; padding: 0 var(--space-4) max(var(--space-4), var(--safe-bottom)); overscroll-behavior: contain; }
+.notify-state { margin: var(--space-5) 0; color: var(--label-2); font-size: var(--text-subhead); line-height: 1.5; }
+.notify-state[hidden] { display: none; }
+.notify-state p { margin: 0 0 var(--space-2); }
+.notify-group-title { margin: var(--space-4) 0 0; color: var(--label-2); font: 700 var(--text-caption) var(--font-text); letter-spacing: .06em; text-transform: uppercase; }
+.notify-items { margin: 0; padding: 0; list-style: none; }
+.notify-item { padding: var(--space-3) 0 var(--space-3) var(--space-3); border-bottom: 1px solid var(--separator); border-inline-start: 2px solid transparent; }
+.notify-item.is-unread { border-inline-start-color: var(--label); }
+.notify-meta { margin: 0 0 2px; color: var(--label-2); font: 500 var(--text-caption) var(--font-mono); font-variant-numeric: tabular-nums; }
+.notify-unread { color: var(--label); font-weight: 700; }
+.notify-title { margin: 0; font: 600 var(--text-subhead) var(--font-text); overflow-wrap: anywhere; }
+.notify-item.is-unread .notify-title { font-weight: 800; }
+.notify-body { margin: var(--space-1) 0 0; color: var(--label-2); font-size: var(--text-footnote); line-height: 1.5; overflow-wrap: anywhere; white-space: pre-line; }
+.notify-actions { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); margin-top: var(--space-1); }
+.notify-link { display: inline-flex; align-items: center; min-height: var(--target); color: var(--label); font-size: var(--text-footnote); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+.engine-notice .notify-link { min-height: 0; }
+.notify-text-btn { min-height: var(--target); padding: 0 var(--space-2); border: 0; border-radius: var(--radius-control); background: transparent; color: var(--label); font: 700 var(--text-footnote) var(--font-text); cursor: pointer; }
+.notify-actions .notify-text-btn { padding: 0; color: var(--label-2); }
+.notify-text-btn:active:not(:disabled) { background: var(--fill-pressed); }
+.notify-text-btn:disabled { color: var(--label-2); opacity: .6; cursor: not-allowed; }
+.notify-text-btn[aria-busy="true"], .notify-more[aria-busy="true"] { cursor: progress; }
+.notify-more { width: 100%; min-height: var(--target); margin-top: var(--space-3); border: 1px solid var(--separator-strong); border-radius: var(--radius-control); background: transparent; color: var(--label); font: 700 var(--text-footnote) var(--font-text); cursor: pointer; }
+.notify-more[hidden] { display: none; }
+.notify-more:active:not(:disabled) { background: var(--fill-pressed); }
+.notify-more:disabled { opacity: .6; cursor: not-allowed; }
+@media (hover: hover) and (pointer: fine) {
+    .app-notify-btn:hover, .notify-close:hover, .notify-text-btn:hover:not(:disabled), .notify-more:hover:not(:disabled) { background: var(--fill-hover); }
+    .notify-close:hover { color: var(--label); }
+    .notify-actions .notify-text-btn:hover { color: var(--label); background: transparent; text-decoration: underline; }
+}
+@media (max-width: 480px) {
+    .app-notify-btn { padding: 0 4px; }
+    .notify-sheet { width: 100%; border-inline-start: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .notify-sheet[open] { animation: none; } .app-notify-btn { transition: none; } }

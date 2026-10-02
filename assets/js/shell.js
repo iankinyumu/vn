@@ -360,7 +360,10 @@
         withdraw.dataset.fundingOpen = 'withdraw';
         withdraw.append(icon('fa-arrow-up'), document.createTextNode('Withdraw'));
         actions.append(deposit, withdraw);
-        bar.append(menu, switcher, actions);
+        // notifications.js fills this with the notification centre button.
+        const notify = element('div', 'app-topbar-notify');
+        notify.dataset.notifications = '';
+        bar.append(menu, switcher, notify, actions);
         return bar;
     }
 
@@ -465,6 +468,16 @@
         return notice;
     }
 
+    // Unread important announcements (notifications.js), one at a time.
+    function buildAnnouncementBanner() {
+        const banner = element('div', 'engine-notice');
+        banner.dataset.announcementBanner = '';
+        banner.setAttribute('role', 'region');
+        banner.setAttribute('aria-label', 'Announcement');
+        banner.hidden = true;
+        return banner;
+    }
+
     function buildRestrictionBanner() {
         const banner = element('div', 'restriction-banner');
         banner.dataset.restrictionBanner = '';
@@ -491,7 +504,7 @@
             const appearance = buildAppearance('rail');
             const rail = buildRail(active, appearance.button);
             const topbar = buildTopbar();
-            headerMount.replaceChildren(rail, wireRail(rail, topbar), topbar, buildRestrictionBanner(), buildEngineNotice(), appearance.menu);
+            headerMount.replaceChildren(rail, wireRail(rail, topbar), topbar, buildRestrictionBanner(), buildAnnouncementBanner(), buildEngineNotice(), appearance.menu);
             document.body.classList.add('has-rail');
             paintRailAvatar(rail);
         } else if (headerMount) {
@@ -553,6 +566,84 @@
         get mounted() { return mounted; },
         links: Object.freeze({ public: PUBLIC_LINKS, app: APP_LINKS })
     });
+
+    /* Shared toasts for every app page: window.smartProfitNotify.show({ title, detail, tone, group }).
+       tone is 'neutral', 'won', 'lost' or 'error'; colour only ever repeats what the title already says.
+       A page may provide its own [data-toasts] host; otherwise one is added to <body>. Screen readers
+       hear toasts through one polite region, batched so a burst of toasts is read once. */
+    const TOAST_LIMIT = 3;
+    const TOAST_MS = 6000;
+    const ANNOUNCE_MS = 1000;
+    let toastHost = null, toastLive = null, announceTimer = 0;
+    const pendingAnnouncements = [];
+
+    function toastParts() {
+        if (toastHost?.isConnected) return { host: toastHost, live: toastLive };
+        toastHost = document.querySelector('[data-toasts]');
+        if (!toastHost) {
+            toastHost = element('div', 'app-toast-stack');
+            toastHost.dataset.toasts = '';
+            document.body.append(toastHost);
+        }
+        toastHost.setAttribute('aria-label', 'Notifications');
+        toastHost.removeAttribute('aria-live');
+        toastLive = element('p', 'app-toast-live');
+        toastLive.setAttribute('role', 'status');
+        toastLive.setAttribute('aria-live', 'polite');
+        toastHost.after(toastLive);
+        return { host: toastHost, live: toastLive };
+    }
+
+    function announce(text) {
+        pendingAnnouncements.push(text);
+        if (announceTimer) return;
+        announceTimer = setTimeout(() => {
+            announceTimer = 0;
+            const { live } = toastParts();
+            const items = pendingAnnouncements.splice(0);
+            live.textContent = items.length === 1 ? items[0] : `${items.length} notifications. ${items.join('. ')}`;
+        }, ANNOUNCE_MS);
+    }
+
+    function showToast({ title, detail = '', tone = 'neutral', group = '' } = {}) {
+        if (!title) return null;
+        const { host } = toastParts();
+        const toast = element('div', `app-toast app-toast-${tone}`);
+        toast.setAttribute('role', 'group');
+        toast.setAttribute('aria-label', title);
+        toast.dataset.toast = tone;
+        if (group) toast.dataset.toastGroup = group;
+        const copy = element('div');
+        copy.append(element('strong', '', title));
+        if (detail) copy.append(element('span', '', detail));
+        const close = element('button', 'app-toast-close', '×');
+        close.type = 'button';
+        close.setAttribute('aria-label', `Dismiss: ${title}`);
+        let timer = 0;
+        const dismiss = () => { clearTimeout(timer); toast.remove(); };
+        const arm = () => { clearTimeout(timer); timer = setTimeout(dismiss, TOAST_MS); };
+        close.addEventListener('click', dismiss);
+        // Reading or tabbing into a toast holds it open; leaving restarts its time.
+        toast.addEventListener('pointerenter', () => clearTimeout(timer));
+        toast.addEventListener('pointerleave', () => { if (!toast.contains(document.activeElement)) arm(); });
+        toast.addEventListener('focusin', () => clearTimeout(timer));
+        toast.addEventListener('focusout', (event) => { if (!toast.contains(event.relatedTarget)) arm(); });
+        toast.addEventListener('keydown', (event) => { if (event.key === 'Escape') { event.stopPropagation(); dismiss(); } });
+        toast.append(copy, close);
+        host.prepend(toast);
+        while (host.children.length > TOAST_LIMIT) host.lastElementChild.remove();
+        arm();
+        announce(detail ? `${title}. ${detail}` : title);
+        return toast;
+    }
+
+    // Removes every toast, or only those of one group (for example a page's trades on an account switch).
+    function clearToasts(group) {
+        if (!toastHost) return;
+        for (const toast of [...toastHost.children]) if (!group || toast.dataset.toastGroup === group) toast.remove();
+    }
+
+    window.smartProfitNotify = Object.freeze({ show: showToast, clear: clearToasts });
 
     function boot() {
         if (!mounted) mount();

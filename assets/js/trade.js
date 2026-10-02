@@ -165,7 +165,6 @@
         const stopLoss = form.querySelector('[data-stop-loss]');
         const status = document.querySelector('[data-trade-status]');
         const canvas = document.querySelector('[data-index-chart]');
-        const toastHost = document.querySelector('[data-trade-toasts]');
         const direction = document.querySelector('[data-price-direction]');
         const livePrice = document.querySelector('[data-live-price]');
         const activeTrade = document.querySelector('[data-active-trade]');
@@ -448,24 +447,15 @@
             if (state === 'empty') livePrice.textContent = 'No ticks yet';
             updateBuy();
         };
+        const notify = (toast) => window.smartProfitNotify?.show({ group: 'trade', ...toast });
+        const accountLabel = () => (account().mode === 'REAL' ? 'REAL' : 'PRACTICE');
         const showResult = (contract) => {
-            const toast = document.createElement('div');
-            toast.className = `trade-toast trade-toast-${contract.state.toLowerCase()}`;
-            toast.setAttribute('role', 'group');
-            const copy = document.createElement('div');
-            const title = document.createElement('strong');
             const result = contractNet(contract);
-            title.textContent = contract.state === 'WON' ? `Won ${signed(result)}` : contract.state === 'LOST' ? `Lost ${signed(result)}` : 'Trade voided';
-            const detail = document.createElement('span');
-            detail.textContent = `${contract.index_code} · ${contractName(contract)}${contract.exit_digit == null ? '' : ` · digit ${contract.exit_digit}`}`;
-            copy.append(title, detail);
-            const close = document.createElement('button');
-            close.type = 'button'; close.className = 'trade-toast-close'; close.textContent = '×'; close.setAttribute('aria-label', 'Dismiss trade result');
-            close.addEventListener('click', () => toast.remove());
-            toast.append(copy, close);
-            toastHost.prepend(toast);
-            while (toastHost.children.length > 3) toastHost.lastElementChild.remove();
-            setTimeout(() => toast.remove(), 6000);
+            notify({
+                tone: contract.state === 'WON' ? 'won' : contract.state === 'LOST' ? 'lost' : 'neutral',
+                title: contract.state === 'WON' ? `Won ${signed(result)}` : contract.state === 'LOST' ? `Lost ${signed(result)}` : 'Trade voided',
+                detail: `${contract.index_code} · ${contractName(contract)}${contract.exit_digit == null ? '' : ` · digit ${contract.exit_digit}`}`,
+            });
         };
         const renderContracts = () => {
             const tick = latestTick();
@@ -580,9 +570,11 @@
                 if (bought.error) { if (['engine_unwitnessed', 'engine_checkpoint_stale', 'engine_worker_unhealthy'].includes(codeOf(bought.error))) refreshGate().catch(() => {}); throw bought.error; }
                 idempotencyKey = '';
                 if (bought.data?.id) { purchasedIds.add(bought.data.id); sessionIds.add(bought.data.id); }
-                status.textContent = `${TYPE_LABELS[type]}${args.p_barrier == null ? '' : ` ${args.p_barrier}`} bought · exit tick #${bought.data.settle_tick_no}`;
+                const boughtName = `${TYPE_LABELS[type]}${args.p_barrier == null ? '' : ` ${args.p_barrier}`}`;
+                status.textContent = `${boughtName} bought · exit tick #${bought.data.settle_tick_no}`;
+                notify({ title: 'Order filled', detail: `${accountLabel()} · ${args.p_index} · ${boughtName} · stake ${dollars(args.p_stake)} · exit tick #${bought.data.settle_tick_no}` });
                 await loadContracts();
-            } catch (error) { report(error); } finally { buying = false; delete button.dataset.busy; updateBuy(); }
+            } catch (error) { report(error); notify({ tone: 'error', title: 'Order not placed', detail: status.textContent }); } finally { buying = false; delete button.dataset.busy; updateBuy(); }
         }
 
         familiesHost.addEventListener('change', (event) => {
@@ -615,7 +607,7 @@
             document.querySelector('[data-open-contracts]').hidden = tab.dataset.activityTab !== 'open';
             document.querySelector('[data-settled-contracts]').hidden = tab.dataset.activityTab !== 'settled';
         }));
-        document.addEventListener('smartprofit:clear-trade-state', () => { teardown(); contracts = []; contractsLoaded = false; purchasedIds.clear(); notifiedIds.clear(); sessionIds.clear(); toastHost.replaceChildren(); renderContracts(); status.textContent = ''; clearTimeout(quoteTimer); intent = ''; idempotencyKey = ''; });
+        document.addEventListener('smartprofit:clear-trade-state', () => { teardown(); contracts = []; contractsLoaded = false; purchasedIds.clear(); notifiedIds.clear(); sessionIds.clear(); window.smartProfitNotify?.clear('trade'); renderContracts(); status.textContent = ''; clearTimeout(quoteTimer); intent = ''; idempotencyKey = ''; });
         document.addEventListener('smartprofit:account-changed', () => subscribe().then(changed).catch(report));
         // A resized chart is redrawn at its new size from the current buffer, and the digit pointer follows its digit.
         if (window.ResizeObserver) new window.ResizeObserver(scheduleChart).observe(canvas); else window.addEventListener('resize', scheduleChart);

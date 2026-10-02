@@ -171,18 +171,6 @@ body.trade-page { margin: 0; }
 .activity-open .activity-result strong { color: var(--app-ink); }
 .activity-empty { padding: 18px 0; color: var(--app-muted); font-size: 13px; }
 
-/* Result toasts. */
-.trade-toast-stack { position: fixed; z-index: 1200; top: calc(var(--topbar-h) + 12px); right: 16px; display: grid; gap: 8px; width: min(320px, calc(100vw - 32px)); pointer-events: none; }
-.trade-toast { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--separator-strong); border-radius: 4px; background: var(--app-panel-raised); color: var(--app-ink); pointer-events: auto; transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out); }
-/* Toasts arrive in quick succession: a transition (interruptible) rather than keyframes. */
-@starting-style { .trade-toast { opacity: 0; transform: translateY(-6px); } }
-.trade-toast > div { display: grid; gap: 3px; min-width: 0; }
-.trade-toast strong { font: 700 15px 'DM Mono', monospace; }
-.trade-toast-won strong { color: var(--up); }
-.trade-toast-lost strong { color: var(--down); }
-.trade-toast span { color: var(--app-muted); font: 500 11px 'DM Mono', monospace; }
-.trade-toast-close { flex: none; display: inline-grid; place-items: center; width: var(--target); height: var(--target); margin: -12px -14px -12px 0; border: 0; padding: 0; background: transparent; color: var(--app-muted); font-size: 20px; line-height: 1; cursor: pointer; }
-.trade-toast-close:hover, .trade-toast-close:focus-visible { color: var(--app-ink); }
 
 @media (max-width: 1099.98px) {
     .trade-layout { grid-template-columns: minmax(0, 1fr); grid-template-areas: "families" "market" "ticket"; }
@@ -214,7 +202,7 @@ body.trade-page { margin: 0; }
     .trade-side { height: 58px; padding: 0 12px; }
     .side-name { font-size: 17px; }
 }
-@media (prefers-reduced-motion: reduce) { .digit-ring, .digit-pointer, .family-tab span, .trade-side, .trade-toast { transition: none; animation: none; } }
+@media (prefers-reduced-motion: reduce) { .digit-ring, .digit-pointer, .family-tab span, .trade-side { transition: none; animation: none; } }
 
 /* Companion (trade-companion.js): the profile character standing free under the order ticket, with its
    text bubble beside it. It explains blocks, keeps session limits, sleeps when the feed is not live,

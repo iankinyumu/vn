@@ -336,6 +336,48 @@ test('an index with no published ticks says so, keeps Buy disabled, and goes liv
     } finally { page.dom.window.close(); }
 });
 
+test('a filled order shows a neutral confirmation naming the account, and a refused order shows why', async () => {
+    const server = fakeServer(20);
+    const rpc = server.client.rpc.bind(server.client);
+    let refuse = false;
+    server.client.rpc = async (name, args) => {
+        if (name === 'engine_buy_contract' && refuse) { server.calls.push({ name, args }); return { data: null, error: { message: 'trading_restricted' } }; }
+        if (name === 'engine_buy_contract') { const bought = await rpc(name, args); return { ...bought, data: { ...bought.data, settle_tick_no: 26 } }; }
+        return rpc(name, args);
+    };
+    const page = await openTradePage(server);
+    try {
+        await goLive(server, page);
+        const { document } = page;
+        setStake(page, '10');
+        await waitFor(() => page.side('EVEN').querySelector('[data-side-payout]').textContent === '$19.30', 'the payout was not shown on the side');
+        await freshTick(server, page);
+        page.side('EVEN').click();
+        await waitFor(() => document.querySelector('[data-toast="neutral"]'), 'the filled order was not confirmed');
+        const filled = document.querySelector('[data-toast="neutral"]');
+        assert.equal(filled.querySelector('strong').textContent, 'Order filled');
+        assert.equal(filled.querySelector('span').textContent, 'PRACTICE · SPI10 · Even · stake $10.00 · exit tick #26');
+        assert.ok(filled.closest('[data-trade-toasts]'), 'the toast was not placed in the page toast stack');
+        assert.equal(document.querySelector('[data-trade-toasts]').getAttribute('aria-live'), null, 'the stack itself must not be a live region');
+        await waitFor(() => /^Order filled. PRACTICE · SPI10/.test(document.querySelector('.app-toast-live').textContent), 'the filled order was not announced', 2500);
+
+        refuse = true;
+        await waitFor(() => page.document.querySelector('[data-side][data-busy]') === null, 'the first purchase did not finish');
+        await freshTick(server, page);
+        page.side('EVEN').click();
+        await waitFor(() => document.querySelector('[data-toast="error"]'), 'the refused order was not shown');
+        assert.equal(document.querySelector('[data-toast="error"] strong').textContent, 'Order not placed');
+        assert.equal(document.querySelector('[data-toast="error"] span').textContent, 'Trading is restricted for this account.');
+
+        const error = document.querySelector('[data-toast="error"]');
+        error.dispatchEvent(new page.dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        assert.equal(document.querySelector('[data-toast="error"]'), null, 'Escape did not dismiss the toast');
+        for (let n = 0; n < 5; n++) page.dom.window.smartProfitNotify.show({ title: `Note ${n}` });
+        assert.equal(document.querySelectorAll('[data-toast]').length, 3, 'more than three toasts were stacked');
+        assert.equal(document.querySelector('[data-toast] strong').textContent, 'Note 4', 'the newest toast is not on top');
+    } finally { page.dom.window.close(); }
+});
+
 test('the balance lives in the top bar: purchases and settlements ask it to be re-read, and the page shows none of its own', async () => {
     const server = fakeServer(20);
     const page = await openTradePage(server);
@@ -369,28 +411,28 @@ test('settlements show one dismissible win or loss popup and a readable net resu
         assert.match(text('[data-open-contracts]'), /SPI10 · Even/);
         assert.equal(text('[data-open-count]'), '1');
         assert.match(text('[data-active-trade]'), /^Even · 5 ticks left$/);
-        assert.equal(page.document.querySelectorAll('.trade-toast').length, 0, 'an open trade was announced as a result');
+        assert.equal(page.document.querySelectorAll('[data-toast]').length, 0, 'an open trade was announced as a result');
         rows = [{ ...first, state: 'WON', exit_digit: 2 }]; update();
-        await waitFor(() => page.document.querySelector('.trade-toast-won'), 'the win popup was not shown');
-        assert.match(text('.trade-toast-won'), /^Won \+\$9\.30SPI10 · Even · digit 2/);
+        await waitFor(() => page.document.querySelector('[data-toast="won"]'), 'the win popup was not shown');
+        assert.match(text('[data-toast="won"]'), /^Won \+\$9\.30SPI10 · Even · digit 2/);
         assert.match(text('[data-settled-contracts]'), /\+\$9\.30Won · digit 2/);
         assert.equal(page.document.querySelector('[data-active-trade]').hidden, true, 'a settled trade stayed active on the chart');
         update(); await new Promise((resolve) => setTimeout(resolve, 20));
-        assert.equal(page.document.querySelectorAll('.trade-toast').length, 1, 'the same settlement was announced twice');
+        assert.equal(page.document.querySelectorAll('[data-toast]').length, 1, 'the same settlement was announced twice');
 
         const second = { ...first, id: 'lost-2', contract_type: 'ODD', stake: '7', payout: '13.51', state: 'OPEN' };
         rows = [second, ...rows]; update();
         await waitFor(() => text('[data-open-contracts]').includes('$7.00'), 'the second trade was not tracked');
         assert.match(text('[data-active-trade]'), /^Odd/);
         rows = [{ ...second, state: 'LOST', exit_digit: 4 }, ...rows.slice(1)]; update();
-        await waitFor(() => page.document.querySelector('.trade-toast-lost'), 'the loss popup was not shown');
-        assert.match(text('.trade-toast-lost'), /^Lost −\$7\.00/);
+        await waitFor(() => page.document.querySelector('[data-toast="lost"]'), 'the loss popup was not shown');
+        assert.match(text('[data-toast="lost"]'), /^Lost −\$7\.00/);
         assert.match(text('[data-settled-contracts]'), /−\$7\.00Lost · digit 4/);
         assert.equal(page.document.querySelector('[data-active-trade]').hidden, true, 'a lost trade stayed active on the chart');
-        page.document.querySelector('.trade-toast-lost button').click();
-        assert.equal(page.document.querySelector('.trade-toast-lost'), null, 'the popup could not be dismissed');
+        page.document.querySelector('[data-toast="lost"] button').click();
+        assert.equal(page.document.querySelector('[data-toast="lost"]'), null, 'the popup could not be dismissed');
         page.switchAccount({ accountId: 'second-id', mode: 'DEMO', currency: 'USD' });
-        assert.equal(page.document.querySelectorAll('.trade-toast').length, 0, 'the old account notification remained visible');
+        assert.equal(page.document.querySelectorAll('[data-toast]').length, 0, 'the old account notification remained visible');
         assert.equal(page.document.querySelector('[data-active-trade]').hidden, true, 'the old account trade remained on the chart');
         await waitFor(() => text('[data-settled-contracts]').includes('No settled trades yet'), 'old account results remained visible');
         await waitFor(() => server.channels.some((channel) => channel.topic === 'contracts:second-id'), 'the new account subscription did not finish');
