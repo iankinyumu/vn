@@ -39,6 +39,12 @@ for (const scheme of ['light', 'dark']) {
                 const box = await button.boundingBox();
                 assert.ok(box.width >= 44 && box.height >= 44, `the button is ${box.width}x${box.height}`);
                 assert.ok(box.x + box.width <= viewport.width, 'the button overflows the top bar');
+                const counter = await page.locator('[data-notify-count]').boundingBox();
+                assert.ok(counter && counter.x >= box.x && counter.x + counter.width <= box.x + box.width + 0.5 && counter.y >= box.y, 'the unread counter sits outside the bell');
+                assert.equal(await page.locator('[data-notify-count]').textContent(), '2');
+                assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('[data-notify-open] i')).fontSize), '24px', 'the bell is not 24px');
+                const idleFill = await page.evaluate(() => getComputedStyle(document.querySelector('[data-notify-open] i')).fontVariationSettings);
+                assert.match(idleFill, /"FILL" 0/, 'the idle bell is filled');
                 assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true, 'the page scrolls sideways');
                 assert.equal(await page.locator('[data-announcement-banner]').isVisible(), true);
                 await shot(page, `notifications-${scheme}-${viewport.width}-bar`);
@@ -46,6 +52,8 @@ for (const scheme of ['light', 'dark']) {
                 await button.click();
                 const sheet = page.locator('[data-notify-sheet]');
                 await page.locator('[data-notify-item]').nth(2).waitFor();
+                // Reduced motion leaves a 10µs transition on every property: wait for the settled value.
+                await page.waitForFunction(() => /"FILL" 1/.test(getComputedStyle(document.querySelector('[data-notify-open] i')).fontVariationSettings), null, { timeout: 2000 });
                 const sheetBox = await sheet.boundingBox();
                 assert.ok(sheetBox.x >= 0 && sheetBox.x + sheetBox.width <= viewport.width + 0.5, 'the sheet does not fit the screen');
                 assert.ok(await page.evaluate(() => {

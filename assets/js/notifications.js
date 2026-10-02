@@ -1,6 +1,6 @@
-/* Notification centre for signed-in pages (migration 20261003100000). The top bar button shows the
- * unread count as text; it opens a sheet with live announcements (site-wide, from administrators)
- * above the person's own notifications (support replies, funding, account). Important
+/* Notification centre for signed-in pages (migration 20261003100000). The top bar bell carries a
+ * small neutral unread counter (a DESIGN.md exception) and fills while its sheet is open. The sheet
+ * lists live announcements (site-wide, from administrators) above the person's own notifications (support replies, funding, account). Important
  * announcements that are still unread also show once as a banner under the top bar.
  *
  * New items arrive over Supabase Realtime (RLS limits each subscriber to their own rows and the
@@ -34,8 +34,9 @@
     function paintCount() {
         if (!button) return;
         const count = button.querySelector('[data-notify-count]');
-        count.textContent = unread > 99 ? '99+' : String(unread);
+        count.textContent = unread > 9 ? '9+' : String(unread);
         count.hidden = unread === 0;
+        button.classList.toggle('has-unread', unread > 0);
         button.setAttribute('aria-label', unread ? `Notifications, ${unread} unread` : 'Notifications');
     }
     const setUnread = (value) => { unread = Math.max(0, Number(value) || 0); paintCount(); };

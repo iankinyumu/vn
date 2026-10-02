@@ -141,6 +141,10 @@ Known exceptions, each kept on purpose:
 - The CSS loader fallback (`.sp-loader-art[data-fallback]` in `loader.css`) draws three flat bars
   with `linear-gradient()` used as a solid fill, not a visible gradient.
 - The MFA QR code in `admin.html` sits on white so phones can scan it in dark mode.
+- The notification bell's unread counter (`.app-notify-count` in `app-shell.css`) is the one
+  counter on the site, at the owner's request (2026-10-03). It is neutral (the text colour,
+  inverted), never red, shows a number ("9+" above nine) rather than a bare dot, and the bell's
+  label says the count ("Notifications, 3 unread"), so it never relies on colour or shape alone.
 
 ## Motion
 

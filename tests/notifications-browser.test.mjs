@@ -69,6 +69,7 @@ test('the top bar button shows the unread count as text and opens the inbox with
         assert.ok(button, 'the button is not in the top bar');
         await waitFor(() => button.getAttribute('aria-label') === 'Notifications, 2 unread', 'the unread count was not shown');
         assert.equal(button.querySelector('[data-notify-count]').textContent, '2');
+        assert.ok(button.classList.contains('has-unread'), 'the bell did not show its unread state');
         assert.equal(button.querySelector('[class*="badge"], [class*="dot"], [class*="pill"]'), null);
 
         const banner = document.querySelector('[data-announcement-banner]');
@@ -96,6 +97,7 @@ test('the top bar button shows the unread count as text and opens the inbox with
         sheet.querySelector('[data-notify-all-read]').click();
         await waitFor(() => button.getAttribute('aria-label') === 'Notifications', 'mark all read did not clear the count');
         assert.equal(button.querySelector('[data-notify-count]').hidden, true);
+        assert.equal(button.classList.contains('has-unread'), false, 'the bell kept its unread state');
         assert.equal(banner.hidden, true, 'the banner stayed after its announcement was read');
         assert.equal(sheet.querySelectorAll('.is-unread').length, 0);
         assert.equal(sheet.querySelector('[data-notify-all-read]').disabled, true);
@@ -180,5 +182,17 @@ test('turning trade popups off on the profile hides only trade toasts, on this d
         box.dispatchEvent(new dom.window.Event('change'));
         assert.equal(dom.window.localStorage.getItem('smartprofit:trade-toasts'), null);
         assert.ok(dom.window.smartProfitNotify.show({ group: 'trade', title: 'Order filled' }));
+    } finally { dom.window.close(); }
+});
+
+test('the counter caps at 9+ while the label keeps the exact number', async () => {
+    const server = fakeServer();
+    for (let n = 0; n < 12; n++) server.state.notifications.push({ id: `extra-${n}`, category: 'system', title: `Note ${n}`, body: '', created_at: today, read: false });
+    const dom = await openPage(server);
+    try {
+        const { document } = dom.window;
+        await waitFor(() => document.querySelector('[data-notify-open]')?.getAttribute('aria-label') === 'Notifications, 14 unread', 'the exact count was not in the label');
+        assert.equal(document.querySelector('[data-notify-count]').textContent, '9+');
+        assert.equal(document.querySelector('[data-notify-count]').getAttribute('aria-hidden'), 'true', 'the counter must not be read twice');
     } finally { dom.window.close(); }
 });
