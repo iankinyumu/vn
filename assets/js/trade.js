@@ -13,7 +13,7 @@
         { key: 'matchdiffer', label: 'Matches / Differs', sides: ['MATCH', 'DIFFER'], barrier: true },
         { key: 'overunder', label: 'Over / Under', sides: ['OVER', 'UNDER'], barrier: true },
     ]);
-    const SIDE_ICONS = Object.freeze({ EVEN: 'fa-hashtag', ODD: 'fa-hashtag', MATCH: 'fa-equals', DIFFER: 'fa-not-equal', OVER: 'fa-arrow-up', UNDER: 'fa-arrow-down' });
+    const SIDE_ICONS = Object.freeze({ EVEN: 'tag', ODD: 'tag', MATCH: 'equal', DIFFER: 'difference', OVER: 'arrow_upward', UNDER: 'arrow_downward' });
     // The barriers the engine accepts for each type (engine_winning_digits); any other barrier cannot win.
     const BARRIER_OK = Object.freeze({ OVER: (digit) => digit <= 8, UNDER: (digit) => digit >= 1, MATCH: () => true, DIFFER: () => true });
     const TICK_CHOICES = Object.freeze([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
@@ -340,7 +340,7 @@
                 const type = family?.sides[position] || '';
                 button.dataset.type = type;
                 button.querySelector('[data-side-label]').textContent = TYPE_LABELS[type] || '—';
-                button.querySelector('i').className = `fas ${SIDE_ICONS[type] || 'fa-circle'}`;
+                button.querySelector('i').dataset.icon = SIDE_ICONS[type] || 'circle';
                 button.querySelector('[data-side-payout]').textContent = '—';
                 button.removeAttribute('title');
             });

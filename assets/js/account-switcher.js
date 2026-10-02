@@ -100,7 +100,9 @@
         const balance = element('span', 'mode-switch-balance', '—');
         balance.dataset.modeBalance = '';
         balance.setAttribute('aria-live', 'polite');
-        const caret = element('i', 'fas fa-chevron-down mode-switch-caret');
+        const caret = element('i', 'ms mode-switch-caret');
+        caret.dataset.icon = 'expand_more';
+        caret.setAttribute('aria-hidden', 'true');
         caret.setAttribute('aria-hidden', 'true');
         toggle.append(label, balance, caret);
         const menu = element('div', 'mode-menu');

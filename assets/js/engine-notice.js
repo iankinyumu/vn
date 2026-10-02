@@ -51,7 +51,8 @@
         mount.hidden = visible.length === 0;
         if (!visible.length) return;
         const icon = document.createElement('i');
-        icon.className = 'fas fa-circle-info engine-notice-icon';
+        icon.className = 'ms engine-notice-icon';
+        icon.dataset.icon = 'info';
         icon.setAttribute('aria-hidden', 'true');
         const body = document.createElement('div');
         body.className = 'engine-notice-body';
@@ -64,7 +65,9 @@
         close.type = 'button';
         close.className = 'engine-notice-close';
         close.setAttribute('aria-label', 'Dismiss this notice');
-        close.append(Object.assign(document.createElement('i'), { className: 'fas fa-xmark' }));
+        close.append(Object.assign(document.createElement('i'), { className: 'ms' }));
+        close.lastChild.dataset.icon = 'close';
+        close.lastChild.setAttribute('aria-hidden', 'true');
         close.firstChild.setAttribute('aria-hidden', 'true');
         close.addEventListener('click', () => { dismiss(items.map((item) => item.id)); mount.hidden = true; });
         mount.append(icon, body, close);

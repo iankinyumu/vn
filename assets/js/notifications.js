@@ -20,7 +20,7 @@
         if (text !== undefined) node.textContent = text;
         return node;
     }
-    const icon = (name) => { const node = el('i', `fas ${name}`); node.setAttribute('aria-hidden', 'true'); return node; };
+    const icon = (name) => { const node = el('i', 'ms'); node.dataset.icon = name; node.setAttribute('aria-hidden', 'true'); return node; };
     const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
     function when(value, now = new Date()) {
         const date = new Date(value);
@@ -58,9 +58,9 @@
         const close = el('button', 'engine-notice-close');
         close.type = 'button';
         close.setAttribute('aria-label', `Dismiss announcement: ${next.title}`);
-        close.append(icon('fa-xmark'));
+        close.append(icon('close'));
         close.addEventListener('click', () => markRead({ announcement: next }).catch(() => {}));
-        banner.replaceChildren(icon('fa-bullhorn'), body, close);
+        banner.replaceChildren(icon('campaign'), body, close);
         banner.firstChild.classList.add('engine-notice-icon');
     }
 
@@ -162,7 +162,7 @@
         <div class="notify-head">
             <h2 class="notify-heading" id="notifyTitle">Notifications</h2>
             <button type="button" class="notify-text-btn" data-notify-all-read>Mark all read</button>
-            <button type="button" class="notify-close" data-notify-close aria-label="Close"><i class="fas fa-xmark" aria-hidden="true"></i></button>
+            <button type="button" class="notify-close" data-notify-close aria-label="Close"><i class="ms" data-icon="close" aria-hidden="true"></i></button>
         </div>
         <div class="notify-scroll">
             <p class="notify-state" data-notify-loading role="status">Loading notifications…</p>
@@ -223,7 +223,7 @@
         count.dataset.notifyCount = '';
         count.setAttribute('aria-hidden', 'true');
         count.hidden = true;
-        button.append(icon('fa-bell'), count);
+        button.append(icon('notifications'), count);
         button.addEventListener('click', open);
         mount.replaceChildren(button);
         paintCount();

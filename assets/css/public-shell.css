@@ -86,7 +86,7 @@ body.public-shell::before, body.auth-shell::before, .public-shell .animated-bg, 
 @media (max-width: 767px) { .public-shell .premium-header .container-fluid, .public-shell .premium-footer .container-fluid { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); } }
 /* Appearance button (shell.js): icon only in the wide header, labelled inside the phone menu. */
 .public-shell .appearance-nav { gap: 8px; min-width: var(--target); justify-content: center; border: 0; background: transparent; }
-.public-shell .appearance-nav i { font-size: 15px; }
+.public-shell .appearance-nav i { font-size: 20px; }
 @media (min-width: 1200px) { .public-shell .appearance-nav-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } }
 /* Placeholders at 4.5:1 or better (WCAG 1.4.3): secondary label colour, full opacity. */
 :is(.public-shell, .help-content) ::placeholder, .auth-shell ::placeholder { color: var(--label-2); opacity: 1; }

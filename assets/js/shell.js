@@ -10,20 +10,20 @@
     const SHELL_SRC = document.currentScript?.src || '';
 
     const PUBLIC_LINKS = Object.freeze([
-        { href: 'index.html', label: 'Home', icon: 'fa-house', key: 'home' },
-        { href: 'about.html', label: 'About', icon: 'fa-circle-info', key: 'about' },
-        { href: 'fairness.html', label: 'Fairness', icon: 'fa-scale-balanced', key: 'fairness' }
+        { href: 'index.html', label: 'Home', icon: 'home', key: 'home' },
+        { href: 'about.html', label: 'About', icon: 'info', key: 'about' },
+        { href: 'fairness.html', label: 'Fairness', icon: 'balance', key: 'fairness' }
     ]);
 
     const APP_LINKS = Object.freeze([
-        { href: 'dashboard.html', label: 'Dashboard', icon: 'fa-gauge-high', key: 'dashboard' },
-        { href: 'trade.html', label: 'Trade', icon: 'fa-chart-simple', key: 'trade' },
-        { href: 'fairness.html', label: 'Fairness', icon: 'fa-scale-balanced', key: 'fairness' },
-        { href: 'profile.html', label: 'Profile', icon: 'fa-user-circle', key: 'profile' },
+        { href: 'dashboard.html', label: 'Dashboard', icon: 'speed', key: 'dashboard' },
+        { href: 'trade.html', label: 'Trade', icon: 'bar_chart', key: 'trade' },
+        { href: 'fairness.html', label: 'Fairness', icon: 'balance', key: 'fairness' },
+        { href: 'profile.html', label: 'Profile', icon: 'account_circle', key: 'profile' },
         // Help lives inside the signed-in shell, so it never drops a customer back onto the landing page.
-        { href: 'blog.html', label: 'Guides', icon: 'fa-book-open', key: 'blog' },
-        { href: 'faq.html', label: 'FAQ', icon: 'fa-circle-question', key: 'faq' },
-        { href: 'contact.html', label: 'Contact', icon: 'fa-headset', key: 'contact' }
+        { href: 'blog.html', label: 'Guides', icon: 'menu_book', key: 'blog' },
+        { href: 'faq.html', label: 'FAQ', icon: 'help', key: 'faq' },
+        { href: 'contact.html', label: 'Contact', icon: 'support_agent', key: 'contact' }
     ]);
 
     const FOOTER_COLUMNS = Object.freeze([
@@ -55,7 +55,8 @@
     }
 
     function icon(name) {
-        const node = element('i', `fas ${name}`);
+        const node = element('i', 'ms');
+        node.dataset.icon = name;
         node.setAttribute('aria-hidden', 'true');
         return node;
     }
@@ -87,7 +88,7 @@
             // Logging out loses nothing, so it takes the quiet style rather than the destructive one.
             const button = element('button', 'btn btn-outline-light btn-sm rounded-pill px-3');
             button.type = 'button';
-            const glyph = icon('fa-right-from-bracket');
+            const glyph = icon('logout');
             glyph.classList.add('me-1');
             button.append(glyph, document.createTextNode('Log out'));
             button.addEventListener('click', () => { if (typeof window.logout === 'function') window.logout(); });
@@ -107,9 +108,9 @@
        menu of three radio items. The menu is a popover, so it sits in the top layer where the
        side panel's clipping cannot cut it off, and Escape or a click outside closes it. */
     const APPEARANCE = Object.freeze([
-        { value: 'system', label: 'System', detail: 'Match this device', icon: 'fa-circle-half-stroke' },
-        { value: 'light', label: 'Light', icon: 'fa-sun' },
-        { value: 'dark', label: 'Dark', icon: 'fa-moon' }
+        { value: 'system', label: 'System', detail: 'Match this device', icon: 'contrast' },
+        { value: 'light', label: 'Light', icon: 'light_mode' },
+        { value: 'dark', label: 'Dark', icon: 'dark_mode' }
     ]);
     let appearanceCount = 0;
 
@@ -122,7 +123,7 @@
         button.setAttribute('aria-haspopup', 'menu');
         button.setAttribute('aria-expanded', 'false');
         button.setAttribute('aria-controls', id);
-        const glyph = icon('fa-circle-half-stroke');
+        const glyph = icon('contrast');
         const text = element('span', inRail ? 'app-rail-text' : 'appearance-nav-text', 'Appearance');
         button.append(glyph, text);
         const menu = element('div', 'appearance-menu');
@@ -148,7 +149,7 @@
         const sync = () => {
             const current = store ? store.get() : 'system';
             const choice = APPEARANCE.find((entry) => entry.value === current) || APPEARANCE[0];
-            glyph.className = `fas ${choice.icon}`;
+            glyph.dataset.icon = choice.icon;
             button.setAttribute('aria-label', `Appearance: ${choice.label}`);
             items.forEach((item) => item.setAttribute('aria-checked', String(item.dataset.appearance === current)));
         };
@@ -324,13 +325,13 @@
         const foot = element('div', 'app-rail-foot');
         const logout = element('button', 'app-rail-link app-rail-logout');
         logout.type = 'button';
-        logout.append(icon('fa-right-from-bracket'), element('span', 'app-rail-text', 'Log out'));
+        logout.append(icon('logout'), element('span', 'app-rail-text', 'Log out'));
         logout.addEventListener('click', () => { if (typeof window.logout === 'function') window.logout(); });
         const expand = element('button', 'app-rail-link app-rail-expand');
         expand.type = 'button';
         expand.dataset.railExpand = '';
         expand.setAttribute('aria-controls', 'appRail');
-        expand.append(icon('fa-angles-right'), element('span', 'app-rail-text', 'Expand'));
+        expand.append(icon('keyboard_double_arrow_right'), element('span', 'app-rail-text', 'Expand'));
         if (appearanceButton) foot.append(appearanceButton);
         foot.append(logout, expand);
         rail.append(brand, nav, foot);
@@ -345,7 +346,7 @@
         menu.setAttribute('aria-label', 'Open menu');
         menu.setAttribute('aria-controls', 'appRail');
         menu.setAttribute('aria-expanded', 'false');
-        menu.append(icon('fa-bars'));
+        menu.append(icon('menu'));
         const switcher = element('div');
         switcher.dataset.accountSwitcher = '';
         // Funding is a Real mode action: the mode switch reveals these once the active mode is Real.
@@ -355,11 +356,11 @@
         const deposit = element('button', 'app-fund-btn app-fund-deposit');
         deposit.type = 'button';
         deposit.dataset.fundingOpen = 'deposit';
-        deposit.append(icon('fa-plus'), document.createTextNode('Deposit'));
+        deposit.append(icon('add'), document.createTextNode('Deposit'));
         const withdraw = element('button', 'app-fund-btn app-fund-withdraw');
         withdraw.type = 'button';
         withdraw.dataset.fundingOpen = 'withdraw';
-        withdraw.append(icon('fa-arrow-up'), document.createTextNode('Withdraw'));
+        withdraw.append(icon('arrow_upward'), document.createTextNode('Withdraw'));
         actions.append(deposit, withdraw);
         // notifications.js fills this with the notification centre button.
         const notify = element('div', 'app-topbar-notify');

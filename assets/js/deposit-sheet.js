@@ -44,7 +44,7 @@
         if (text !== undefined) node.textContent = text;
         return node;
     }
-    const icon = (name) => { const node = el('i', `fas ${name}`); node.setAttribute('aria-hidden', 'true'); return node; };
+    const icon = (name) => { const node = el('i', 'ms'); node.dataset.icon = name; node.setAttribute('aria-hidden', 'true'); return node; };
 
     const TEMPLATE = `
         <div class="fund-sheet-head">
@@ -52,11 +52,11 @@
                 <button type="button" role="tab" id="fundTabDeposit" aria-controls="fundPanelDeposit" data-fund-tab="deposit">Deposit</button>
                 <button type="button" role="tab" id="fundTabWithdraw" aria-controls="fundPanelWithdraw" data-fund-tab="withdraw">Withdraw</button>
             </div>
-            <button type="button" class="fund-close" data-fund-close aria-label="Close"><i class="fas fa-xmark" aria-hidden="true"></i></button>
+            <button type="button" class="fund-close" data-fund-close aria-label="Close"><i class="ms" data-icon="close" aria-hidden="true"></i></button>
         </div>
         <section class="fund-panel" role="tabpanel" id="fundPanelDeposit" aria-labelledby="fundTabDeposit" data-fund-panel="deposit">
             <div class="fund-method">
-                <span class="fund-method-name"><i class="fas fa-mobile-screen-button" aria-hidden="true"></i>Lipa na M-Pesa</span>
+                <span class="fund-method-name"><i class="ms" data-icon="smartphone" aria-hidden="true"></i>Lipa na M-Pesa</span>
                 <span class="fund-env" data-fund-env hidden></span>
             </div>
             <div class="fund-loading" data-fund-loading></div>
@@ -108,7 +108,7 @@
         </section>
         <section class="fund-panel" role="tabpanel" id="fundPanelWithdraw" aria-labelledby="fundTabWithdraw" data-fund-panel="withdraw" hidden>
             <div class="fund-method">
-                <span class="fund-method-name"><i class="fas fa-mobile-screen-button" aria-hidden="true"></i>Lipa na M-Pesa</span>
+                <span class="fund-method-name"><i class="ms" data-icon="smartphone" aria-hidden="true"></i>Lipa na M-Pesa</span>
             </div>
             <p class="fund-empty" data-fund-withdraw-closed>Withdrawals are not open yet.</p>
         </section>`;
@@ -371,7 +371,7 @@
         result.dataset.tone = tone;
         q('[data-payment-state]').textContent = label;
         q('[data-payment-message]').textContent = payment.status_message || '';
-        q('[data-payment-icon]').replaceChildren(icon(tone === 'ok' ? 'fa-circle-check' : tone === 'bad' ? 'fa-circle-xmark' : tone === 'review' ? 'fa-circle-exclamation' : 'fa-mobile-screen-button'));
+        q('[data-payment-icon]').replaceChildren(icon(tone === 'ok' ? 'check_circle' : tone === 'bad' ? 'cancel' : tone === 'review' ? 'error' : 'smartphone'));
         q('[data-fund-again]').hidden = PENDING.has(payment.state);
         showStep('status');
         document.dispatchEvent(new CustomEvent('smartprofit:deposit-updated', { detail: { state: payment.state } }));

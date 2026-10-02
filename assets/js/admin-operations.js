@@ -190,17 +190,17 @@
                 const data = await this.call('get_platform_overview');
                 const today = data.contracts_today || {};
                 const card = (label, value, icon, note) => h('div', { className: 'card-kpi stat-card' }, [
-                    h('div', { className: 'stat-icon-wrapper' }, [h('i', { className: `fas ${icon}` })]),
+                    h('div', { className: 'stat-icon-wrapper' }, [h('i', { className: `ms ${icon.split(' ').slice(1).join(' ')}`.trim(), attrs: { 'data-icon': icon.split(' ')[0], 'aria-hidden': 'true' } })]),
                     h('div', { className: 'stat-content' }, [h('div', { className: 'stat-label', text: label }), h('div', { className: 'stat-value', text: value }), h('div', { className: 'stat-badge', text: note })]),
                 ]);
                 grid.replaceChildren(
-                    card('Open tickets', data.open_tickets, 'fa-headset text-primary', 'Active queue'),
-                    card('Unassigned', data.unassigned_tickets, 'fa-inbox text-warning', 'Needs review'),
-                    card('Registered accounts', data.total_customers, 'fa-users text-info', 'Platform total'),
-                    card('Active restrictions', data.active_restrictions, 'fa-user-slash text-danger', 'Unexpired'),
-                    card('Contracts today', `${(today.DEMO ?? 0) + (today.REAL ?? 0)}`, 'fa-exchange-alt text-success', `Practice ${today.DEMO ?? 0} · Real ${today.REAL ?? 0}`),
-                    card('Active staff', data.active_staff, 'fa-user-shield text-primary', 'Operations'),
-                    card('Engine', String(data.engine_health || 'unavailable').toUpperCase(), `fa-bolt ${{ healthy: 'text-success', watch: 'text-warning', alert: 'text-danger', degraded: 'text-danger' }[data.engine_health] || 'text-secondary'}`, 'Details in the Engine tab'),
+                    card('Open tickets', data.open_tickets, 'support_agent text-primary', 'Active queue'),
+                    card('Unassigned', data.unassigned_tickets, 'inbox text-warning', 'Needs review'),
+                    card('Registered accounts', data.total_customers, 'group text-info', 'Platform total'),
+                    card('Active restrictions', data.active_restrictions, 'person_off text-danger', 'Unexpired'),
+                    card('Contracts today', `${(today.DEMO ?? 0) + (today.REAL ?? 0)}`, 'swap_horiz text-success', `Practice ${today.DEMO ?? 0} · Real ${today.REAL ?? 0}`),
+                    card('Active staff', data.active_staff, 'admin_panel_settings text-primary', 'Operations'),
+                    card('Engine', String(data.engine_health || 'unavailable').toUpperCase(), `bolt ${{ healthy: 'text-success', watch: 'text-warning', alert: 'text-danger', degraded: 'text-danger' }[data.engine_health] || 'text-secondary'}`, 'Details in the Engine tab'),
                 );
                 status.textContent = `Live as of ${new Date(data.timestamp).toLocaleTimeString()}`;
             } catch (error) {

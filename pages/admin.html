@@ -8,7 +8,7 @@
 
   <!-- Product fonts (Manrope, DM Mono) and FontAwesome; appearance follows the shared setting. -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0..1,0&amp;icon_names=account_circle,add,admin_panel_settings,alternate_email,area_chart,arrow_back,arrow_downward,arrow_forward,arrow_right_alt,arrow_upward,balance,bar_chart,block,bolt,calendar_month,campaign,cancel,casino,category,check,check_circle,chevron_left,chevron_right,circle,close,contrast,currency_exchange,dark_mode,difference,edit,equal,error,expand_more,format_list_numbered,graphic_eq,group,help,history,home,hourglass_top,inbox,info,key,keyboard_double_arrow_left,keyboard_double_arrow_right,layers,light_mode,list,lock,lock_open,login,logout,mail,menu,menu_book,mood,notifications,percent,person,person_off,pie_chart,qr_code,refresh,save,schedule,search,send,settings,shield,show_chart,smartphone,sort,speed,sports_score,star,support_agent,swap_horiz,table,tag,timer,tune,undo,upload,visibility,warning&amp;display=block" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="../assets/js/theme.js"></script>
 
@@ -31,7 +31,7 @@
     <div class="container-fluid px-4 d-flex align-items-center justify-content-between">
       <div class="header-brand-wrap d-flex align-items-center gap-3">
         <a class="premium-logo d-flex align-items-center gap-2" href="dashboard.html">
-          <div class="logo-icon"><i class="fas fa-cubes"></i></div>
+          <div class="logo-icon"><i class="ms" data-icon="category" aria-hidden="true"></i></div>
           <div class="logo-text">
             <span class="logo-primary">SmartProfit</span><span class="logo-secondary">Binary</span>
           </div>
@@ -45,16 +45,16 @@
       <div class="header-user-wrap d-flex align-items-center gap-2">
         <span id="adminIdentity" class="user-identity-badge"></span>
         <a href="dashboard.html" class="btn btn-light btn-sm rounded-pill px-3 border">
-          <i class="fas fa-chart-line me-1 text-secondary"></i> Customer dashboard
+          <i class="ms me-1 text-secondary" data-icon="show_chart" aria-hidden="true"></i> Customer dashboard
         </a>
         <a id="adminSignIn" href="staff-login.html?redirect=admin.html" class="btn btn-premium-primary btn-sm rounded-pill px-3" hidden>
-          <i class="fas fa-sign-in-alt me-1"></i> Staff Sign In
+          <i class="ms me-1" data-icon="login" aria-hidden="true"></i> Staff Sign In
         </a>
         <button id="adminRetry" type="button" class="btn btn-light btn-sm rounded-pill px-3 border" hidden>
-          <i class="fas fa-redo me-1 text-warning"></i> Check Access
+          <i class="ms me-1 text-warning" data-icon="refresh" aria-hidden="true"></i> Check Access
         </button>
         <button id="adminSignOut" type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3" hidden>
-          <i class="fas fa-sign-out-alt me-1"></i> Sign Out
+          <i class="ms me-1" data-icon="logout" aria-hidden="true"></i> Sign Out
         </button>
       </div>
     </div>
@@ -70,7 +70,7 @@
           <div id="adminStatus" role="status" aria-live="polite" class="mt-2 text-secondary small">Checking your access…</div>
         </div>
         <div class="d-flex align-items-center gap-2 bg-light px-3 py-2 rounded-pill border">
-          <i class="far fa-calendar-alt text-secondary"></i>
+          <i class="ms text-secondary" data-icon="calendar_month" aria-hidden="true"></i>
           <span id="adminCurrentDate" class="small fw-bold text-secondary"></span>
         </div>
       </div>
@@ -78,7 +78,7 @@
 
     <noscript>
       <div class="alert alert-danger" role="alert">
-        <i class="fas fa-exclamation-triangle me-2"></i> JavaScript is required to access the staff operations center.
+        <i class="ms me-2" data-icon="warning" aria-hidden="true"></i> JavaScript is required to access the staff operations center.
       </div>
     </noscript>
 
@@ -86,7 +86,7 @@
     <section id="adminMfa" hidden aria-labelledby="mfaTitle" class="mx-auto my-5 p-4 border" style="max-width: 440px;">
       <div class="text-center mb-4">
         <div class="stat-icon-wrapper mx-auto mb-3" style="width: 52px; height: 52px; font-size: 1.4rem;">
-          <i class="fas fa-shield-alt"></i>
+          <i class="ms" data-icon="shield" aria-hidden="true"></i>
         </div>
         <h2 id="mfaTitle" class="h5 fw-bold text-dark mb-1">Two-Factor Authentication</h2>
         <p class="text-secondary small">Enter the 6-digit TOTP code from your authenticator app to unlock.</p>
@@ -99,7 +99,7 @@
 
       <div class="text-center mb-3">
         <button id="mfaEnroll" type="button" class="btn btn-light btn-sm rounded-pill border" hidden>
-          <i class="fas fa-qrcode me-1"></i> Set up an authenticator
+          <i class="ms me-1" data-icon="qr_code" aria-hidden="true"></i> Set up an authenticator
         </button>
       </div>
 
@@ -107,7 +107,7 @@
         <!-- QR Code display -->
         <div class="text-center mb-3">
           <p class="small text-secondary mb-2 fw-semibold">
-            <i class="fas fa-qrcode me-1 text-primary"></i>
+            <i class="ms me-1 text-primary" data-icon="qr_code" aria-hidden="true"></i>
             Scan this QR code with your authenticator app
           </p>
           <div class="d-inline-block p-2 bg-white border">
@@ -144,7 +144,7 @@
           <input id="mfaCode" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="000000" required class="form-control form-control-lg text-center font-monospace fw-bold bg-light border-primary rounded-pill" style="letter-spacing: 0.35em;">
         </div>
         <button id="mfaVerify" type="submit" class="btn btn-premium-primary w-100 py-2">
-          <i class="fas fa-unlock-alt me-1"></i> Verify &amp; Enter Console
+          <i class="ms me-1" data-icon="lock_open" aria-hidden="true"></i> Verify &amp; Enter Console
         </button>
       </form>
       <div id="mfaStatus" role="status" aria-live="polite" class="mt-3 text-center small text-secondary"></div>
@@ -157,31 +157,31 @@
       <!-- Navigation Tabs (Pills Bar) -->
       <nav id="adminTabs" class="admin-tabs" aria-label="Admin modules">
         <button id="tabSupport" class="tab-btn active" data-tab="supportPanel" type="button">
-          <i class="fas fa-headset me-1"></i> Support
+          <i class="ms me-1" data-icon="support_agent" aria-hidden="true"></i> Support
         </button>
         <button id="tabOverview" class="tab-btn" data-tab="overviewPanel" type="button" hidden>
-          <i class="fas fa-chart-pie me-1"></i> Overview
+          <i class="ms me-1" data-icon="pie_chart" aria-hidden="true"></i> Overview
         </button>
         <button id="tabCustomers" class="tab-btn" data-tab="customersPanel" type="button" hidden>
-          <i class="fas fa-users me-1"></i> Customers
+          <i class="ms me-1" data-icon="group" aria-hidden="true"></i> Customers
         </button>
         <button id="tabContracts" class="tab-btn" data-tab="contractsPanel" type="button" hidden>
-          <i class="fas fa-exchange-alt me-1"></i> Contracts
+          <i class="ms me-1" data-icon="swap_horiz" aria-hidden="true"></i> Contracts
         </button>
         <button id="tabEngine" class="tab-btn" data-tab="enginePanel" type="button" hidden>
-          <i class="fas fa-bolt me-1"></i> Engine
+          <i class="ms me-1" data-icon="bolt" aria-hidden="true"></i> Engine
         </button>
         <button id="tabFunding" class="tab-btn" data-tab="fundingPanel" type="button" hidden>
-          <i class="fas fa-money-bill-transfer me-1"></i> Funding
+          <i class="ms me-1" data-icon="currency_exchange" aria-hidden="true"></i> Funding
         </button>
         <button id="tabNotifications" class="tab-btn" data-tab="notificationsPanel" type="button" hidden>
-          <i class="fas fa-bullhorn me-1"></i> Notifications
+          <i class="ms me-1" data-icon="campaign" aria-hidden="true"></i> Notifications
         </button>
         <button id="tabStaff" class="tab-btn" data-tab="staffPanel" type="button" hidden>
-          <i class="fas fa-user-shield me-1"></i> Staff
+          <i class="ms me-1" data-icon="admin_panel_settings" aria-hidden="true"></i> Staff
         </button>
         <button id="tabAudit" class="tab-btn" data-tab="auditPanel" type="button" hidden>
-          <i class="fas fa-history me-1"></i> Audit
+          <i class="ms me-1" data-icon="history" aria-hidden="true"></i> Audit
         </button>
       </nav>
 
@@ -212,11 +212,11 @@
         <!-- Modern Customer Search Bar with Icon -->
         <form id="customerSearchForm" class="modern-search-bar mb-4">
           <div class="search-input-wrapper">
-            <i class="fas fa-search search-icon"></i>
+            <i class="ms search-icon" data-icon="search" aria-hidden="true"></i>
             <input id="customerSearchInput" class="form-control" placeholder="Search by email, display name, or UUID…">
           </div>
           <button type="submit" class="btn btn-premium-primary">
-            <i class="fas fa-search me-1"></i> Search
+            <i class="ms me-1" data-icon="search" aria-hidden="true"></i> Search
           </button>
         </form>
 
@@ -245,7 +245,7 @@
               <p id="customerDetailMeta" class="text-secondary small mb-0"></p>
             </div>
             <button id="closeCustomerDetail" type="button" class="btn btn-light btn-sm rounded-pill px-3 border">
-              <i class="fas fa-times me-1"></i> Close Inspector
+              <i class="ms me-1" data-icon="close" aria-hidden="true"></i> Close Inspector
             </button>
           </div>
           <div class="row g-4">
@@ -274,7 +274,7 @@
                 <label class="d-block small mb-2">Expires (optional, your local time) <input id="restrictionExpires" type="datetime-local" class="form-control form-control-sm"></label>
                 <label class="d-block small mb-2">Reason (audited) <input id="restrictionReason" placeholder="Reason (3-500 characters)" minlength="3" maxlength="500" required class="form-control form-control-sm bg-light"></label>
                 <label class="d-block small mb-2" data-reverify hidden>Authenticator code <input inputmode="numeric" maxlength="6" autocomplete="one-time-code" class="form-control form-control-sm"></label>
-                <button type="submit" class="btn btn-danger btn-sm px-3"><i class="fas fa-ban me-1"></i> Apply restriction</button>
+                <button type="submit" class="btn btn-danger btn-sm px-3"><i class="ms me-1" data-icon="block" aria-hidden="true"></i> Apply restriction</button>
                 <p id="restrictionStatus" role="status" aria-live="polite" class="text-secondary small mt-2 mb-0"></p>
               </form>
               <form id="customerMessageForm" class="p-3 rounded bg-white border mt-3" novalidate hidden>
@@ -284,7 +284,7 @@
                 <label class="d-block small mb-2">Message <textarea id="customerMessageBody" class="form-control form-control-sm" rows="3" maxlength="1000" required></textarea></label>
                 <label class="d-block small mb-2">Link (optional) <input id="customerMessageLink" class="form-control form-control-sm" placeholder="support.html" maxlength="220"></label>
                 <label class="d-block small mb-2">Reason (audited) <input id="customerMessageReason" class="form-control form-control-sm bg-light" minlength="3" maxlength="500" required></label>
-                <button type="submit" class="btn btn-premium-primary btn-sm"><i class="fas fa-paper-plane me-1"></i> Send message</button>
+                <button type="submit" class="btn btn-premium-primary btn-sm"><i class="ms me-1" data-icon="send" aria-hidden="true"></i> Send message</button>
                 <p id="customerMessageStatus" role="status" aria-live="polite" class="text-secondary small mt-2 mb-0"></p>
               </form>
             </div>
@@ -340,7 +340,7 @@
             <label for="contractToFilter" class="form-label small text-uppercase text-secondary fw-bold mb-1">To (UTC)</label>
             <input id="contractToFilter" type="date" class="form-control">
           </div>
-          <button type="submit" class="btn btn-premium-primary align-self-end"><i class="fas fa-sliders-h me-1"></i> Filter</button>
+          <button type="submit" class="btn btn-premium-primary align-self-end"><i class="ms me-1" data-icon="tune" aria-hidden="true"></i> Filter</button>
         </form>
         <p id="contractsStatus" role="status" aria-live="polite" class="text-secondary small mb-2"></p>
         <div class="table-responsive">
@@ -366,14 +366,14 @@
         <div id="contractDetailCard" class="detail-card mt-4" hidden>
           <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
             <h3 id="contractDetailTitle" class="h5 text-dark fw-bold mb-0">Contract detail</h3>
-            <button id="closeContractDetail" type="button" class="btn btn-light btn-sm rounded-pill px-3 border"><i class="fas fa-times me-1"></i> Close</button>
+            <button id="closeContractDetail" type="button" class="btn btn-light btn-sm rounded-pill px-3 border"><i class="ms me-1" data-icon="close" aria-hidden="true"></i> Close</button>
           </div>
           <div id="contractDetailContent"></div>
           <form id="contractVoidForm" class="p-3 rounded bg-white border mt-3" hidden>
             <label for="contractVoidReason" class="form-label small text-uppercase text-secondary fw-bold">Void and refund (Owner only, audited)</label>
             <textarea id="contractVoidReason" class="form-control bg-light mb-2" minlength="10" maxlength="500" required placeholder="Reason (at least 10 characters)"></textarea>
             <label class="d-block small mb-2" data-reverify hidden>Authenticator code <input inputmode="numeric" maxlength="6" autocomplete="one-time-code" class="form-control form-control-sm"></label>
-            <button type="submit" class="btn btn-danger btn-sm px-3"><i class="fas fa-undo me-1"></i> Void contract</button>
+            <button type="submit" class="btn btn-danger btn-sm px-3"><i class="ms me-1" data-icon="undo" aria-hidden="true"></i> Void contract</button>
           </form>
           <p id="contractVoidStatus" role="status" aria-live="polite" class="text-secondary small mt-2 mb-0"></p>
         </div>
@@ -390,7 +390,7 @@
               <option value="DEMO">Practice</option>
               <option value="REAL">Real</option>
             </select>
-            <button id="engineRefresh" type="button" class="btn btn-light btn-sm rounded-pill px-3 border"><i class="fas fa-redo me-1"></i> Refresh</button>
+            <button id="engineRefresh" type="button" class="btn btn-light btn-sm rounded-pill px-3 border"><i class="ms me-1" data-icon="refresh" aria-hidden="true"></i> Refresh</button>
           </div>
         </div>
         <p id="engineStatus" role="status" aria-live="polite" class="text-secondary small mb-2"></p>
@@ -409,7 +409,7 @@
         <div id="indexStatusCard" class="detail-card mb-4" hidden>
           <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
             <h4 id="indexStatusTitle" class="h6 text-dark fw-bold mb-0">Change trading status</h4>
-            <button id="indexStatusCancel" type="button" class="btn btn-light btn-sm rounded-pill px-3 border"><i class="fas fa-times me-1"></i> Cancel</button>
+            <button id="indexStatusCancel" type="button" class="btn btn-light btn-sm rounded-pill px-3 border"><i class="ms me-1" data-icon="close" aria-hidden="true"></i> Cancel</button>
           </div>
           <form id="indexStatusForm" class="p-3 rounded bg-white border">
             <input type="hidden" id="indexStatusIndex">
@@ -417,7 +417,7 @@
             <input type="hidden" id="indexStatusTarget">
             <label for="indexStatusReason" class="form-label small text-uppercase text-secondary fw-bold">Reason (audited)</label>
             <input id="indexStatusReason" class="form-control bg-light mb-2" minlength="10" maxlength="500" required placeholder="Reason (at least 10 characters)">
-            <button type="submit" class="btn btn-premium-primary btn-sm"><i class="fas fa-check me-1"></i> Confirm</button>
+            <button type="submit" class="btn btn-premium-primary btn-sm"><i class="ms me-1" data-icon="check" aria-hidden="true"></i> Confirm</button>
           </form>
           <p id="indexStatusMessage" role="status" aria-live="polite" class="text-secondary small mt-2 mb-0"></p>
         </div>
@@ -460,7 +460,7 @@
             <label class="col-sm-4 small">Max liability per tick <input id="policyMaxLiability" type="number" step="0.01" class="form-control form-control-sm" required></label>
           </div>
           <label class="d-block small mb-2">Reason (audited) <input id="policyReason" class="form-control form-control-sm bg-light" minlength="10" maxlength="500" required placeholder="Reason (at least 10 characters)"></label>
-          <button type="submit" class="btn btn-premium-primary btn-sm"><i class="fas fa-upload me-1"></i> Publish policy</button>
+          <button type="submit" class="btn btn-premium-primary btn-sm"><i class="ms me-1" data-icon="upload" aria-hidden="true"></i> Publish policy</button>
           <p id="policyPublishStatus" role="status" aria-live="polite" class="text-secondary small mt-2 mb-0"></p>
         </form>
 
@@ -490,14 +490,14 @@
         <div id="engineVoidCard" class="detail-card" hidden>
           <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
             <h4 id="engineVoidTitle" class="h6 text-dark fw-bold mb-0">Void contract</h4>
-            <button id="engineVoidCancel" type="button" class="btn btn-light btn-sm rounded-pill px-3 border"><i class="fas fa-times me-1"></i> Cancel</button>
+            <button id="engineVoidCancel" type="button" class="btn btn-light btn-sm rounded-pill px-3 border"><i class="ms me-1" data-icon="close" aria-hidden="true"></i> Cancel</button>
           </div>
           <form id="engineVoidForm" class="p-3 rounded bg-white border">
             <input type="hidden" id="engineVoidContract">
             <label for="engineVoidReason" class="form-label small text-uppercase text-secondary fw-bold">Reason (audited)</label>
             <textarea id="engineVoidReason" class="form-control bg-light mb-2" minlength="10" maxlength="500" required placeholder="Reason (at least 10 characters)"></textarea>
             <label class="d-block small mb-2" data-reverify hidden>Authenticator code <input inputmode="numeric" maxlength="6" autocomplete="one-time-code" class="form-control form-control-sm"></label>
-            <button type="submit" class="btn btn-danger btn-sm px-3"><i class="fas fa-undo me-1"></i> Void contract</button>
+            <button type="submit" class="btn btn-danger btn-sm px-3"><i class="ms me-1" data-icon="undo" aria-hidden="true"></i> Void contract</button>
           </form>
           <p id="engineVoidStatus" role="status" aria-live="polite" class="text-secondary small mt-2 mb-0"></p>
         </div>
@@ -513,7 +513,7 @@
               <option value="SANDBOX">Sandbox</option>
               <option value="PRODUCTION">Production</option>
             </select>
-            <button id="fundingRefresh" type="button" class="btn btn-light btn-sm rounded-pill px-3 border"><i class="fas fa-redo me-1"></i> Refresh</button>
+            <button id="fundingRefresh" type="button" class="btn btn-light btn-sm rounded-pill px-3 border"><i class="ms me-1" data-icon="refresh" aria-hidden="true"></i> Refresh</button>
           </div>
         </div>
         <p id="fundingStatus" role="status" aria-live="polite" class="text-secondary small mb-2"></p>
@@ -552,7 +552,7 @@
             <label for="fundingDecisionReason" class="form-label small text-uppercase text-secondary fw-bold">Reason (audited)</label>
             <input id="fundingDecisionReason" class="form-control bg-light mb-2" minlength="10" maxlength="500" required placeholder="For example: checked against the CBK site">
             <label class="d-block small mb-2" data-reverify hidden>Authenticator code <input inputmode="numeric" maxlength="6" autocomplete="one-time-code" class="form-control form-control-sm"></label>
-            <button type="submit" class="btn btn-premium-primary btn-sm"><i class="fas fa-check me-1"></i> Confirm</button>
+            <button type="submit" class="btn btn-premium-primary btn-sm"><i class="ms me-1" data-icon="check" aria-hidden="true"></i> Confirm</button>
             <button type="button" id="fundingDecisionCancel" class="btn btn-light btn-sm border ms-1">Cancel</button>
           </form>
           <p id="fundingDecisionStatus" role="status" aria-live="polite" class="text-secondary small mt-2 mb-0"></p>
@@ -570,7 +570,7 @@
           <input id="fundingRateReason" class="form-control bg-light mb-2" minlength="10" maxlength="500" required placeholder="For example: CBK mean for 26 September">
           <label class="d-block small mb-2" data-reverify hidden>Authenticator code <input inputmode="numeric" maxlength="6" autocomplete="one-time-code" class="form-control form-control-sm"></label>
           <p id="fundingRateCheck" class="small text-danger mb-2" hidden></p>
-          <button type="submit" class="btn btn-premium-primary btn-sm"><i class="fas fa-check me-1"></i> Publish rate</button>
+          <button type="submit" class="btn btn-premium-primary btn-sm"><i class="ms me-1" data-icon="check" aria-hidden="true"></i> Publish rate</button>
           <p id="fundingRateStatus" role="status" aria-live="polite" class="text-secondary small mt-2 mb-0"></p>
         </form>
 
@@ -581,7 +581,7 @@
           <label for="fundingTreasuryNote" class="form-label small text-uppercase text-secondary fw-bold">Note (audited)</label>
           <input id="fundingTreasuryNote" class="form-control bg-light mb-2" minlength="10" maxlength="500" required placeholder="Where the figure came from">
           <label class="d-block small mb-2" data-reverify hidden>Authenticator code <input inputmode="numeric" maxlength="6" autocomplete="one-time-code" class="form-control form-control-sm"></label>
-          <button type="submit" class="btn btn-premium-primary btn-sm"><i class="fas fa-check me-1"></i> Record snapshot</button>
+          <button type="submit" class="btn btn-premium-primary btn-sm"><i class="ms me-1" data-icon="check" aria-hidden="true"></i> Record snapshot</button>
           <p id="fundingTreasuryStatus" role="status" aria-live="polite" class="text-secondary small mt-2 mb-0"></p>
         </form>
       </section>
@@ -590,7 +590,7 @@
       <section id="notificationsPanel" class="admin-tab-panel" hidden aria-labelledby="notificationsTitle">
         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
           <h2 id="notificationsTitle" class="h5 text-dark fw-bold mb-0">Announcements</h2>
-          <button id="announcementsRefresh" type="button" class="btn btn-light btn-sm px-3 border"><i class="fas fa-redo me-1"></i> Refresh</button>
+          <button id="announcementsRefresh" type="button" class="btn btn-light btn-sm px-3 border"><i class="ms me-1" data-icon="refresh" aria-hidden="true"></i> Refresh</button>
         </div>
         <p class="small text-secondary">An announcement shows in every matching customer's notification centre. Important ones also show once as a banner under the top bar. Keep it factual: no promises of profit and no urgency.</p>
 
@@ -630,7 +630,7 @@
             <button type="button" id="announcementConfirmSend" class="btn btn-premium-primary btn-sm">Publish</button>
             <button type="button" id="announcementConfirmCancel" class="btn btn-light btn-sm border ms-1">Edit</button>
           </div>
-          <button type="submit" id="announcementReview" class="btn btn-premium-primary btn-sm"><i class="fas fa-eye me-1"></i> Review and publish</button>
+          <button type="submit" id="announcementReview" class="btn btn-premium-primary btn-sm"><i class="ms me-1" data-icon="visibility" aria-hidden="true"></i> Review and publish</button>
           <p id="announcementStatus" role="status" aria-live="polite" class="text-secondary small mt-2 mb-0"></p>
         </form>
 
@@ -682,7 +682,7 @@
           <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
             <h3 id="staffRoleTitle" class="h5 text-dark fw-bold mb-0">Modify Staff Role</h3>
             <button id="cancelStaffRole" type="button" class="btn btn-light btn-sm rounded-pill px-3 border">
-              <i class="fas fa-times me-1"></i> Cancel
+              <i class="ms me-1" data-icon="close" aria-hidden="true"></i> Cancel
             </button>
           </div>
           <form id="staffRoleForm" class="p-3 rounded bg-white border">
@@ -710,7 +710,7 @@
             </div>
             <label class="d-block small mb-3" data-reverify hidden>Authenticator code <input inputmode="numeric" maxlength="6" autocomplete="one-time-code" class="form-control form-control-sm"></label>
             <button type="submit" class="btn btn-premium-primary">
-              <i class="fas fa-save me-1"></i> Save Privilege Role
+              <i class="ms me-1" data-icon="save" aria-hidden="true"></i> Save Privilege Role
             </button>
           </form>
           <p id="staffRoleStatus" role="status" aria-live="polite" class="text-secondary small mt-2 mb-0"></p>
@@ -731,7 +731,7 @@
         <p id="auditStatus" role="status" aria-live="polite" class="text-secondary small mb-2"></p>
         <ol id="auditEvents" class="list-unstyled d-flex flex-column gap-2"></ol>
         <button id="auditMore" type="button" class="btn btn-light btn-sm rounded-pill px-4 mt-3 border" hidden>
-          <i class="fas fa-arrow-down me-1"></i> Load Older Events
+          <i class="ms me-1" data-icon="arrow_downward" aria-hidden="true"></i> Load Older Events
         </button>
       </section>
     </div>

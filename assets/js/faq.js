@@ -100,7 +100,8 @@
         question.setAttribute('aria-expanded', 'false');
         question.append(document.createTextNode(faq.question));
         const chevron = document.createElement('i');
-        chevron.className = 'fas fa-chevron-down';
+        chevron.className = 'ms';
+        chevron.dataset.icon = 'expand_more';
         chevron.setAttribute('aria-hidden', 'true');
         question.append(chevron);
 

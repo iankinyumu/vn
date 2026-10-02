@@ -418,6 +418,6 @@
 
 /* Contact (DESIGN.md, Impeccable critique): mascot hero; title steps up clearly from section headings. */
 .contact-mascot { display: block; width: 120px; height: 120px; margin: 0 auto 12px; object-fit: contain; }
-.public-shell .contact-hero-title { font-size: clamp(1.75rem, 3vw, 2.25rem); letter-spacing: -.03em; }
-.public-shell .form-hint, .public-shell .contact-form small { font-size: var(--text-caption); }
-.public-shell #messageHint { font-size: var(--text-caption); line-height: 1.5; }
+.help-content .contact-hero-title { font-size: clamp(1.75rem, 3vw, 2.25rem); letter-spacing: -.03em; }
+.help-content .form-hint, .help-content .contact-form small { font-size: var(--text-caption); }
+.help-content #messageHint { font-size: var(--text-caption); line-height: 1.5; }

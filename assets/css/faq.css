@@ -80,7 +80,7 @@
 }
 
 .faq-cat-btn i {
-    font-size: 13px
+    font-size: 16px
 }
 
 .faq-cat-btn.active {
@@ -410,16 +410,16 @@
 }
 /* FAQ (DESIGN.md, Impeccable critique): mascot hero, questions as a ruled list, no icon tiles. */
 .faq-mascot { display: block; width: 120px; height: 120px; margin: 0 auto 12px; object-fit: contain; }
-.public-shell .faq-item { margin: 0; border: 0; border-bottom: 1px solid var(--separator); border-radius: 0; background: transparent; }
-.public-shell .faq-section { border-top: 1px solid var(--separator); }
-.public-shell .faq-question { min-height: var(--target); padding-inline: 0; }
-.public-shell .faq-question:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
-.public-shell .faq-answer { padding-inline: 0; }
+.help-content .faq-item { margin: 0; border: 0; border-bottom: 1px solid var(--separator); border-radius: 0; background: transparent; }
+.help-content .faq-section { border-top: 1px solid var(--separator); }
+.help-content .faq-question { min-height: var(--target); padding-inline: 0; }
+.help-content .faq-question:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
+.help-content .faq-answer { padding-inline: 0; }
 .qh-icon, .sidebar-cta-icon { display: none; }
-.public-shell .quick-help-item { padding: 10px 0; border-bottom: 1px solid var(--separator); }
-.public-shell .quick-help-item h3 { margin: 0 0 2px; color: var(--label); font-size: var(--text-subhead); font-weight: 700; }
-.public-shell .quick-help-item p { margin: 0; font-size: var(--text-caption); }
-.public-shell .faq-side-heading { margin: 0 0 12px; color: var(--label); font-size: var(--text-headline); font-weight: 700; }
-.public-shell .pop-q-item { display: flex; align-items: center; gap: 8px; min-height: var(--target); color: var(--label-2); text-decoration: none; }
-.public-shell .pop-q-item:hover { color: var(--label); text-decoration: underline; }
-.public-shell .faq-contact-btns .btn { font-size: 1rem; padding: 12px 20px; }
+.help-content .quick-help-item { padding: 10px 0; border-bottom: 1px solid var(--separator); }
+.help-content .quick-help-item h3 { margin: 0 0 2px; color: var(--label); font-size: var(--text-subhead); font-weight: 700; }
+.help-content .quick-help-item p { margin: 0; font-size: var(--text-caption); }
+.help-content .faq-side-heading { margin: 0 0 12px; color: var(--label); font-size: var(--text-headline); font-weight: 700; }
+.help-content .pop-q-item { display: flex; align-items: center; gap: 8px; min-height: var(--target); color: var(--label-2); text-decoration: none; }
+.help-content .pop-q-item:hover { color: var(--label); text-decoration: underline; }
+.help-content .faq-contact-btns .btn { font-size: 1rem; padding: 12px 20px; }

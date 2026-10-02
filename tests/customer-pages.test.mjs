@@ -68,6 +68,8 @@ test('help pages (guides, FAQ, contact) live in the signed-in shell and are not 
         assert.match(source, /<main class="[^"]*help-content/, `${name} must scope its content styles`);
         for (const script of ['notifications.js', 'account-switcher.js', 'deposit-sheet.js']) assert.ok(source.includes(script), `${name} is missing ${script}`);
     }
+    // Their own stylesheets must not target the landing body class, which these pages no longer carry.
+    for (const css of ['faq.css', 'contact.css', 'guides.css']) assert.doesNotMatch(fs.readFileSync(`assets/css/${css}`, 'utf8'), /\.public-shell\b/, `${css} styles help content only on the landing body`);
     const shell = fs.readFileSync('assets/js/shell.js', 'utf8');
     const block = (name) => shell.slice(shell.indexOf(`const ${name} = Object.freeze(`), shell.indexOf(']);', shell.indexOf(`const ${name} = Object.freeze(`)));
     for (const href of ['faq.html', 'contact.html', 'blog.html']) {
