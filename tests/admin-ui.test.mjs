@@ -289,9 +289,9 @@ async function openConsole(role, responses = {}) {
 
 test('each role sees exactly the console tabs its capabilities allow', async () => {
     const expected = {
-        support_agent: { tabOverview: false, tabCustomers: false, tabContracts: false, tabEngine: false, tabFunding: false, tabStaff: false, tabAudit: false },
-        administrator: { tabOverview: true, tabCustomers: true, tabContracts: true, tabEngine: true, tabFunding: true, tabStaff: false, tabAudit: false },
-        owner: { tabOverview: true, tabCustomers: true, tabContracts: true, tabEngine: true, tabFunding: true, tabStaff: true, tabAudit: true },
+        support_agent: { tabOverview: false, tabCustomers: false, tabContracts: false, tabEngine: false, tabFunding: false, tabNotifications: false, tabStaff: false, tabAudit: false },
+        administrator: { tabOverview: true, tabCustomers: true, tabContracts: true, tabEngine: true, tabFunding: true, tabNotifications: true, tabStaff: false, tabAudit: false },
+        owner: { tabOverview: true, tabCustomers: true, tabContracts: true, tabEngine: true, tabFunding: true, tabNotifications: true, tabStaff: true, tabAudit: true },
     };
     for (const [role, tabs] of Object.entries(expected)) {
         const page = await openConsole(role);
@@ -427,6 +427,74 @@ test('lifting uses an inline reason form and reports the result in a live region
         assert.deepEqual(page.calls.find((call) => call.name === 'lift_account_restriction').args, { p_restriction_id: 'r-severe', p_reason: 'Reviewed and cleared' });
         assert.equal(document.getElementById('restrictionListStatus').getAttribute('aria-live'), 'polite');
     } finally { page.dom.window.close(); }
+});
+
+test('an announcement is previewed, refused if it pressures customers, confirmed with its audience size, then published once', async () => {
+    const live = { id: 'a-live', title: 'Maintenance tonight', body: 'Trading pauses briefly.', severity: 'important', audience: 'all', starts_at: '2026-10-03T10:00:00Z', ends_at: null, state: 'live', reads: 12 };
+    const page = await openConsole('administrator', {
+        staff_list_announcements: { data: [live, { ...live, id: 'a-old', title: 'Old news', state: 'withdrawn', reads: 3 }], error: null },
+        staff_announcement_audience_count: { data: 1240, error: null },
+        staff_publish_announcement: { data: { id: 'x', duplicate: false }, error: null },
+    });
+    try {
+        const { document } = page;
+        page.click(document.getElementById('tabNotifications'));
+        await page.until(() => document.querySelector('[data-announcement="a-live"]'));
+        assert.match(document.querySelector('[data-announcement="a-live"]').textContent, /Maintenance tonight.*All customers.*Live/);
+        assert.ok(document.querySelector('[data-announcement="a-live"] button'), 'a live announcement cannot be withdrawn');
+        assert.equal(document.querySelector('[data-announcement="a-old"] button'), null, 'a withdrawn announcement offers withdraw');
+
+        const set = (id, value) => { const node = document.getElementById(id); node.value = value; node.dispatchEvent(new page.dom.window.Event('input')); };
+        const submit = () => document.getElementById('announcementForm').dispatchEvent(new page.dom.window.Event('submit', { cancelable: true }));
+        set('announcementTitle', 'Win big this weekend');
+        set('announcementBody', 'New indices open on Saturday.');
+        assert.equal(document.getElementById('announcementCheck').hidden, false);
+        assert.match(document.getElementById('announcementCheck').textContent, /Remove "Win big"/);
+        assert.match(document.getElementById('announcementPreview').textContent, /^Announcement · now · UnreadWin big this weekend/);
+        set('announcementReason', 'Product update');
+        submit();
+        assert.match(document.getElementById('announcementStatus').textContent, /must not promise profit or create urgency/);
+        assert.equal(page.calls.some((call) => call.name === 'staff_announcement_audience_count'), false);
+
+        set('announcementTitle', 'New indices on Saturday');
+        set('announcementLink', 'https://elsewhere.example');
+        submit();
+        assert.match(document.getElementById('announcementStatus').textContent, /page on this site/);
+        set('announcementLink', 'faq.html');
+        document.getElementById('announcementSeverity').value = 'important';
+        submit();
+        await page.until(() => page.visible('announcementConfirm'));
+        assert.equal(document.getElementById('announcementConfirmText').textContent, 'Show "New indices on Saturday" to 1240 customers now?');
+        assert.equal(page.visible('announcementReview'), false);
+        page.click(document.getElementById('announcementConfirmSend'));
+        await page.until(() => document.getElementById('announcementStatus').textContent === 'Announcement published.');
+        const published = page.calls.filter((call) => call.name === 'staff_publish_announcement');
+        assert.equal(published.length, 1);
+        assert.deepEqual({ ...published[0].args, p_request_id: typeof published[0].args.p_request_id }, { p_title: 'New indices on Saturday', p_body: 'New indices open on Saturday.', p_link: 'faq.html', p_severity: 'important', p_audience: 'all', p_starts_at: null, p_ends_at: null, p_reason: 'Product update', p_request_id: 'string' });
+        assert.equal(document.getElementById('announcementTitle').value, '', 'the form was not cleared');
+        assert.equal(page.visible('announcementConfirm'), false);
+    } finally { page.dom.window.close(); }
+});
+
+test('an administrator can message one customer from the inspector; a support agent never sees the form', async () => {
+    const page = await openConsole('administrator', { staff_send_notification: { data: { id: 'n-1', duplicate: false }, error: null } });
+    try {
+        const { document } = page;
+        page.click(document.getElementById('tabCustomers'));
+        await page.until(() => document.querySelector('#customersTableBody .btn-inspect'));
+        page.click(document.querySelector('#customersTableBody .btn-inspect'));
+        await page.until(() => page.visible('customerMessageForm'));
+        document.getElementById('customerMessageTitle').value = 'About your deposit';
+        document.getElementById('customerMessageBody').value = 'We have checked your M-Pesa receipt.';
+        document.getElementById('customerMessageReason').value = 'Customer asked by phone';
+        document.getElementById('customerMessageForm').dispatchEvent(new page.dom.window.Event('submit', { cancelable: true }));
+        await page.until(() => /^Message sent/.test(document.getElementById('customerMessageStatus').textContent));
+        const sent = page.calls.find((call) => call.name === 'staff_send_notification').args;
+        assert.deepEqual({ ...sent, p_request_id: typeof sent.p_request_id }, { p_user_id: consoleData.get_admin_customer_detail.user_id, p_title: 'About your deposit', p_body: 'We have checked your M-Pesa receipt.', p_link: null, p_ticket_id: null, p_reason: 'Customer asked by phone', p_request_id: 'string' });
+        assert.equal(document.getElementById('customerMessageTitle').value, '');
+    } finally { page.dom.window.close(); }
+    const agent = await openConsole('support_agent');
+    try { assert.equal(agent.visible('customerMessageForm'), false); } finally { agent.dom.window.close(); }
 });
 
 test('the Funding tab shows the current rate and treasury; only an owner publishes a rate, with a typo guard and a fresh authenticator code', async () => {

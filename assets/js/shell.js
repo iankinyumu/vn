@@ -605,8 +605,13 @@
         }, ANNOUNCE_MS);
     }
 
+    // Trade popups can be turned off per device on the profile page; everything else always shows.
+    const TRADE_TOASTS_KEY = 'smartprofit:trade-toasts';
+    const tradeToastsOn = () => { try { return window.localStorage.getItem(TRADE_TOASTS_KEY) !== 'off'; } catch (_) { return true; } };
+    function setTradeToasts(on) { try { if (on) window.localStorage.removeItem(TRADE_TOASTS_KEY); else window.localStorage.setItem(TRADE_TOASTS_KEY, 'off'); } catch (_) { /* Private mode: the default stays. */ } }
+
     function showToast({ title, detail = '', tone = 'neutral', group = '' } = {}) {
-        if (!title) return null;
+        if (!title || (group === 'trade' && !tradeToastsOn())) return null;
         const { host } = toastParts();
         const toast = element('div', `app-toast app-toast-${tone}`);
         toast.setAttribute('role', 'group');
@@ -643,7 +648,7 @@
         for (const toast of [...toastHost.children]) if (!group || toast.dataset.toastGroup === group) toast.remove();
     }
 
-    window.smartProfitNotify = Object.freeze({ show: showToast, clear: clearToasts });
+    window.smartProfitNotify = Object.freeze({ show: showToast, clear: clearToasts, tradeToastsOn, setTradeToasts });
 
     function boot() {
         if (!mounted) mount();

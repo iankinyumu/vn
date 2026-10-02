@@ -158,3 +158,27 @@ test('a failed load says so and offers a retry; an empty inbox explains what wil
         assert.equal(doc.querySelector('[data-announcement-banner]').hidden, true);
     } finally { second.window.close(); }
 });
+
+test('turning trade popups off on the profile hides only trade toasts, on this device', async () => {
+    const server = fakeServer();
+    const dom = await openPage(server);
+    const { document } = dom.window;
+    try {
+        const box = document.createElement('input');
+        box.type = 'checkbox';
+        box.dataset.tradeToastPref = '';
+        document.body.append(box);
+        // The checkbox is bound when notifications.js starts; re-run that start on the page as the profile does.
+        dom.window.eval(fs.readFileSync('assets/js/notifications.js', 'utf8'));
+        await waitFor(() => box.checked, 'trade popups were not on by default');
+        box.checked = false;
+        box.dispatchEvent(new dom.window.Event('change'));
+        assert.equal(dom.window.localStorage.getItem('smartprofit:trade-toasts'), 'off');
+        assert.equal(dom.window.smartProfitNotify.show({ group: 'trade', title: 'Order filled' }), null, 'a trade toast showed while turned off');
+        assert.ok(dom.window.smartProfitNotify.show({ title: 'Deposit confirmed' }), 'a non-trade toast was hidden');
+        box.checked = true;
+        box.dispatchEvent(new dom.window.Event('change'));
+        assert.equal(dom.window.localStorage.getItem('smartprofit:trade-toasts'), null);
+        assert.ok(dom.window.smartProfitNotify.show({ group: 'trade', title: 'Order filled' }));
+    } finally { dom.window.close(); }
+});

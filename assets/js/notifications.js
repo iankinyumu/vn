@@ -251,7 +251,17 @@
         paintBanner();
     }
 
+    // The profile page's per-device switch for trade popups (shell.js keeps the setting).
+    function bindPreference() {
+        const box = document.querySelector('[data-trade-toast-pref]');
+        const notify = window.smartProfitNotify;
+        if (!box || !notify?.setTradeToasts) return;
+        box.checked = notify.tradeToastsOn();
+        box.addEventListener('change', () => notify.setTradeToasts(box.checked));
+    }
+
     async function start() {
+        bindPreference();
         const mount = document.querySelector('[data-notifications]');
         if (!mount) return;
         banner = document.querySelector('[data-announcement-banner]');

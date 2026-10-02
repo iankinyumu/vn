@@ -114,6 +114,35 @@ test('notifications: customers read only their own inbox, staff sends are scoped
             assert.ok(!(await inbox()).announcements.some((item) => item.id === all.id), 'a withdrawn announcement still showed');
         });
 
+        await t.test('deposit outcomes and restriction changes reach the customer once, without the staff reason', async () => {
+            // The shared test database stops before the funding migrations: a stand-in payments table
+            // with the columns the producer reads is enough to attach and exercise its trigger.
+            await db.exec('reset role');
+            await db.exec(`create schema if not exists funding;
+                create table funding.payments(id uuid primary key, user_id uuid not null, environment text not null, usd_amount numeric(18,2) not null, state text not null);`);
+            await db.exec(fs.readFileSync('supabase/migrations/20261003110000_notification_producers.sql', 'utf8'));
+            const payment = randomUUID();
+            await db.query("insert into funding.payments values($1,$2,'SANDBOX',10,'PENDING')", [payment, identities.customer2.id]);
+            await db.query("update funding.payments set state = 'VERIFYING' where id = $1", [payment]);
+            await db.query("update funding.payments set state = 'CONFIRMED' where id = $1", [payment]);
+            await db.query("update funding.payments set state = 'CONFIRMED' where id = $1", [payment]);
+
+            await as('administrator');
+            const applied = await scalar("select public.apply_account_restriction($1,'TRADING','REAL','LIMITED',$2,null,'Secret internal reason') as result", [identities.customer2.id, JSON.stringify({ max_stake: 5 })]);
+            const restrictionId = applied?.id || applied;
+            await scalar('select public.lift_account_restriction($1,$2) as result', [restrictionId, 'Reviewed and cleared']);
+
+            await as('customer2');
+            const { notifications } = await inbox();
+            assert.deepEqual(notifications.map((item) => item.title).sort(), ['A limit on your account', 'A restriction was lifted', 'Deposit confirmed']);
+            const deposit = notifications.find((item) => item.title === 'Deposit confirmed');
+            assert.equal(deposit.body, '$10.00 was added to your Real sandbox test balance. Test funds cannot be withdrawn.');
+            assert.equal(deposit.category, 'funding');
+            const limit = notifications.find((item) => item.title === 'A limit on your account');
+            assert.equal(limit.body, 'This applies to trading on Real accounts. Contact support if you have questions.');
+            assert.ok(!JSON.stringify(notifications).includes('Secret internal reason'), 'the staff reason reached the customer');
+        });
+
         await t.test('every staff send and broadcast is audited', async () => {
             await db.exec('reset role');
             const actions = (await db.query("select action, count(*)::int n from public.admin_audit_events where action like 'notification.%' or action like 'announcement.%' group by action order by action")).rows;

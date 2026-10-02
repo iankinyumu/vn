@@ -644,3 +644,6 @@ table.table tbody tr:hover td {
 .nav-tabs .nav-link, .nav-pills .nav-link { background: transparent !important; border: 0 !important; border-bottom: 2px solid transparent !important; border-radius: 0 !important; color: var(--label-2) !important; }
 .nav-tabs .nav-link.active, .nav-pills .nav-link.active { color: var(--label) !important; border-bottom-color: var(--label) !important; }
 .welcome-section { background: transparent !important; border: 0 !important; border-bottom: 1px solid var(--separator) !important; border-radius: 0 !important; box-shadow: none !important; padding-inline: 0 !important; }
+
+/* Announcement preview: how the message reads in a customer's notification centre. */
+.announcement-preview { padding: 12px 14px; border: 1px solid var(--separator); border-inline-start: 2px solid var(--label); border-radius: var(--radius-control); background: var(--bg-3); color: var(--label); white-space: pre-line; overflow-wrap: anywhere; }

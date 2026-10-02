@@ -174,6 +174,9 @@
         <button id="tabFunding" class="tab-btn" data-tab="fundingPanel" type="button" hidden>
           <i class="fas fa-money-bill-transfer me-1"></i> Funding
         </button>
+        <button id="tabNotifications" class="tab-btn" data-tab="notificationsPanel" type="button" hidden>
+          <i class="fas fa-bullhorn me-1"></i> Notifications
+        </button>
         <button id="tabStaff" class="tab-btn" data-tab="staffPanel" type="button" hidden>
           <i class="fas fa-user-shield me-1"></i> Staff
         </button>
@@ -273,6 +276,16 @@
                 <label class="d-block small mb-2" data-reverify hidden>Authenticator code <input inputmode="numeric" maxlength="6" autocomplete="one-time-code" class="form-control form-control-sm"></label>
                 <button type="submit" class="btn btn-danger btn-sm px-3"><i class="fas fa-ban me-1"></i> Apply restriction</button>
                 <p id="restrictionStatus" role="status" aria-live="polite" class="text-secondary small mt-2 mb-0"></p>
+              </form>
+              <form id="customerMessageForm" class="p-3 rounded bg-white border mt-3" novalidate hidden>
+                <h5 class="form-label small text-uppercase text-secondary fw-bold">Message this customer</h5>
+                <p class="small text-secondary mb-2">Shows in their notification centre, marked "From support". Ticket replies reach them automatically.</p>
+                <label class="d-block small mb-2">Title <input id="customerMessageTitle" class="form-control form-control-sm" maxlength="120" required></label>
+                <label class="d-block small mb-2">Message <textarea id="customerMessageBody" class="form-control form-control-sm" rows="3" maxlength="1000" required></textarea></label>
+                <label class="d-block small mb-2">Link (optional) <input id="customerMessageLink" class="form-control form-control-sm" placeholder="support.html" maxlength="220"></label>
+                <label class="d-block small mb-2">Reason (audited) <input id="customerMessageReason" class="form-control form-control-sm bg-light" minlength="3" maxlength="500" required></label>
+                <button type="submit" class="btn btn-premium-primary btn-sm"><i class="fas fa-paper-plane me-1"></i> Send message</button>
+                <p id="customerMessageStatus" role="status" aria-live="polite" class="text-secondary small mt-2 mb-0"></p>
               </form>
             </div>
           </div>
@@ -570,6 +583,72 @@
           <label class="d-block small mb-2" data-reverify hidden>Authenticator code <input inputmode="numeric" maxlength="6" autocomplete="one-time-code" class="form-control form-control-sm"></label>
           <button type="submit" class="btn btn-premium-primary btn-sm"><i class="fas fa-check me-1"></i> Record snapshot</button>
           <p id="fundingTreasuryStatus" role="status" aria-live="polite" class="text-secondary small mt-2 mb-0"></p>
+        </form>
+      </section>
+
+      <!-- Announcements to customers (administrators and owners) -->
+      <section id="notificationsPanel" class="admin-tab-panel" hidden aria-labelledby="notificationsTitle">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <h2 id="notificationsTitle" class="h5 text-dark fw-bold mb-0">Announcements</h2>
+          <button id="announcementsRefresh" type="button" class="btn btn-light btn-sm px-3 border"><i class="fas fa-redo me-1"></i> Refresh</button>
+        </div>
+        <p class="small text-secondary">An announcement shows in every matching customer's notification centre. Important ones also show once as a banner under the top bar. Keep it factual: no promises of profit and no urgency.</p>
+
+        <form id="announcementForm" class="p-3 rounded bg-white border mb-3" novalidate>
+          <h3 class="h6 text-dark fw-bold">New announcement</h3>
+          <label class="d-block small mb-2">Title <input id="announcementTitle" class="form-control form-control-sm" maxlength="120" required></label>
+          <label class="d-block small mb-2">Message <textarea id="announcementBody" class="form-control form-control-sm" rows="3" maxlength="1000" required></textarea></label>
+          <div class="row g-2 mb-2">
+            <label class="col-sm-4 small">Audience
+              <select id="announcementAudience" class="form-select form-select-sm">
+                <option value="all">All customers</option>
+                <option value="real">Real account holders</option>
+                <option value="practice">Practice account holders</option>
+              </select>
+            </label>
+            <label class="col-sm-4 small">Importance
+              <select id="announcementSeverity" class="form-select form-select-sm">
+                <option value="info">Information</option>
+                <option value="important">Important (also a banner)</option>
+              </select>
+            </label>
+            <label class="col-sm-4 small">Link (optional) <input id="announcementLink" class="form-control form-control-sm" placeholder="faq.html" maxlength="220"></label>
+          </div>
+          <div class="row g-2 mb-2">
+            <label class="col-sm-6 small">Starts (optional, your local time) <input id="announcementStarts" type="datetime-local" class="form-control form-control-sm"></label>
+            <label class="col-sm-6 small">Ends (optional, your local time) <input id="announcementEnds" type="datetime-local" class="form-control form-control-sm"></label>
+          </div>
+          <label class="d-block small mb-2">Reason (audited) <input id="announcementReason" class="form-control form-control-sm bg-light" minlength="3" maxlength="500" required placeholder="For example: planned engine maintenance"></label>
+          <div class="mb-2">
+            <p class="small text-uppercase text-secondary fw-bold mb-1">Preview</p>
+            <div id="announcementPreview" class="announcement-preview"></div>
+          </div>
+          <p id="announcementCheck" class="small text-danger mb-2" hidden></p>
+          <label class="d-block small mb-2" data-reverify hidden>Authenticator code <input inputmode="numeric" maxlength="6" autocomplete="one-time-code" class="form-control form-control-sm"></label>
+          <div id="announcementConfirm" class="mb-2" hidden>
+            <p id="announcementConfirmText" class="small fw-bold mb-2"></p>
+            <button type="button" id="announcementConfirmSend" class="btn btn-premium-primary btn-sm">Publish</button>
+            <button type="button" id="announcementConfirmCancel" class="btn btn-light btn-sm border ms-1">Edit</button>
+          </div>
+          <button type="submit" id="announcementReview" class="btn btn-premium-primary btn-sm"><i class="fas fa-eye me-1"></i> Review and publish</button>
+          <p id="announcementStatus" role="status" aria-live="polite" class="text-secondary small mt-2 mb-0"></p>
+        </form>
+
+        <p id="announcementsStatus" role="status" aria-live="polite" class="text-secondary small mb-2"></p>
+        <div class="table-responsive">
+          <table class="table align-middle small mb-0">
+            <thead><tr><th class="ps-3">Announcement</th><th>Audience</th><th>State</th><th>Shows</th><th>Read by</th><th class="text-end pe-3">Action</th></tr></thead>
+            <tbody id="announcementsBody"></tbody>
+          </table>
+        </div>
+        <form id="withdrawAnnouncementForm" class="p-3 rounded bg-white border mt-2" hidden>
+          <input type="hidden" id="withdrawAnnouncementId">
+          <p id="withdrawAnnouncementTitle" class="small fw-bold mb-2"></p>
+          <label class="d-block small mb-2">Reason (audited) <input id="withdrawAnnouncementReason" class="form-control form-control-sm bg-light" minlength="3" maxlength="500" required></label>
+          <label class="d-block small mb-2" data-reverify hidden>Authenticator code <input inputmode="numeric" maxlength="6" autocomplete="one-time-code" class="form-control form-control-sm"></label>
+          <button type="submit" class="btn btn-danger btn-sm">Withdraw</button>
+          <button type="button" id="withdrawAnnouncementCancel" class="btn btn-light btn-sm border ms-1">Cancel</button>
+          <p id="withdrawAnnouncementStatus" role="status" aria-live="polite" class="text-secondary small mt-2 mb-0"></p>
         </form>
       </section>
 

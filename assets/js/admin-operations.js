@@ -15,6 +15,7 @@
         ['tabContracts', 'contractsPanel', 'contracts.read'],
         ['tabEngine', 'enginePanel', 'engine.read'],
         ['tabFunding', 'fundingPanel', 'funding.read'],
+        ['tabNotifications', 'notificationsPanel', 'announcements.manage'],
         ['tabStaff', 'staffPanel', 'staff.manage'],
         ['tabAudit', 'auditPanel', 'audit.read'],
     ];
@@ -64,6 +65,23 @@
     const badge = (text, tone) => h('span', { className: `badge-${tone}`, text });
     const emptyRow = (columns, text) => h('tr', {}, [h('td', { text, attrs: { colspan: String(columns) }, className: 'text-muted ps-3' })]);
     const button = (label, className, onClick) => h('button', { className, text: label, attrs: { type: 'button' }, onClick });
+    // Customer-facing copy never promises profit or presses for haste (CLAUDE.md, Responsibility).
+    const PRESSURE = /\b(guarantee[ds]?|risk[- ]free|sure (win|profit|thing)|win big|easy money|get rich|double your|act now|hurry|last chance|don'?t miss|limited time|only today)\b/i;
+    const copyProblem = (text) => {
+        const found = String(text).match(PRESSURE);
+        return found ? `Remove "${found[0]}": messages to customers must not promise profit or create urgency.` : null;
+    };
+    // Same-site page links only, as the server requires (for example "faq.html" or "support.html").
+    const PAGE_LINK = /^[a-z0-9-]+\.html(\?[A-Za-z0-9=&_.-]{0,200})?$/;
+    function messageDraft(title, body, link, reason) {
+        const draft = { title: title.trim(), body: body.trim(), link: link.trim() || null, reason: reason.trim() };
+        if (!draft.title || draft.title.length > 120) draft.problem = 'Give a title of up to 120 characters.';
+        else if (!draft.body || draft.body.length > 1000) draft.problem = 'Write a message of up to 1000 characters.';
+        else if (draft.link && !PAGE_LINK.test(draft.link)) draft.problem = 'Links must be a page on this site, such as faq.html.';
+        else if (draft.reason.length < 3) draft.problem = 'Give a reason of at least 3 characters.';
+        else draft.problem = copyProblem(`${draft.title} ${draft.body}`);
+        return draft;
+    }
     const setOptions = (select, values, label = (value) => value, keep = select.value) => {
         select.replaceChildren(...values.map((value) => new Option(label(value), value)));
         if (values.includes(keep)) select.value = keep;
@@ -117,6 +135,7 @@
             this.bindEngineEvents();
             this.bindStaffEvents();
             this.bindFundingEvents();
+            this.bindNotificationEvents();
         }
 
         switchTab(panelId) {
@@ -131,6 +150,7 @@
             else if (panelId === 'enginePanel') this.loadEngine();
             else if (panelId === 'staffPanel') this.loadStaff();
             else if (panelId === 'fundingPanel') this.loadFunding();
+            else if (panelId === 'notificationsPanel') this.loadAnnouncements();
             else if (panelId === 'auditPanel') { const audit = el('auditOpen'); if (audit && !audit.hidden) audit.click(); }
         }
 
@@ -278,6 +298,7 @@
             el('customerRestrictionsList').replaceChildren();
             el('restrictionListStatus').textContent = '';
             this.renderRestrictionChoices();
+            this.resetCustomerMessage();
             try {
                 const data = await this.call('get_admin_customer_detail', { p_user_id: userId });
                 if (this.customerId !== userId) return;
@@ -749,6 +770,154 @@
         }
 
         // ================= STAFF MANAGEMENT (OWNER ONLY) =================
+        // ================= NOTIFICATIONS =================
+        /* Announcements reach every matching customer, so publishing is two steps: Review shows a
+           preview and the number of customers it reaches, then Publish sends. Copy that promises
+           profit or presses for haste is refused before it reaches the server. */
+        bindNotificationEvents() {
+            const form = el('announcementForm');
+            const fields = ['announcementTitle', 'announcementBody', 'announcementSeverity', 'announcementLink'];
+            const edited = () => { this.renderAnnouncementPreview(); el('announcementConfirm').hidden = true; el('announcementReview').hidden = false; };
+            for (const id of [...fields, 'announcementAudience', 'announcementStarts', 'announcementEnds']) el(id).oninput = edited;
+            form.onsubmit = async (event) => {
+                event.preventDefault();
+                const status = el('announcementStatus');
+                const draft = this.announcementDraft();
+                if (draft.problem) { status.textContent = draft.problem; return; }
+                status.textContent = 'Counting the audience…';
+                try {
+                    const count = await this.call('staff_announcement_audience_count', { p_audience: draft.audience });
+                    const timing = draft.startsAt ? `from ${when(draft.startsAt)}` : 'now';
+                    el('announcementConfirmText').textContent = `Show "${draft.title}" to ${count} customer${count === 1 ? '' : 's'} ${timing}${draft.endsAt ? ` until ${when(draft.endsAt)}` : ''}?`;
+                    el('announcementConfirm').hidden = false;
+                    el('announcementReview').hidden = true;
+                    status.textContent = '';
+                    el('announcementConfirmSend').focus();
+                } catch (error) { this.report(status, error); }
+            };
+            el('announcementConfirmCancel').onclick = () => { el('announcementConfirm').hidden = true; el('announcementReview').hidden = false; el('announcementTitle').focus(); };
+            el('announcementConfirmSend').onclick = async () => {
+                const status = el('announcementStatus');
+                const send = el('announcementConfirmSend');
+                const draft = this.announcementDraft();
+                if (draft.problem) { status.textContent = draft.problem; return; }
+                // One request id per intended announcement, reused if the same publish is retried.
+                if (!form.dataset.requestId) form.dataset.requestId = window.crypto.randomUUID();
+                send.disabled = true; send.setAttribute('aria-busy', 'true');
+                status.textContent = 'Publishing…';
+                try {
+                    if (!await this.runProtected(form, status, () => this.call('staff_publish_announcement', {
+                        p_title: draft.title, p_body: draft.body, p_link: draft.link, p_severity: draft.severity, p_audience: draft.audience,
+                        p_starts_at: draft.startsAt, p_ends_at: draft.endsAt, p_reason: draft.reason, p_request_id: form.dataset.requestId,
+                    }))) return;
+                    delete form.dataset.requestId;
+                    form.reset();
+                    edited();
+                    status.textContent = draft.startsAt ? 'Announcement scheduled.' : 'Announcement published.';
+                    await this.loadAnnouncements();
+                } catch (error) { this.report(status, error); }
+                finally { send.disabled = false; send.removeAttribute('aria-busy'); }
+            };
+            el('announcementsRefresh').onclick = () => this.loadAnnouncements();
+            const withdraw = el('withdrawAnnouncementForm');
+            withdraw.onsubmit = async (event) => {
+                event.preventDefault();
+                const status = el('withdrawAnnouncementStatus');
+                const reason = el('withdrawAnnouncementReason').value.trim();
+                if (reason.length < 3) { status.textContent = 'Give a reason of at least 3 characters.'; return; }
+                status.textContent = 'Withdrawing…';
+                try {
+                    if (!await this.runProtected(withdraw, status, () => this.call('staff_withdraw_announcement', { p_id: el('withdrawAnnouncementId').value, p_reason: reason }))) return;
+                    withdraw.hidden = true;
+                    await this.loadAnnouncements();
+                    el('announcementsStatus').textContent = 'Announcement withdrawn. Customers no longer see it.';
+                } catch (error) { this.report(status, error); }
+            };
+            el('withdrawAnnouncementCancel').onclick = () => { withdraw.hidden = true; };
+            const message = el('customerMessageForm');
+            message.onsubmit = async (event) => {
+                event.preventDefault();
+                const status = el('customerMessageStatus');
+                const userId = this.customerId;
+                const draft = messageDraft(el('customerMessageTitle').value, el('customerMessageBody').value, el('customerMessageLink').value, el('customerMessageReason').value);
+                if (!userId) return;
+                if (draft.problem) { status.textContent = draft.problem; return; }
+                if (!message.dataset.requestId) message.dataset.requestId = window.crypto.randomUUID();
+                status.textContent = 'Sending…';
+                try {
+                    await this.call('staff_send_notification', { p_user_id: userId, p_title: draft.title, p_body: draft.body, p_link: draft.link, p_ticket_id: null, p_reason: draft.reason, p_request_id: message.dataset.requestId });
+                    if (this.customerId !== userId) return;
+                    this.resetCustomerMessage();
+                    el('customerMessageStatus').textContent = 'Message sent. It is in the customer\'s notification centre.';
+                } catch (error) { this.report(status, error); }
+            };
+            this.renderAnnouncementPreview();
+        }
+
+        announcementDraft() {
+            const draft = messageDraft(el('announcementTitle').value, el('announcementBody').value, el('announcementLink').value, el('announcementReason').value);
+            const at = (id) => (el(id).value ? new Date(el(id).value) : null);
+            const starts = at('announcementStarts'), ends = at('announcementEnds');
+            draft.severity = el('announcementSeverity').value;
+            draft.audience = el('announcementAudience').value;
+            draft.startsAt = starts && starts > new Date() ? starts.toISOString() : null;
+            draft.endsAt = ends ? ends.toISOString() : null;
+            if (!draft.problem && ends && ends <= (starts && starts > new Date() ? starts : new Date())) draft.problem = 'The end must be after the start.';
+            return draft;
+        }
+
+        // Shows the announcement as a customer will read it in the notification centre.
+        renderAnnouncementPreview() {
+            const title = el('announcementTitle').value.trim();
+            const body = el('announcementBody').value.trim();
+            const important = el('announcementSeverity').value === 'important';
+            const problem = copyProblem(`${title} ${body}`);
+            el('announcementCheck').hidden = !problem;
+            el('announcementCheck').textContent = problem || '';
+            el('announcementPreview').replaceChildren(...(title || body ? [
+                h('p', { className: 'small text-secondary mb-1', text: `${important ? 'Important announcement' : 'Announcement'} · now · Unread` }),
+                h('p', { className: 'fw-bold mb-1', text: title || 'Title' }),
+                h('p', { className: 'small mb-0', text: body || 'Message' }),
+            ] : [h('p', { className: 'small text-secondary mb-0', text: 'Write a title and message to see the preview.' })]));
+        }
+
+        async loadAnnouncements() {
+            const status = el('announcementsStatus');
+            const body = el('announcementsBody');
+            status.textContent = 'Loading announcements…';
+            try {
+                const rows = await this.call('staff_list_announcements', { p_limit: 50 }) || [];
+                status.textContent = rows.length ? `${rows.length} announcement${rows.length === 1 ? '' : 's'}, newest first` : '';
+                const AUDIENCE = { all: 'All customers', real: 'Real holders', practice: 'Practice holders' };
+                const STATE = { live: 'Live', scheduled: 'Scheduled', ended: 'Ended', withdrawn: 'Withdrawn' };
+                body.replaceChildren(...(rows.length ? rows.map((row) => h('tr', { attrs: { 'data-announcement': row.id } }, [
+                    h('td', { className: 'ps-3' }, [h('strong', { text: row.title }), h('br'), h('small', { className: 'text-muted', text: `${row.severity === 'important' ? 'Important · ' : ''}${row.body}` })]),
+                    cell(AUDIENCE[row.audience] || row.audience),
+                    cell(STATE[row.state] || row.state),
+                    cell(`${when(row.starts_at)}${row.ends_at ? ` to ${when(row.ends_at)}` : ''}`, 'text-muted'),
+                    cell(String(row.reads ?? 0), 'mono'),
+                    h('td', { className: 'text-end pe-3' }, ['live', 'scheduled'].includes(row.state) ? [button('Withdraw', 'btn btn-light btn-sm border', () => {
+                        el('withdrawAnnouncementId').value = row.id;
+                        el('withdrawAnnouncementTitle').textContent = `Withdraw "${row.title}"? Customers stop seeing it at once.`;
+                        el('withdrawAnnouncementReason').value = '';
+                        el('withdrawAnnouncementStatus').textContent = '';
+                        el('withdrawAnnouncementForm').hidden = false;
+                        el('withdrawAnnouncementReason').focus();
+                    })] : []),
+                ])) : [emptyRow(6, 'No announcements yet.')]));
+            } catch (error) {
+                if (error !== STALE) { body.replaceChildren(); status.textContent = `Could not load announcements. ${explain(error)}`; }
+            }
+        }
+
+        resetCustomerMessage() {
+            const form = el('customerMessageForm');
+            form.hidden = !this.can('notifications.send');
+            form.reset();
+            delete form.dataset.requestId;
+            el('customerMessageStatus').textContent = '';
+        }
+
         bindStaffEvents() {
             const form = el('staffRoleForm');
             form.onsubmit = async (event) => {
@@ -811,13 +980,13 @@
             this.capabilities = new Set();
             this.customerId = null;
             this.contract = null;
-            for (const id of ['overviewCards', 'customersTableBody', 'customerAccountsList', 'customerRestrictionsList', 'contractsTableBody', 'contractDetailContent', 'engineHealthBody', 'enginePolicyHistory', 'engineExposureBody', 'engineEpochsBody', 'engineStuckBody', 'staffTableBody']) el(id)?.replaceChildren();
-            for (const id of ['overviewStatus', 'customersStatus', 'restrictionStatus', 'restrictionListStatus', 'contractsStatus', 'contractVoidStatus', 'engineStatus', 'enginePolicyCurrent', 'policyPublishStatus', 'indexStatusMessage', 'engineVoidStatus', 'staffStatus', 'staffRoleStatus']) { const node = el(id); if (node) node.textContent = ''; }
-            for (const id of ['customerDetailModal', 'contractDetailCard', 'indexStatusCard', 'engineVoidCard', 'staffRoleCard']) { const node = el(id); if (node) node.hidden = true; }
+            for (const id of ['overviewCards', 'customersTableBody', 'customerAccountsList', 'customerRestrictionsList', 'contractsTableBody', 'contractDetailContent', 'engineHealthBody', 'enginePolicyHistory', 'engineExposureBody', 'engineEpochsBody', 'engineStuckBody', 'staffTableBody', 'announcementsBody']) el(id)?.replaceChildren();
+            for (const id of ['overviewStatus', 'customersStatus', 'restrictionStatus', 'restrictionListStatus', 'contractsStatus', 'contractVoidStatus', 'engineStatus', 'enginePolicyCurrent', 'policyPublishStatus', 'indexStatusMessage', 'engineVoidStatus', 'staffStatus', 'staffRoleStatus', 'announcementsStatus', 'announcementStatus', 'withdrawAnnouncementStatus', 'customerMessageStatus']) { const node = el(id); if (node) node.textContent = ''; }
+            for (const id of ['customerDetailModal', 'contractDetailCard', 'indexStatusCard', 'engineVoidCard', 'staffRoleCard', 'withdrawAnnouncementForm', 'customerMessageForm', 'announcementConfirm']) { const node = el(id); if (node) node.hidden = true; }
             document.querySelectorAll('[data-reverify]').forEach((wrap) => { wrap.hidden = true; wrap.querySelectorAll('input').forEach((input) => { input.value = ''; }); });
         }
     }
 
     window.adminOperations = new AdminOperations();
-    window.smartProfitAdminRules = Object.freeze({ restrictionCapability, restrictionAllowed });
+    window.smartProfitAdminRules = Object.freeze({ restrictionCapability, restrictionAllowed, copyProblem, messageDraft });
 })();
