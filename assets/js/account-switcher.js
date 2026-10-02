@@ -267,5 +267,10 @@
 
     window.loadEngineConfig = loadEngineConfig;
     window.initAccountSwitcher = init;
+    // Signed-in pages without account logic of their own (guides, FAQ, contact) opt in with
+    // data-account-switcher-auto on <body>, so their top bar still shows PRACTICE or REAL.
+    const autoStart = () => { if (document.body?.hasAttribute('data-account-switcher-auto')) init().catch(() => { /* The switch shows its own unavailable state. */ }); };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', autoStart, { once: true });
+    else autoStart();
     window.smartProfitStartup = Object.freeze({ message: startupMessage, log: logStartupFailure, StartupError });
 })();

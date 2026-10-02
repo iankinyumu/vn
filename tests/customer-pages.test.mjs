@@ -47,7 +47,7 @@ test('every customer navigation surface links to the fairness verifier', () => {
 test('contact, dashboard and profile keep their designed layouts on the shared shell', () => {
     const page = (name) => fs.readFileSync(path.join('pages', name), 'utf8');
     const expectations = {
-        'contact.html': ['contact.css', 'contact-hero', 'id="contactForm"', 'id="requestHistory"', 'assets/js/contact.js', 'data-shell-surface="public"'],
+        'contact.html': ['contact.css', 'contact-hero', 'id="contactForm"', 'id="requestHistory"', 'assets/js/contact.js', 'data-shell-surface="app"'],
         'dashboard.html': ['welcome-section', 'balance-card', 'stat-card', 'chart-card', 'data-index-rows', 'data-open-contracts', 'data-latest-ticks', 'assets/js/charts.js', 'data-shell-surface="app"'],
         'profile.html': ['profile.css', 'profile-header-card', 'data-profile-tab="settings"', 'data-profile-tab="accounts"', 'id="profileForm"', 'data-shell-surface="app"'],
     };
@@ -58,6 +58,26 @@ test('contact, dashboard and profile keep their designed layouts on the shared s
         assert.doesNotMatch(source, /Order Book|24h Volume|Dominance|Listed Coins|API Keys|KYC|unsplash/i, `${name} still carries retired market content`);
     }
     assert.doesNotMatch(page('contact.html'), /value="(deposit|withdrawal)"/, 'Practice accounts have no funding topics');
+});
+
+test('help pages (guides, FAQ, contact) live in the signed-in shell and are not offered on the landing page', () => {
+    for (const name of ['faq.html', 'contact.html', 'blog.html', 'guide-fairness.html', 'guide-payouts.html', 'guide-settlement.html']) {
+        const source = fs.readFileSync(path.join('pages', name), 'utf8');
+        assert.match(source, /<body[^>]*data-shell-surface="app"/, `${name} must use the signed-in shell`);
+        assert.match(source, /<script src="\.\.\/assets\/js\/auth\.js"><\/script>\s*<script>requireAuth\(\)<\/script>/, `${name} must load auth.js, then require sign-in`);
+        assert.match(source, /<main class="[^"]*help-content/, `${name} must scope its content styles`);
+        for (const script of ['notifications.js', 'account-switcher.js', 'deposit-sheet.js']) assert.ok(source.includes(script), `${name} is missing ${script}`);
+    }
+    const shell = fs.readFileSync('assets/js/shell.js', 'utf8');
+    const block = (name) => shell.slice(shell.indexOf(`const ${name} = Object.freeze(`), shell.indexOf(']);', shell.indexOf(`const ${name} = Object.freeze(`)));
+    for (const href of ['faq.html', 'contact.html', 'blog.html']) {
+        assert.ok(!block('PUBLIC_LINKS').includes(href), `the landing header still links ${href}`);
+        assert.ok(!block('FOOTER_COLUMNS').includes(href), `the landing footer still links ${href}`);
+        assert.ok(block('APP_LINKS').includes(href), `the signed-in rail does not link ${href}`);
+    }
+    for (const name of ['index.html', 'about.html', '404.html', 'login.html', 'register.html']) {
+        assert.doesNotMatch(fs.readFileSync(path.join('pages', name), 'utf8'), /href="(faq|contact|blog)\.html/, `${name} links a signed-in help page`);
+    }
 });
 
 test('fairness uses the shared app header and keeps the verifier controls', () => {

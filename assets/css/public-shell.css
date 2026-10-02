@@ -4,8 +4,8 @@ body.public-shell, body.auth-shell { background: var(--bg); color: var(--label);
 body.public-shell::before, body.auth-shell::before, .public-shell .animated-bg, .auth-shell .animated-bg, .public-shell .live-ticker-bar { display: none; }
 .public-shell .premium-header { position: relative; background: var(--bg); border-bottom: 1px solid var(--flat-line); backdrop-filter: none; padding: 15px 0; }
 .public-shell .premium-header .container-fluid { max-width: 1240px; }
-.public-shell .logo-primary, .public-shell .logo-secondary { font-size: 18px; letter-spacing: -.04em; }
-.public-shell .logo-secondary { color: var(--label); font-weight: 700; }
+:is(.public-shell, .help-content) .logo-primary, :is(.public-shell, .help-content) .logo-secondary { font-size: 18px; letter-spacing: -.04em; }
+:is(.public-shell, .help-content) .logo-secondary { color: var(--label); font-weight: 700; }
 /* Hover changes colour only; the underline marks the current page. */
 .public-shell .nav-link { display: inline-flex; align-items: center; min-height: var(--target); color: var(--label-2) !important; border-radius: 0; font-size: var(--text-footnote); padding: 7px 10px !important; }
 .public-shell .nav-link:hover { color: var(--label) !important; background: transparent; }
@@ -13,42 +13,42 @@ body.public-shell::before, body.auth-shell::before, .public-shell .animated-bg, 
 .public-shell .premium-header .btn { display: inline-flex; align-items: center; justify-content: center; min-height: var(--target); }
 /* Size only: Bootstrap owns the toggler's display, which hides it on wide screens. */
 .public-shell .navbar-toggler { min-width: var(--target); min-height: var(--target); border-color: var(--separator-strong); }
-.public-shell .btn, .auth-shell .btn, .auth-shell .btn-signin, .auth-shell .btn-register, .auth-shell .btn-reset { border-radius: 4px; box-shadow: none; font-weight: 600; }
-.public-shell .btn-premium-primary, .auth-shell .btn-signin, .auth-shell .btn-register, .auth-shell .btn-reset { background: var(--accent-fill); border: 1px solid var(--accent-fill); color: var(--on-accent); }
-.public-shell .btn-premium-primary:hover, .auth-shell .btn-signin:hover, .auth-shell .btn-register:hover, .auth-shell .btn-reset:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--on-accent); box-shadow: none; transform: none; }
-.public-shell .btn-outline-light, .public-shell .btn-glass-premium { background: transparent; border-color: var(--flat-line); color: var(--flat-ink); }
-.public-shell .btn-outline-light:hover, .public-shell .btn-glass-premium:hover { background: var(--fill-hover); border-color: var(--separator-strong); }
-.public-shell .btn:active, .auth-shell .btn:active { opacity: .85; }
-.public-shell .btn-outline-light:active, .public-shell .btn-glass-premium:active { background: var(--fill-pressed); opacity: 1; }
+:is(.public-shell, .help-content) .btn, .auth-shell .btn, .auth-shell .btn-signin, .auth-shell .btn-register, .auth-shell .btn-reset { border-radius: 4px; box-shadow: none; font-weight: 600; }
+:is(.public-shell, .help-content) .btn-premium-primary, .auth-shell .btn-signin, .auth-shell .btn-register, .auth-shell .btn-reset { background: var(--accent-fill); border: 1px solid var(--accent-fill); color: var(--on-accent); }
+:is(.public-shell, .help-content) .btn-premium-primary:hover, .auth-shell .btn-signin:hover, .auth-shell .btn-register:hover, .auth-shell .btn-reset:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--on-accent); box-shadow: none; transform: none; }
+:is(.public-shell, .help-content) .btn-outline-light, :is(.public-shell, .help-content) .btn-glass-premium { background: transparent; border-color: var(--flat-line); color: var(--flat-ink); }
+:is(.public-shell, .help-content) .btn-outline-light:hover, :is(.public-shell, .help-content) .btn-glass-premium:hover { background: var(--fill-hover); border-color: var(--separator-strong); }
+:is(.public-shell, .help-content) .btn:active, .auth-shell .btn:active { opacity: .85; }
+:is(.public-shell, .help-content) .btn-outline-light:active, :is(.public-shell, .help-content) .btn-glass-premium:active { background: var(--fill-pressed); opacity: 1; }
 /* No card panels (DESIGN.md): content sits on the page, set off by a top separator. */
-.public-shell .premium-glass-card, .public-shell .contact-hero, .public-shell .article-card, .public-shell .blog-card, .public-shell .faq-card, .public-shell .sidebar-card { background: transparent; border: 0; border-top: 1px solid var(--flat-line); border-radius: 0; box-shadow: none; padding-inline: 0; }
-.public-shell .premium-glass-card:hover { box-shadow: none; transform: none; }
-.public-shell .text-gradient-animated { color: var(--label); -webkit-text-fill-color: var(--label); background: none; animation: none; }
-.public-shell .page-header, .public-shell .about-hero, .public-shell .blog-hero, .public-shell .faq-hero, .public-shell .contact-hero { background: transparent !important; border: 0 !important; border-bottom: 1px solid var(--flat-line) !important; border-radius: 0 !important; box-shadow: none !important; }
-.public-shell .page-title, .public-shell h1, .public-shell h2, .public-shell h3, .public-shell h4, .public-shell h5, .public-shell h6 { color: var(--flat-ink); }
-.public-shell .page-subtitle, .public-shell .text-muted, .public-shell p, .public-shell .article-excerpt, .public-shell .faq-answer, .public-shell .form-subtitle { color: var(--flat-muted); }
-.public-shell .feature-icon, .public-shell .contact-hero-icon, .public-shell .contact-card-icon, .public-shell .value-icon, .public-shell .mission-icon { background: transparent !important; border: 1px solid var(--flat-line); border-radius: 4px; box-shadow: none !important; color: var(--label-2); }
+:is(.public-shell, .help-content) .premium-glass-card, :is(.public-shell, .help-content) .contact-hero, :is(.public-shell, .help-content) .article-card, :is(.public-shell, .help-content) .blog-card, :is(.public-shell, .help-content) .faq-card, :is(.public-shell, .help-content) .sidebar-card { background: transparent; border: 0; border-top: 1px solid var(--flat-line); border-radius: 0; box-shadow: none; padding-inline: 0; }
+:is(.public-shell, .help-content) .premium-glass-card:hover { box-shadow: none; transform: none; }
+:is(.public-shell, .help-content) .text-gradient-animated { color: var(--label); -webkit-text-fill-color: var(--label); background: none; animation: none; }
+:is(.public-shell, .help-content) .page-header, :is(.public-shell, .help-content) .about-hero, :is(.public-shell, .help-content) .blog-hero, :is(.public-shell, .help-content) .faq-hero, :is(.public-shell, .help-content) .contact-hero { background: transparent !important; border: 0 !important; border-bottom: 1px solid var(--flat-line) !important; border-radius: 0 !important; box-shadow: none !important; }
+:is(.public-shell, .help-content) .page-title, :is(.public-shell, .help-content) h1, :is(.public-shell, .help-content) h2, :is(.public-shell, .help-content) h3, :is(.public-shell, .help-content) h4, :is(.public-shell, .help-content) h5, :is(.public-shell, .help-content) h6 { color: var(--flat-ink); }
+:is(.public-shell, .help-content) .page-subtitle, :is(.public-shell, .help-content) .text-muted, :is(.public-shell, .help-content) p, :is(.public-shell, .help-content) .article-excerpt, :is(.public-shell, .help-content) .faq-answer, :is(.public-shell, .help-content) .form-subtitle { color: var(--flat-muted); }
+:is(.public-shell, .help-content) .feature-icon, :is(.public-shell, .help-content) .contact-hero-icon, :is(.public-shell, .help-content) .contact-card-icon, :is(.public-shell, .help-content) .value-icon, :is(.public-shell, .help-content) .mission-icon { background: transparent !important; border: 1px solid var(--flat-line); border-radius: 4px; box-shadow: none !important; color: var(--label-2); }
 /* Status and category labels are plain uppercase text, not pills or badges. */
-.public-shell .contact-card-badge, .public-shell .post-tag, .public-shell .article-category, .public-shell .author-badge, .public-shell .badge, .public-shell .tag, .public-shell .stat-badge { background: transparent !important; border: 0 !important; border-radius: 0 !important; color: var(--label-2) !important; padding: 0 !important; box-shadow: none !important; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
-.public-shell .timeline-dot { display: none !important; }
-.public-shell .timeline::before, .public-shell .timeline-line { background: var(--flat-line) !important; }
-.public-shell .blog-cat-btn, .public-shell .faq-cat-btn { background: transparent; border: 0; border-radius: 0; color: var(--flat-muted); padding: 10px 12px; }
-.public-shell .blog-cat-btn:hover, .public-shell .faq-cat-btn:hover { background: transparent; color: var(--label); }
-.public-shell .blog-cat-btn, .public-shell .faq-cat-btn { border-bottom: 2px solid transparent; min-height: var(--target); }
-.public-shell .blog-cat-btn.active, .public-shell .faq-cat-btn.active { background: transparent; color: var(--label); border-bottom-color: var(--label); box-shadow: none; }
-.public-shell .premium-search, .public-shell .form-input, .auth-shell .form-input { background: var(--bg-field); border: 1px solid var(--field-border); border-radius: var(--radius-control); color: var(--label); box-shadow: none; }
-.public-shell .premium-search:focus, .public-shell .form-input:focus, .auth-shell .form-input:focus { background: var(--bg-field); box-shadow: none; outline: none; }
-.public-shell .premium-search:focus-visible, .public-shell .form-input:focus-visible, .auth-shell .form-input:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
-.public-shell .form-label, .auth-shell .form-group label { color: var(--flat-muted); font-size: 13px; }
-.public-shell .input-wrapper:focus-within .form-icon, .auth-shell .input-wrapper:focus-within .form-icon { color: var(--label); }
-.public-shell .form-select-custom { color: var(--flat-ink); }
-.public-shell .form-select-custom option { background: var(--bg-2); }
-.public-shell .file-upload-label, .public-shell .social-link, .public-shell .share-btn, .public-shell .comment-action-btn { background: transparent; border: 1px solid var(--flat-line); border-radius: 4px; color: var(--flat-muted); }
-.public-shell .social-link:hover, .public-shell .share-btn:hover, .public-shell .comment-action-btn:hover { background: var(--fill-hover); border-color: var(--separator-strong); color: var(--label); }
-.public-shell .faq-item, .public-shell .faq-question { background: transparent; border-color: var(--flat-line); border-radius: 0; box-shadow: none; }
-.public-shell .faq-question:hover, .public-shell .faq-item.active .faq-question { color: var(--label); }
-.public-shell .pagination .page-link { background: transparent; border-color: var(--flat-line); border-radius: 0; color: var(--flat-muted); }
-.public-shell .pagination .page-item.active .page-link, .public-shell .pagination .page-link:hover { background: transparent; color: var(--label); border-color: var(--label); }
+:is(.public-shell, .help-content) .contact-card-badge, :is(.public-shell, .help-content) .post-tag, :is(.public-shell, .help-content) .article-category, :is(.public-shell, .help-content) .author-badge, :is(.public-shell, .help-content) .badge, :is(.public-shell, .help-content) .tag, :is(.public-shell, .help-content) .stat-badge { background: transparent !important; border: 0 !important; border-radius: 0 !important; color: var(--label-2) !important; padding: 0 !important; box-shadow: none !important; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+:is(.public-shell, .help-content) .timeline-dot { display: none !important; }
+:is(.public-shell, .help-content) .timeline::before, :is(.public-shell, .help-content) .timeline-line { background: var(--flat-line) !important; }
+:is(.public-shell, .help-content) .blog-cat-btn, :is(.public-shell, .help-content) .faq-cat-btn { background: transparent; border: 0; border-radius: 0; color: var(--flat-muted); padding: 10px 12px; }
+:is(.public-shell, .help-content) .blog-cat-btn:hover, :is(.public-shell, .help-content) .faq-cat-btn:hover { background: transparent; color: var(--label); }
+:is(.public-shell, .help-content) .blog-cat-btn, :is(.public-shell, .help-content) .faq-cat-btn { border-bottom: 2px solid transparent; min-height: var(--target); }
+:is(.public-shell, .help-content) .blog-cat-btn.active, :is(.public-shell, .help-content) .faq-cat-btn.active { background: transparent; color: var(--label); border-bottom-color: var(--label); box-shadow: none; }
+:is(.public-shell, .help-content) .premium-search, :is(.public-shell, .help-content) .form-input, .auth-shell .form-input { background: var(--bg-field); border: 1px solid var(--field-border); border-radius: var(--radius-control); color: var(--label); box-shadow: none; }
+:is(.public-shell, .help-content) .premium-search:focus, :is(.public-shell, .help-content) .form-input:focus, .auth-shell .form-input:focus { background: var(--bg-field); box-shadow: none; outline: none; }
+:is(.public-shell, .help-content) .premium-search:focus-visible, :is(.public-shell, .help-content) .form-input:focus-visible, .auth-shell .form-input:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
+:is(.public-shell, .help-content) .form-label, .auth-shell .form-group label { color: var(--flat-muted); font-size: 13px; }
+:is(.public-shell, .help-content) .input-wrapper:focus-within .form-icon, .auth-shell .input-wrapper:focus-within .form-icon { color: var(--label); }
+:is(.public-shell, .help-content) .form-select-custom { color: var(--flat-ink); }
+:is(.public-shell, .help-content) .form-select-custom option { background: var(--bg-2); }
+:is(.public-shell, .help-content) .file-upload-label, :is(.public-shell, .help-content) .social-link, :is(.public-shell, .help-content) .share-btn, :is(.public-shell, .help-content) .comment-action-btn { background: transparent; border: 1px solid var(--flat-line); border-radius: 4px; color: var(--flat-muted); }
+:is(.public-shell, .help-content) .social-link:hover, :is(.public-shell, .help-content) .share-btn:hover, :is(.public-shell, .help-content) .comment-action-btn:hover { background: var(--fill-hover); border-color: var(--separator-strong); color: var(--label); }
+:is(.public-shell, .help-content) .faq-item, :is(.public-shell, .help-content) .faq-question { background: transparent; border-color: var(--flat-line); border-radius: 0; box-shadow: none; }
+:is(.public-shell, .help-content) .faq-question:hover, :is(.public-shell, .help-content) .faq-item.active .faq-question { color: var(--label); }
+:is(.public-shell, .help-content) .pagination .page-link { background: transparent; border-color: var(--flat-line); border-radius: 0; color: var(--flat-muted); }
+:is(.public-shell, .help-content) .pagination .page-item.active .page-link, :is(.public-shell, .help-content) .pagination .page-link:hover { background: transparent; color: var(--label); border-color: var(--label); }
 .public-shell .premium-footer ul li { margin-bottom: 0; }
 .public-shell .premium-footer ul li a { display: inline-flex; align-items: center; min-height: var(--target); }
 .public-shell .premium-footer { margin-top: 0; background: var(--bg); border-top: 1px solid var(--flat-line); padding: 28px 0 20px; }
@@ -89,8 +89,26 @@ body.public-shell::before, body.auth-shell::before, .public-shell .animated-bg, 
 .public-shell .appearance-nav i { font-size: 15px; }
 @media (min-width: 1200px) { .public-shell .appearance-nav-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } }
 /* Placeholders at 4.5:1 or better (WCAG 1.4.3): secondary label colour, full opacity. */
-.public-shell ::placeholder, .auth-shell ::placeholder { color: var(--label-2); opacity: 1; }
+:is(.public-shell, .help-content) ::placeholder, .auth-shell ::placeholder { color: var(--label-2); opacity: 1; }
 /* Auth pages (DESIGN.md, Impeccable critique): a mascot above the title, no icon tile or badge. */
 .auth-shell .auth-mascot { display: block; width: 96px; height: 96px; margin: 0 auto 8px; object-fit: contain; }
 .auth-shell .auth-done-title { margin: 12px 0 8px; font-size: var(--text-title-3); font-weight: 700; }
 .auth-shell .success-icon { background: transparent !important; color: var(--positive) !important; border: 0 !important; }
+/* "Can't sign in?" on the login page: a plain disclosure under the form, no panel. */
+.auth-shell .signin-help { margin: 8px 0 0; border-top: 1px solid var(--flat-line); text-align: start; }
+.auth-shell .signin-help summary { display: flex; align-items: center; min-height: var(--target); color: var(--label); font-size: var(--text-footnote); font-weight: 700; text-decoration: underline; text-underline-offset: .18em; cursor: pointer; list-style: none; }
+.auth-shell .signin-help summary::-webkit-details-marker { display: none; }
+.auth-shell .signin-help summary::after { content: '+'; display: inline-block; margin-inline-start: 8px; text-decoration: none; }
+.auth-shell .signin-help[open] summary::after { content: '−'; }
+.auth-shell .signin-help summary:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
+.auth-shell .signin-help-body { padding: 0 0 12px; }
+.auth-shell .signin-help-title { margin: 12px 0 4px; color: var(--label); font-size: var(--text-subhead); font-weight: 700; }
+.auth-shell .signin-help-body p { margin: 0 0 8px; color: var(--flat-muted); font-size: var(--text-footnote); line-height: 1.5; }
+.auth-shell .signin-help-body a { color: var(--label); text-decoration: underline; text-underline-offset: .18em; }
+.auth-shell .signin-help-btn { min-height: var(--target); padding: 0 14px; border: 1px solid var(--separator-strong); border-radius: var(--radius-control); background: transparent; color: var(--label); font: 700 var(--text-footnote) var(--font-text); cursor: pointer; }
+.auth-shell .signin-help-btn:active:not(:disabled) { background: var(--fill-pressed); }
+.auth-shell .signin-help-btn:disabled { opacity: .6; cursor: progress; }
+.auth-shell .signin-help-btn:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) { .auth-shell .signin-help-btn:hover:not(:disabled) { background: var(--fill-hover); } }
+.auth-shell .signin-help-status:empty { display: none; }
+.auth-shell .signin-help-status { margin-top: 8px !important; color: var(--label) !important; }

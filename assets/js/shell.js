@@ -12,9 +12,6 @@
     const PUBLIC_LINKS = Object.freeze([
         { href: 'index.html', label: 'Home', icon: 'fa-house', key: 'home' },
         { href: 'about.html', label: 'About', icon: 'fa-circle-info', key: 'about' },
-        { href: 'blog.html', label: 'Guides', icon: 'fa-book-open', key: 'blog' },
-        { href: 'faq.html', label: 'FAQ', icon: 'fa-circle-question', key: 'faq' },
-        { href: 'contact.html', label: 'Contact', icon: 'fa-headset', key: 'contact' },
         { href: 'fairness.html', label: 'Fairness', icon: 'fa-scale-balanced', key: 'fairness' }
     ]);
 
@@ -22,12 +19,16 @@
         { href: 'dashboard.html', label: 'Dashboard', icon: 'fa-gauge-high', key: 'dashboard' },
         { href: 'trade.html', label: 'Trade', icon: 'fa-chart-simple', key: 'trade' },
         { href: 'fairness.html', label: 'Fairness', icon: 'fa-scale-balanced', key: 'fairness' },
-        { href: 'profile.html', label: 'Profile', icon: 'fa-user-circle', key: 'profile' }
+        { href: 'profile.html', label: 'Profile', icon: 'fa-user-circle', key: 'profile' },
+        // Help lives inside the signed-in shell, so it never drops a customer back onto the landing page.
+        { href: 'blog.html', label: 'Guides', icon: 'fa-book-open', key: 'blog' },
+        { href: 'faq.html', label: 'FAQ', icon: 'fa-circle-question', key: 'faq' },
+        { href: 'contact.html', label: 'Contact', icon: 'fa-headset', key: 'contact' }
     ]);
 
     const FOOTER_COLUMNS = Object.freeze([
-        { title: 'Explore', links: [{ href: 'about.html', label: 'About' }, { href: 'blog.html', label: 'Guides' }, { href: 'contact.html', label: 'Contact' }, { href: 'fairness.html', label: 'Fairness' }] },
-        { title: 'Account', links: [{ href: 'faq.html', label: 'FAQ' }, { href: 'login.html', label: 'Sign in' }, { href: 'register.html', label: 'Create account' }] }
+        { title: 'Explore', links: [{ href: 'about.html', label: 'About' }, { href: 'fairness.html', label: 'Fairness' }] },
+        { title: 'Account', links: [{ href: 'login.html', label: 'Sign in' }, { href: 'register.html', label: 'Create account' }] }
     ]);
 
     const APP_FOOTER_LINKS = Object.freeze([

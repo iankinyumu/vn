@@ -17,12 +17,16 @@
     <link href="../assets/css/style.css" rel="stylesheet">
     <link href="../assets/css/faq.css" rel="stylesheet">
     <link href="../assets/css/public-shell.css" rel="stylesheet">
+    <link href="../assets/css/app-shell.css" rel="stylesheet">
+    <link href="../assets/css/mode-tokens.css" rel="stylesheet">
 </head>
 
-<body class="premium-theme public-shell" data-shell-surface="public" data-shell-active="faq">
+<body class="premium-theme app-shell" data-shell-surface="app" data-shell-active="faq" data-account-switcher-auto>
+    <script src="../assets/js/auth.js"></script>
+    <script>requireAuth()</script>
     <div data-shell-header></div>
 
-    <main class="faq-wrapper">
+    <main class="faq-wrapper help-content">
         <div class="container-fluid px-4 py-4">
 
             <div class="row mb-4">
@@ -137,8 +141,14 @@
     <div data-shell-footer></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-    <script src="../assets/js/auth.js"></script>
     <script src="../assets/js/shell.js"></script>
+    <script src="../assets/js/engine-notice.js"></script>
+    <script src="../assets/js/account-context.js"></script>
+    <script src="../assets/js/account-keys.js"></script>
+    <script src="../assets/js/account-switcher.js"></script>
+    <script src="../assets/js/deposit-sheet.js"></script>
+    <script src="../assets/js/notifications.js"></script>
+    <script src="../assets/js/restriction-banner.js"></script>
     <script src="../assets/js/faq.js"></script>
 </body>
 
