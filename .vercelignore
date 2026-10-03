@@ -1,0 +1,19 @@
+# Source art and tooling that the site does not serve.
+# The mascot PNGs are originals; pages use the WebP copies in assets/img/mascots.
+assets/img/*.png
+.agents
+.claude
+skills-lock.json
+tests
+docs
+# Never upload secrets, local tooling or source that the static site does not serve.
+.env
+.env.*
+!.env.example
+.sandbox
+.VSCode
+assets/layered-asset
+supabase
+scripts/*.cjs
+engine
+modules

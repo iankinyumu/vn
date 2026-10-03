@@ -5,13 +5,25 @@
     "build": "node scripts/build-static.mjs",
     "test": "npm run check:parity && node scripts/test-engine-postgres.mjs && node --test --test-concurrency=1 tests/*.test.mjs",
     "check:parity": "node scripts/check-parity.mjs",
-    "test:cryp\u0074o-legacy": "node --test --test-concurrency=1 modules/cryp\u0074o-spot/tests/*.test.mjs"
+    "test:cryp\u0074o-legacy": "node --test --test-concurrency=1 modules/cryp\u0074o-spot/tests/*.test.mjs",
+    "calibrate:engine-v3": "node scripts/engine-v3-calibrate.mjs",
+    "check:engine-v3-vectors": "node scripts/engine-v3-vectors.mjs",
+    "accept:engine-v3": "node scripts/engine-v3-acceptance.mjs",
+    "accept:engine-v3:practice": "node scripts/engine-v3-acceptance.mjs --practice",
+    "start:engine-v3-attestor": "node engine/v3/service/attestor-main.mjs",
+    "report:engine-v3-soak": "node scripts/engine-v3-soak-report.mjs",
+    "start:engine-v3-worker": "node engine/v3/service/main.mjs",
+    "check:icons": "node scripts/check-icons.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.8",
     "embedded-postgres": "18.4.0-beta.17",
     "jsdom": "26.1.0",
     "pg": "8.23.0",
+    "playwright-core": "1.63.0",
     "supabase": "^2.117.0"
+  },
+  "dependencies": {
+    "@aws-sdk/client-kms": "3.1140.0"
   }
 }

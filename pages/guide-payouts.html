@@ -3,24 +3,30 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0, viewport-fit=cover">
     <meta name="description"
         content="The SmartProfit house margin, the exact payout formula with worked examples, cent rounding, and which values are configurable.">
     <title>The house margin and payouts — SmartProfit Guides</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0..1,0&amp;icon_names=account_circle,add,admin_panel_settings,alternate_email,area_chart,arrow_back,arrow_downward,arrow_forward,arrow_right_alt,arrow_upward,balance,bar_chart,block,bolt,calendar_month,campaign,cancel,casino,category,check,check_circle,chevron_left,chevron_right,circle,close,contrast,currency_exchange,dark_mode,difference,edit,equal,error,expand_more,format_list_numbered,graphic_eq,group,help,history,home,hourglass_top,inbox,info,key,keyboard_double_arrow_left,keyboard_double_arrow_right,layers,light_mode,list,lock,lock_open,login,logout,mail,menu,menu_book,mood,notifications,percent,person,person_off,pie_chart,qr_code,refresh,save,schedule,search,send,settings,shield,show_chart,smartphone,sort,speed,sports_score,star,support_agent,swap_horiz,table,tag,timer,tune,undo,upload,visibility,warning&amp;display=block" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
+    <script src="../assets/js/consent.js"></script><script src="../assets/js/theme.js"></script>
+    <link href="../assets/css/tokens.css" rel="stylesheet">
     <link href="../assets/css/glassmorphism.css" rel="stylesheet">
     <link href="../assets/css/style.css" rel="stylesheet">
     <link href="../assets/css/public-shell.css" rel="stylesheet">
+    <link href="../assets/css/app-shell.css" rel="stylesheet">
+    <link href="../assets/css/mode-tokens.css" rel="stylesheet">
     <link href="../assets/css/guides.css" rel="stylesheet">
 </head>
 
-<body class="premium-theme public-shell" data-shell-surface="public" data-shell-active="blog">
+<body class="premium-theme app-shell" data-shell-surface="app" data-shell-active="blog" data-account-switcher-auto>
+    <script src="../assets/js/auth.js"></script>
+    <script>requireAuth()</script>
     <div data-shell-header></div>
 
-    <main class="guides-wrapper">
+    <main class="guides-wrapper help-content">
         <article class="guide-article" aria-labelledby="guideTitle">
             <header class="guides-header">
                 <div class="guides-kicker"><a href="blog.html">Guides</a> · Payouts</div>
@@ -38,7 +44,7 @@
             <p>A new version applies to new purchases only. Every contract records the policy version, payout and multiplier it was bought with, and a later policy never changes a contract you already hold. The quote always uses the version in force at that moment.</p>
 
             <h2>What the margin means</h2>
-            <p>Without a margin, a fair payout would return exactly the stake on average: stake × 10 ÷ winning digits. The margin takes a fixed share of that. At 3.5%, an Even contract pays 1.93 times the stake and wins half the time, so across many contracts it returns 96.5% of the amount staked on average, and every contract type returns the same 96.5% share. Over time, the expected result of buying contracts is a loss of about 3.5% of the total staked. Individual results vary, and past results do not change the odds of the next one.</p>
+            <p>Without a margin, a fair payout would return exactly the stake on average: stake × 10 ÷ winning digits. The margin takes a fixed share of that. At 3.5%, an Even contract pays 1.93 times the stake. Every contract type is priced with the same margin, so no type is cheaper than another. Past results do not change the odds of the next one.</p>
 
             <h2>Worked examples at a 3.5% margin</h2>
             <div class="guide-table-wrap">
@@ -56,28 +62,33 @@
             <p>At launch only Even and Odd are enabled; the other rows show how the same formula prices the remaining types.</p>
 
             <h2>Rounding always goes down</h2>
-            <p>The payout is floored to the cent, never rounded up. On most stakes this changes nothing, but on some small stakes the effective margin is slightly above the published one. For example, a 1.01 Even stake has an exact value of 1.9493 and pays 1.94. The difference always favours the house, never the customer.</p>
+            <p>The payout is floored to the cent, never rounded up. On most stakes this changes nothing, but on some small stakes the effective margin is slightly above the published one. For example, a 1.01 Even stake has an exact value of 1.9493 and pays 1.94. The payout shown before you buy is always the exact amount paid.</p>
 
             <h2>Offers the engine refuses</h2>
             <p>The engine will not sell a contract whose profit would be less than 1% of the stake (the minimum profit ratio in policy version 1). Before a policy version is published, the server checks that every enabled contract type, at every allowed barrier, clears this minimum at the smallest allowed stake.</p>
 
-            <h2>Practice stakes and limits</h2>
-            <p>Practice accounts are denominated in virtual USD. Under policy version 1, a stake is between 1.00 and 1,000.00, an account may hold at most 20 open contracts and buy at most 30 per minute, and a single settle tick carries a capped total liability. The server checks each limit on every purchase.</p>
+            <h2>Stakes and limits</h2>
+            <p>Accounts are denominated in USD. Under policy version 1, a stake is between 1.00 and 1,000.00, an account may hold at most 20 open contracts and buy at most 30 per minute, and a single settle tick carries a capped total liability. The server checks each limit on every purchase.</p>
 
-            <p class="guide-note">Practice credits are virtual. They have no cash value and cannot be withdrawn, and a practice result says nothing about any future funded result.</p>
 
             <nav class="guide-nav" aria-label="Guide navigation">
-                <a href="guide-settlement.html"><i class="fas fa-arrow-left me-2" aria-hidden="true"></i>Previous: how contracts settle</a>
-                <a href="guide-fairness.html">Next: verifying fairness<i class="fas fa-arrow-right ms-2" aria-hidden="true"></i></a>
+                <a href="guide-settlement.html"><i class="ms me-2" data-icon="arrow_back" aria-hidden="true"></i>Previous: how contracts settle</a>
+                <a href="guide-fairness.html">Next: verifying fairness<i class="ms ms-2" data-icon="arrow_forward" aria-hidden="true"></i></a>
             </nav>
         </article>
     </main>
 
     <div data-shell-footer></div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-    <script src="../assets/js/auth.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
     <script src="../assets/js/shell.js"></script>
+    <script src="../assets/js/engine-notice.js"></script>
+    <script src="../assets/js/account-context.js"></script>
+    <script src="../assets/js/account-keys.js"></script>
+    <script src="../assets/js/account-switcher.js"></script>
+    <script src="../assets/js/deposit-sheet.js"></script>
+    <script src="../assets/js/notifications.js"></script>
+    <script src="../assets/js/restriction-banner.js"></script>
 </body>
 
 </html>

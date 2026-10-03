@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200"><title>Lavender Beret</title><style>
+.breathe{transform-box:fill-box;transform-origin:50% 100%;animation:breathe 4.2s ease-in-out -0.6s infinite}
+.blink{transform-box:fill-box;transform-origin:50% 50%;animation:blink 5s ease-in-out 2.0999999999999996s infinite}
+.sway{transform-box:fill-box;transform-origin:50% 0;animation:sway 3.6s ease-in-out -1s infinite}
+@keyframes breathe{0%,100%{transform:scale(1,1)}50%{transform:scale(1.02,.975)}}
+@keyframes blink{0%,94%,100%{transform:scaleY(1)}96.5%{transform:scaleY(.1)}}
+@keyframes sway{0%,100%{rotate:-4deg}50%{rotate:4deg}}
+@media (prefers-reduced-motion:reduce){.breathe,.blink,.sway{animation:none}}
+</style><g class="breathe"><path d="M100 34C128 72 166 100 166 134 166 168 136 180 100 180 64 180 34 168 34 134 34 100 72 72 100 34Z" fill="#b8a1ea" stroke="#b8a1ea" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/><ellipse cx="80" cy="104" rx="18" ry="12" fill="#fff" opacity=".22"/><g class="blink"><ellipse cx="87" cy="124" rx="6.5" ry="9" fill="#1b1b1b"/><circle cx="89" cy="120.5" r="2" fill="#fff"/><ellipse cx="121" cy="124" rx="6.5" ry="9" fill="#1b1b1b"/><circle cx="123" cy="120.5" r="2" fill="#fff"/></g><g class="sway" transform="rotate(-16 86 70)"><ellipse cx="86" cy="70" rx="52" ry="21.84" fill="#1b1b1b"/><ellipse cx="86" cy="66" rx="41.6" ry="12.48" fill="#2c2c2c"/><circle cx="67.8" cy="48.16" r="9" fill="#1b1b1b"/></g></g></svg>

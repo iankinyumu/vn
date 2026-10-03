@@ -17,13 +17,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!user) return;
         const version = authVersion;
         refresh.disabled = true;
-        history.textContent = 'Loading requests...';
+        const loader = window.smartProfitLoader?.mount(history, { label: 'Loading requests', overlay: false, compact: true });
+        if (!loader) history.textContent = 'Loading requests...';
         try {
             const { data, error } = await client.from('support_requests')
                 .select('ticket_number,subject,status,created_at').eq('user_id', user.id)
                 .order('created_at', { ascending: false }).limit(20);
             if (error) throw error;
             if (version !== authVersion) return;
+            loader?.remove();
             history.replaceChildren();
             if (!data.length) history.textContent = 'You have not submitted any requests yet.';
             for (const request of data) {
@@ -39,6 +41,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         } catch (_) {
             if (version !== authVersion) return;
+            loader?.remove();
             history.textContent = 'Unable to load requests. Try refreshing. This does not affect requests already saved.';
         } finally { if (version === authVersion) refresh.disabled = !user; }
     }

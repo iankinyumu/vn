@@ -36,8 +36,15 @@
         var emailInput = document.getElementById('email');
         var passwordInput = document.getElementById('password');
         var submit = event.currentTarget.querySelector('button[type="submit"]');
-        var email = emailInput.value.trim();
+        var email = window.smartProfitForms ? window.smartProfitForms.clean(emailInput.value, 254) : emailInput.value.trim();
         var password = passwordInput.value;
+        // Five failures in ten minutes pause this tab for ten; Supabase Auth limits sign-ins per IP as well.
+        var limit = window.smartProfitForms ? window.smartProfitForms.limiter('staff-signin', { max: 5, windowMs: 10 * 60000, lockMs: 10 * 60000 }) : null;
+        var wait = limit ? limit.wait() : 0;
+        if (wait) {
+            setStatus('Too many failed sign-ins from this browser. Try again in ' + window.smartProfitForms.waitText(wait) + '.', 'error');
+            return;
+        }
 
         submit.disabled = true;
         setStatus('Verifying staff access…', 'info');
@@ -52,10 +59,12 @@
             if (context.error) throw context.error;
             if (!context.data || !context.data.role) throw new Error('not_staff');
 
+            if (limit) limit.reset();
             window.location.assign(safeRedirect(new URLSearchParams(window.location.search).get('redirect')));
         } catch (error) {
             // Leave no session behind for an account the console would reject.
             await window.staffSignOut();
+            if (limit) limit.record();
             passwordInput.value = '';
             setStatus(describe(error), 'error');
             submit.disabled = false;
@@ -64,5 +73,7 @@
 
     document.addEventListener('DOMContentLoaded', function () {
         if (typeof window.redirectIfStaffAuthenticated === 'function') window.redirectIfStaffAuthenticated();
+        var form = document.getElementById('staffLoginForm');
+        if (form) form.addEventListener('submit', window.handleStaffLogin);
     });
 })();

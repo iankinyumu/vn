@@ -1,0 +1,76 @@
+{
+  "spec": "v3.1",
+  "generated_at": "2026-09-28T01:16:30.829Z",
+  "commit": "unknown",
+  "engine_files_uncommitted": true,
+  "generator_sha256": "8c915e3d44ca9145ccbd4e2159c8ca71536d32cb447a78a692de65f670d08949",
+  "node": "v24.20.0",
+  "command": "node scripts/engine-v3-calibrate.mjs --ticks 15768000 --seeds 1 --first-seed 0 --indices SPI10 --out docs/calibration/engine-v3-1y-SPI10",
+  "bands": {
+    "volFull": 0.01,
+    "volDay": 0.03,
+    "driftZ": 5,
+    "acfZ": 5,
+    "kurtosis": [
+      -0.15,
+      -0.05
+    ],
+    "maxAbsE": 6,
+    "digitChi": 33.72,
+    "pairChi": 137.20528580249547,
+    "runPerMillion": 12,
+    "logDevSd": 8,
+    "walkDevSd": 5
+  },
+  "results": [
+    {
+      "metrics": {
+        "index": "SPI10",
+        "seed": "calibration-0",
+        "ticks": 15768000,
+        "seconds": 1884.913,
+        "target_vol": 0.09999999913707518,
+        "realised_vol": 0.10001357928790097,
+        "vol_ratio_error": 0.0001358015094297116,
+        "worst_day_vol_error": 0.012686894945987959,
+        "drift_z": 0.9289290667253339,
+        "lag1_acf_z": 0.42568663287164066,
+        "excess_kurtosis": -0.09991331057920494,
+        "max_abs_e": 4.723492175748572,
+        "digit_chi2": 6.735620243531202,
+        "pair_chi2": 84.37047723929541,
+        "longest_run_per_million": 8,
+        "min_price": 9728.929,
+        "max_price": 11962.86,
+        "max_log_dev_sd": 1.7922175892264647,
+        "anchorless": true,
+        "soft_range_exits": 0,
+        "digits": [
+          1576437,
+          1578750,
+          1576004,
+          1576894,
+          1577516,
+          1577831,
+          1575151,
+          1577035,
+          1575501,
+          1576881
+        ]
+      },
+      "checks": {
+        "vol": true,
+        "vol_day": true,
+        "drift": true,
+        "acf": true,
+        "kurtosis": true,
+        "tails": true,
+        "digits": true,
+        "pairs": true,
+        "runs": true,
+        "range": true
+      },
+      "pass": true
+    }
+  ]
+}

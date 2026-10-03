@@ -1,0 +1,250 @@
+/* Shared design tokens: every colour, type size, space, radius and timing the
+   shell uses, named by role (HIG semantic colours) rather than by hue. Page CSS
+   reads these; the older --app-*, --flat-* and --text-* names alias them.
+   Appearance follows the system (theme.js sets data-bs-theme on <html>, which
+   also switches Bootstrap); there is no in-app setting, per HIG Dark Mode. Dark
+   is the default so the page stays consistent if the script cannot run. */
+:root {
+    color-scheme: dark;
+
+    /* Backgrounds: page, grouped panel, raised surface (menus, sheets), field. */
+    --bg: #0a0a0a;
+    --bg-2: #121212;
+    --bg-3: #1a1a1a;
+    --bg-field: #0f0f0f;
+
+    /* Labels. --label-2 is 6.0:1 or better on every background above. */
+    --label: #f2f2f2;
+    --label-2: #9e9e9e;
+    --label-table: #cfcfcf;
+
+    /* Separators are decorative; field borders identify a control, so they meet 3:1 (WCAG 1.4.11). */
+    --separator: rgb(255 255 255 / .09);
+    --separator-strong: rgb(255 255 255 / .18);
+    --field-border: #6e6e6e;
+
+    /* Fills for interaction states on transparent controls. */
+    --fill-subtle: rgb(255 255 255 / .025);
+    --fill-hover: rgb(255 255 255 / .04);
+    --fill-pressed: rgb(255 255 255 / .08);
+    --scrim: rgb(0 0 0 / .6);
+    --scrim-strong: rgb(0 0 0 / .7);
+
+    /* No hue accent (DESIGN.md): the "accent" is the text colour. It marks links, the
+       current location and primary actions; green and red stay free for buy/sell,
+       win/loss and safe/danger. --accent-fill is the solid primary button. */
+    --accent: var(--label);
+    --accent-fill: #f2f2f2;
+    --accent-hover: #d9d9d9;
+    --accent-pressed: #bfbfbf;
+    --accent-tint: rgb(255 255 255 / .06);
+    --on-accent: #0a0a0a;
+
+    /* Status. Never the only signal: pair with a sign, label or icon. */
+    --positive: #66d9a5;
+    --negative: #ff8585;
+    --negative-tint: rgb(255 133 133 / .08);
+    --on-positive: #07170f;
+    --on-negative: #240909;
+    /* Caution and info are neutral: meaning comes from the words and icon, not a hue. */
+    --caution: var(--label);
+    --info: var(--label-2);
+    --alert-bg: #7f2d2d;
+
+    --focus-ring: var(--label);
+    --focus-width: 2px;
+
+    /* Two typefaces: one for text, one for numbers and codes. */
+    --font-text: Manrope, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-mono: "DM Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+    /* Type ramp (Apple's default text styles in rem). Nothing smaller than 11px. */
+    --text-caption-2: .6875rem;
+    --text-caption: .75rem;
+    --text-footnote: .8125rem;
+    --text-subhead: .875rem;
+    --text-callout: 1rem;
+    --text-headline: 1.0625rem;
+    --text-title-3: 1.25rem;
+    --text-title-2: 1.375rem;
+    --text-title-1: 1.75rem;
+
+    /* 8px grid with a 4px half step. */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 48px;
+
+    --radius-control: 4px;
+    /* Flat: nothing rounder than 4px. The larger names stay as aliases. */
+    --radius-card: 4px;
+    --radius-sheet: 4px;
+
+    --target: 44px;
+
+    /* 1 in left-to-right text, -1 in right-to-left: mirrors slides and edge indicators. */
+    --start-sign: 1;
+
+    /* Safe areas (notches, home indicator) with viewport-fit=cover; 0 elsewhere. */
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-start: env(safe-area-inset-left, 0px);
+    --safe-end: env(safe-area-inset-right, 0px);
+
+    --ease-out: cubic-bezier(.2, .8, .2, 1);
+    --dur-fast: 150ms;
+    --dur-base: 200ms;
+
+    /* No shadows: floating layers separate by a solid background and a 1px border. */
+    --shadow-float: none;
+    --shadow-sheet: none;
+    /* Chart canvas colours (charts.js reads them; canvas needs plain rgba/hex). */
+    --chart-up: #64d9a0;
+    --chart-down: #ff7885;
+    --chart-line: #f2f2f2;
+    --chart-area: rgba(242,242,242,.35);
+    --chart-grid: rgba(255,255,255,.055);
+    --chart-edge: rgba(255,255,255,.12);
+    --chart-axis: rgba(224,224,224,.66);
+    --chart-crosshair: rgba(255,255,255,.4);
+    --chart-tag: #333333;
+    --chart-tag-ink: #f2f2f2;
+    --chart-on-trend: #0a0a0a;
+}
+
+/* Links are the text colour and underlined (DESIGN.md: told apart by shape, not hue).
+   Bootstrap's primary, info and warning follow the neutral tokens too. */
+:root[data-bs-theme] {
+    --bs-link-color: var(--label);
+    --bs-link-color-rgb: 242, 242, 242;
+    --bs-link-hover-color: var(--label);
+    --bs-link-hover-color-rgb: 242, 242, 242;
+    --bs-primary: var(--accent-fill);
+    --bs-primary-rgb: 242, 242, 242;
+    --bs-info: var(--label-2);
+    --bs-info-rgb: 158, 158, 158;
+    --bs-warning: var(--label);
+    --bs-warning-rgb: 242, 242, 242;
+}
+
+/* Light appearance: brighter backgrounds and darker foregrounds, not an inversion. */
+:root[data-bs-theme="light"] {
+    color-scheme: light;
+    --bg: #f5f5f5;
+    --bg-2: #ffffff;
+    --bg-3: #ffffff;
+    --bg-field: #ffffff;
+    --label: #0a0a0a;
+    --label-2: #5c5c5c;
+    --label-table: #2e2e2e;
+    --separator: rgb(10 10 10 / .1);
+    --separator-strong: rgb(10 10 10 / .2);
+    --field-border: #7a7a7a;
+    --fill-subtle: rgb(10 10 10 / .025);
+    --fill-hover: rgb(10 10 10 / .045);
+    --fill-pressed: rgb(10 10 10 / .09);
+    --scrim: rgb(10 10 10 / .32);
+    --scrim-strong: rgb(10 10 10 / .45);
+    --accent-fill: #0a0a0a;
+    --accent-hover: #2e2e2e;
+    --accent-pressed: #474747;
+    --accent-tint: rgb(10 10 10 / .05);
+    --on-accent: #f5f5f5;
+    --positive: #0b7a4b;
+    --negative: #c42b31;
+    --negative-tint: rgb(196 43 49 / .07);
+    --on-positive: #ffffff;
+    --on-negative: #ffffff;
+    --alert-bg: #b3261e;
+    --chart-up: #0b7a4b;
+    --chart-down: #c42b31;
+    --chart-line: #0a0a0a;
+    --chart-area: rgba(10,10,10,.25);
+    --chart-grid: rgba(10,10,10,.07);
+    --chart-edge: rgba(10,10,10,.14);
+    --chart-axis: rgba(46,46,46,.9);
+    --chart-crosshair: rgba(10,10,10,.4);
+    --chart-tag: #2e2e2e;
+    --chart-tag-ink: #ffffff;
+    --chart-on-trend: #ffffff;
+    --bs-link-color-rgb: 10, 10, 10;
+    --bs-link-hover-color-rgb: 10, 10, 10;
+    --bs-primary-rgb: 10, 10, 10;
+    --bs-info-rgb: 92, 92, 92;
+    --bs-warning-rgb: 10, 10, 10;
+}
+
+/* Increase Contrast: stronger secondary text and separators. */
+@media (prefers-contrast: more) {
+    :root {
+        --label-2: #cfcfcf;
+        --separator: rgb(255 255 255 / .24);
+        --separator-strong: rgb(255 255 255 / .4);
+        --field-border: #9e9e9e;
+        --fill-hover: rgb(255 255 255 / .1);
+    }
+    :root[data-bs-theme="light"] {
+        --label-2: #2e2e2e;
+        --separator: rgb(10 10 10 / .25);
+        --separator-strong: rgb(10 10 10 / .45);
+        --field-border: #5c5c5c;
+        --fill-hover: rgb(10 10 10 / .08);
+    }
+}
+
+/* A visible focus ring on every interactive element; components may refine it. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: var(--focus-width) solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+/* Appearance menu (shell.js), shared by the side panel and the public header. It is a
+   popover in the top layer; shell.js positions it next to its button. */
+.appearance-menu { box-sizing: border-box; width: 240px; padding: 6px; border: 1px solid var(--separator); border-radius: var(--radius-card); background: var(--bg-3); color: var(--label); box-shadow: var(--shadow-float); font-family: var(--font-text); }
+.appearance-menu[hidden] { display: none; }
+.appearance-item { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); width: 100%; min-height: var(--target); padding: 8px 12px; border: 0; border-inline-start: 2px solid transparent; border-radius: var(--radius-control); background: transparent; color: var(--label); font: 600 var(--text-subhead) var(--font-text); text-align: start; cursor: pointer; }
+.appearance-item-label { display: inline-flex; align-items: center; gap: 10px; }
+.appearance-item-label i { width: 16px; text-align: center; color: var(--label-2); }
+.appearance-item-detail { color: var(--label-2); font-size: var(--text-caption); font-weight: 500; white-space: nowrap; }
+.appearance-item[aria-checked="true"] { border-inline-start-color: var(--label); font-weight: 700; }
+.appearance-item[aria-checked="true"] .appearance-item-label i { color: var(--label); }
+.appearance-item:focus-visible { background: var(--fill-hover); outline: var(--focus-width) solid var(--focus-ring); outline-offset: -2px; }
+.appearance-item:active { background: var(--fill-pressed); }
+@media (hover: hover) and (pointer: fine) { .appearance-item:hover { background: var(--fill-hover); } }
+
+/* Flat (DESIGN.md): links are underlined text, and Bootstrap utilities that would round,
+   lift or blur something are neutralised. */
+:where(p, dd, td, small, label, figcaption, .form-text) a:where(:not(.btn)) { color: inherit; text-decoration-line: underline; text-underline-offset: .18em; }
+.rounded-pill, .rounded-circle, .rounded-3, .rounded-4, .rounded-5 { border-radius: var(--radius-control) !important; }
+.shadow, .shadow-sm, .shadow-lg { box-shadow: none !important; }
+.btn:focus-visible, .form-control:focus, .form-select:focus, .form-check-input:focus { box-shadow: none !important; }
+.form-control:focus-visible, .form-select:focus-visible, .form-check-input:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
+
+/* Right-to-left: the layout mirrors through logical properties; these cover what they cannot. */
+[dir="rtl"] { --start-sign: -1; --safe-start: env(safe-area-inset-right, 0px); --safe-end: env(safe-area-inset-left, 0px); }
+[dir="rtl"] .ms:is([data-icon="keyboard_double_arrow_right"], [data-icon="keyboard_double_arrow_left"], [data-icon="arrow_forward"], [data-icon="arrow_back"], [data-icon="chevron_right"], [data-icon="chevron_left"], [data-icon="logout"], [data-icon="login"], [data-icon="arrow_right_alt"], [data-icon="send"]) { scale: -1 1; }
+
+/* Reduce Motion: state changes stay, movement goes. */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Alerts (Bootstrap) are plain status text, never a tinted box (DESIGN.md). Success and danger
+   are safe/danger states, so their text may be green or red; the words carry the meaning. */
+.alert { padding: 8px 0; border: 0; border-radius: 0; background: transparent; color: var(--label); }
+.alert-success { color: var(--positive); }
+.alert-danger { color: var(--negative); }
+
+/* Icons: Google Material Symbols (Outlined), loaded per page from Google Fonts with only the icons in use
+   (scripts/icon-map.mjs). <i class="ms" data-icon="name" aria-hidden="true"></i> draws the glyph from
+   data-icon, so the icon name is never page text for screen readers, copying or search. */
+.ms { display: inline-block; flex: none; width: 1em; height: 1em; overflow: hidden; font-family: "Material Symbols Outlined"; font-size: 1.2em; font-style: normal; font-weight: 400; line-height: 1; letter-spacing: normal; text-transform: none; white-space: nowrap; direction: ltr; vertical-align: -0.225em; font-feature-settings: "liga"; -webkit-font-smoothing: antialiased; font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24; }
+.ms::before { content: attr(data-icon); }

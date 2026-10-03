@@ -1,0 +1,4 @@
+{
+  "note": "Published Ed25519 signing keys for engine v3 commitments and checkpoints (ADR 0002 D4). Add a key only through a reviewed commit after `node engine/v3/service/main.mjs --init-signing-key <keyId>` prints it. Retired keys stay listed so history remains verifiable. Empty means no key has been published yet: the verifier then reports signatures as unpinned.",
+  "keys": {}
+}

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="Which cookies and browser storage SmartProfit uses, why, for how long, and how to change your choice.">
+    <title>Cookie Policy — SmartProfit</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0..1,0&amp;icon_names=account_circle,add,admin_panel_settings,alternate_email,area_chart,arrow_back,arrow_downward,arrow_forward,arrow_right_alt,arrow_upward,balance,bar_chart,block,bolt,calendar_month,campaign,cancel,casino,category,check,check_circle,chevron_left,chevron_right,circle,close,contrast,currency_exchange,dark_mode,difference,edit,equal,error,expand_more,format_list_numbered,graphic_eq,group,help,history,home,hourglass_top,inbox,info,key,keyboard_double_arrow_left,keyboard_double_arrow_right,layers,light_mode,list,lock,lock_open,login,logout,mail,menu,menu_book,mood,notifications,percent,person,person_off,pie_chart,qr_code,refresh,save,schedule,search,send,settings,shield,show_chart,smartphone,sort,speed,sports_score,star,support_agent,swap_horiz,table,tag,timer,tune,undo,upload,visibility,warning&amp;display=block" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="../assets/js/consent.js"></script><script src="../assets/js/theme.js"></script>
+    <link href="../assets/css/tokens.css" rel="stylesheet">
+    <link href="../assets/css/glassmorphism.css" rel="stylesheet">
+    <link href="../assets/css/style.css" rel="stylesheet">
+    <link href="../assets/css/public-shell.css" rel="stylesheet">
+    <link href="../assets/css/legal.css" rel="stylesheet">
+</head>
+
+<body class="premium-theme public-shell" data-shell-surface="public" data-shell-active="cookies">
+    <div data-shell-header></div>
+
+    <main class="legal-main" aria-labelledby="cookiesTitle">
+        <h1 id="cookiesTitle">Cookie Policy</h1>
+        <p class="legal-updated">Version 2026-10-03. Last updated 3 October 2026.</p>
+
+        <div class="legal-summary">
+            <p><strong>In short:</strong> SmartProfit sets no advertising or analytics cookies. It keeps your sign-in session and a few security records on your device because the site cannot work without them. Settings you choose, such as appearance, are remembered only if you allow it.</p>
+        </div>
+
+        <section id="settings" aria-labelledby="settingsHeading">
+            <h2 id="settingsHeading">Your choice</h2>
+            <form class="consent-settings" data-consent-settings>
+                <fieldset>
+                    <legend>Storage on this device</legend>
+                    <label class="consent-option">
+                        <input type="checkbox" checked disabled aria-describedby="essentialDetail">
+                        <span><strong>Essential (always on)</strong><span id="essentialDetail">Sign-in session, account caches, sign-in attempt limits and this choice.</span></span>
+                    </label>
+                    <label class="consent-option">
+                        <input type="checkbox" data-consent-preferences aria-describedby="preferencesDetail">
+                        <span><strong>Remember my settings</strong><span id="preferencesDetail">Appearance, side panel width, chart style, trade popups, the trade companion and dismissed notices.</span></span>
+                    </label>
+                </fieldset>
+                <button type="submit" class="consent-save">Save choice</button>
+                <p class="consent-status" data-consent-status role="status" aria-live="polite"></p>
+            </form>
+        </section>
+
+        <section id="what" aria-labelledby="whatHeading">
+            <h2 id="whatHeading">What we store and why</h2>
+            <p>SmartProfit sets one first-party cookie, <code>sp_consent</code>, to remember your answer to this page. Everything else lives in your browser's local storage and session storage, which the law treats the same way as cookies, so this policy covers both. Session storage is cleared when you close the tab; local storage stays until it is removed.</p>
+
+            <div class="legal-table-wrap">
+                <table class="legal-table">
+                    <caption>Essential storage, always on</caption>
+                    <thead>
+                        <tr><th scope="col">Name</th><th scope="col">Purpose</th><th scope="col">Kept for</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>sb-…-auth-token</code></td><td>Your customer sign-in session.</td><td>Until you log out. With "Remember me" off, until the tab closes.</td></tr>
+                        <tr><td><code>smartprofit:staff-auth:v1</code></td><td>A staff sign-in session for the operations console, kept apart from customer sessions.</td><td>Until the staff member signs out</td></tr>
+                        <tr><td><code>smartprofit:account:v1:…</code></td><td>Short-lived copies of account data so pages load quickly.</td><td>Minutes; cleared when the tab closes or you log out</td></tr>
+                        <tr><td><code>practice:…</code>, <code>real:…</code></td><td>Working state for the active Practice or Real account.</td><td>Cleared when you switch account or log out</td></tr>
+                        <tr><td><code>smartprofit:onboarding:done:…</code></td><td>Remembers that the welcome questions are done, so each page does not ask the server again.</td><td>Until the tab closes or you log out</td></tr>
+                        <tr><td><code>smartprofit:limit:…</code></td><td>Counts failed sign-ins and emails sent from this tab, to slow repeated attempts.</td><td>Until the tab closes</td></tr>
+                        <tr><td><code>sp_consent</code> (cookie)</td><td>Remembers the choice you made on this page: "essential" or "preferences" and when you chose. Sent only to SmartProfit, never to another site, and holds no identifier.</td><td>12 months</td></tr>
+                        <tr><td><code>smartprofit:consent</code></td><td>A copy of the same choice in local storage.</td><td>Until you clear it or change it</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="legal-table-wrap">
+                <table class="legal-table">
+                    <caption>Preference storage, only with your consent</caption>
+                    <thead>
+                        <tr><th scope="col">Name</th><th scope="col">Purpose</th><th scope="col">Kept for</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>smartprofit:appearance</code></td><td>Light, Dark or System appearance.</td><td>Until changed or consent withdrawn</td></tr>
+                        <tr><td><code>smartprofit:rail-expanded</code></td><td>Whether the side panel is expanded.</td><td>Until changed or consent withdrawn</td></tr>
+                        <tr><td><code>smartprofit:chart</code></td><td>Chart style and period on the trading page.</td><td>Until changed or consent withdrawn</td></tr>
+                        <tr><td><code>smartprofit:trade-toasts</code></td><td>Whether trade popups are switched off.</td><td>Until changed or consent withdrawn</td></tr>
+                        <tr><td><code>smartprofit:companion</code></td><td>Whether the trade companion is hidden and its tour was seen.</td><td>Until changed or consent withdrawn</td></tr>
+                        <tr><td><code>smartprofit:engine-notice-dismissed</code></td><td>Engine notices you have dismissed.</td><td>Until changed or consent withdrawn</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p>Without consent these settings still work on the page you are on, and are forgotten when it closes.</p>
+        </section>
+
+        <section id="third" aria-labelledby="thirdHeading">
+            <h2 id="thirdHeading">Third parties</h2>
+            <p>Pages load fonts from Google Fonts and code libraries from cdnjs (Cloudflare) and jsDelivr. These services receive your IP address and browser details when a page loads, as any website you visit does, but they set no cookies for SmartProfit and we receive no tracking data from them. See the <a href="privacy.html">Privacy Policy</a> for every provider we use.</p>
+        </section>
+
+        <section id="change" aria-labelledby="changeHeading">
+            <h2 id="changeHeading">Changing your mind</h2>
+            <p>Use the form above, or <button type="button" class="link-inline" data-consent-open>cookie settings</button> in the footer of any page. Withdrawing consent removes the preference storage straight away. You can also clear all site data in your browser's settings; that signs you out.</p>
+        </section>
+    </main>
+
+    <div data-shell-footer></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/shell.js"></script>
+</body>
+
+</html>

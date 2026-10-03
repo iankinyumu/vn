@@ -9,32 +9,20 @@
 .faq-hero {
     padding: 40px 30px;
     text-align: center;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.06), rgba(139, 92, 246, 0.03))
+    background: transparent
 }
 
 .faq-hero-icon {
     width: 64px;
     height: 64px;
     background: var(--purple-grad);
-    border-radius: 18px;
+    border-radius: var(--radius-control);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 28px;
     margin: 0 auto 16px;
-    animation: pulse-glow 3s ease-in-out infinite
-}
-
-@keyframes pulse-glow {
-
-    0%,
-    100% {
-        box-shadow: 0 0 15px rgba(99, 102, 241, 0.2)
-    }
-
-    50% {
-        box-shadow: 0 0 30px rgba(139, 92, 246, 0.4)
-    }
+    animation: none
 }
 
 .faq-hero-title {
@@ -48,8 +36,8 @@
     font-size: 14px;
     margin-bottom: 20px;
     max-width: 500px;
-    margin-left: auto;
-    margin-right: auto
+    margin-inline-start: auto;
+    margin-inline-end: auto
 }
 
 .faq-search {
@@ -78,33 +66,33 @@
 .faq-cat-btn {
     white-space: nowrap;
     padding: 10px 18px;
-    border-radius: 12px;
+    border-radius: var(--radius-control);
     border: 1px solid var(--glass-border);
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--fill-subtle);
     color: var(--text-secondary);
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: color var(--dur-fast) ease, background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, opacity var(--dur-fast) ease;
     display: flex;
     align-items: center;
     gap: 6px
 }
 
 .faq-cat-btn i {
-    font-size: 13px
+    font-size: 16px
 }
 
 .faq-cat-btn.active {
     background: var(--purple-grad);
-    color: white;
+    color: var(--on-accent);
     border-color: transparent
 }
 
 .faq-cat-btn:hover:not(.active) {
-    background: rgba(255, 255, 255, 0.06);
-    color: white;
-    border-color: rgba(255, 255, 255, 0.12)
+    background: var(--fill-hover);
+    color: var(--label);
+    border-color: var(--separator-strong)
 }
 
 .faq-section {
@@ -128,27 +116,25 @@
 }
 
 .faq-category-title i {
-    color: #818cf8
+    color: var(--accent)
 }
 
 .faq-item {
     background: var(--glass-bg);
-    backdrop-filter: blur(var(--blur));
-    -webkit-backdrop-filter: blur(var(--blur));
     border: 1px solid var(--glass-border);
-    border-radius: 14px;
+    border-radius: var(--radius-control);
     margin-bottom: 6px;
     overflow: hidden;
-    transition: all 0.3s
+    transition: color var(--dur-fast) ease, background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, opacity var(--dur-fast) ease
 }
 
 .faq-item:hover {
-    border-color: rgba(255, 255, 255, 0.1)
+    border-color: var(--separator)
 }
 
 .faq-item.active {
-    border-color: rgba(99, 102, 241, 0.3);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3)
+    border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+    box-shadow: none
 }
 
 .faq-question {
@@ -163,13 +149,13 @@
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
-    text-align: left;
+    text-align: start;
     gap: 12px;
-    transition: all 0.3s
+    transition: color var(--dur-fast) ease, background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, opacity var(--dur-fast) ease
 }
 
 .faq-question:hover {
-    color: white
+    color: var(--label)
 }
 
 .faq-question span {
@@ -180,19 +166,19 @@
     flex-shrink: 0;
     width: 28px;
     height: 28px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.04);
+    border-radius: var(--radius-control);
+    background: var(--fill-hover);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 12px;
-    transition: all 0.3s;
+    transition: color var(--dur-fast) ease, background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, opacity var(--dur-fast) ease;
     color: var(--text-secondary)
 }
 
 .faq-item.active .faq-arrow {
     background: var(--purple-grad);
-    color: white
+    color: var(--on-accent)
 }
 
 .faq-answer {
@@ -217,7 +203,7 @@
 }
 
 .faq-answer-inner ul {
-    padding-left: 18px;
+    padding-inline-start: 18px;
     margin-bottom: 10px
 }
 
@@ -230,17 +216,17 @@
 }
 
 .faq-answer-inner .faq-note {
-    background: rgba(99, 102, 241, 0.08);
-    border: 1px solid rgba(99, 102, 241, 0.15);
-    border-radius: 10px;
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 15%, transparent);
+    border-radius: var(--radius-control);
     padding: 10px 14px;
     font-size: 12px;
     margin-top: 8px
 }
 
 .faq-answer-inner .faq-note i {
-    color: #818cf8;
-    margin-right: 6px
+    color: var(--accent);
+    margin-inline-end: 6px
 }
 
 .faq-contact-card {
@@ -294,24 +280,24 @@
     gap: 12px;
     align-items: center;
     padding: 10px 12px;
-    border-radius: 10px;
-    transition: all 0.3s
+    border-radius: var(--radius-control);
+    transition: color var(--dur-fast) ease, background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, opacity var(--dur-fast) ease
 }
 
 .quick-help-item:hover {
-    background: rgba(255, 255, 255, 0.02)
+    background: var(--fill-subtle)
 }
 
 .qh-icon {
     width: 38px;
     height: 38px;
-    border-radius: 10px;
-    background: rgba(99, 102, 241, 0.1);
+    border-radius: var(--radius-control);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 15px;
-    color: #818cf8;
+    color: var(--accent);
     flex-shrink: 0
 }
 
@@ -328,14 +314,14 @@
 }
 
 .highlight-card {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.03))
+    background: transparent
 }
 
 .sidebar-cta-icon {
     width: 50px;
     height: 50px;
     background: var(--purple-grad);
-    border-radius: 14px;
+    border-radius: var(--radius-control);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -367,21 +353,21 @@
     align-items: center;
     gap: 8px;
     padding: 10px 12px;
-    border-radius: 8px;
+    border-radius: var(--radius-control);
     color: var(--text-secondary);
     text-decoration: none;
     font-size: 13px;
-    transition: all 0.3s
+    transition: color var(--dur-fast) ease, background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, opacity var(--dur-fast) ease
 }
 
 .pop-q-item:hover {
-    background: rgba(255, 255, 255, 0.03);
-    color: white
+    background: var(--fill-subtle);
+    color: var(--label)
 }
 
 .pop-q-item i {
     font-size: 10px;
-    color: #818cf8
+    color: var(--accent)
 }
 
 .faq-no-results {
@@ -392,7 +378,7 @@
 
 .faq-no-results i {
     font-size: 40px;
-    color: rgba(255, 255, 255, 0.1);
+    color: color-mix(in srgb, var(--label) 10%, transparent);
     margin-bottom: 12px;
     display: block
 }
@@ -422,3 +408,18 @@
         font-size: 13px
     }
 }
+/* FAQ (DESIGN.md, Impeccable critique): mascot hero, questions as a ruled list, no icon tiles. */
+.faq-mascot { display: block; width: 120px; height: 120px; margin: 0 auto 12px; object-fit: contain; }
+.help-content .faq-item { margin: 0; border: 0; border-bottom: 1px solid var(--separator); border-radius: 0; background: transparent; }
+.help-content .faq-section { border-top: 1px solid var(--separator); }
+.help-content .faq-question { min-height: var(--target); padding-inline: 0; }
+.help-content .faq-question:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
+.help-content .faq-answer { padding-inline: 0; }
+.qh-icon, .sidebar-cta-icon { display: none; }
+.help-content .quick-help-item { padding: 10px 0; border-bottom: 1px solid var(--separator); }
+.help-content .quick-help-item h3 { margin: 0 0 2px; color: var(--label); font-size: var(--text-subhead); font-weight: 700; }
+.help-content .quick-help-item p { margin: 0; font-size: var(--text-caption); }
+.help-content .faq-side-heading { margin: 0 0 12px; color: var(--label); font-size: var(--text-headline); font-weight: 700; }
+.help-content .pop-q-item { display: flex; align-items: center; gap: 8px; min-height: var(--target); color: var(--label-2); text-decoration: none; }
+.help-content .pop-q-item:hover { color: var(--label); text-decoration: underline; }
+.help-content .faq-contact-btns .btn { font-size: 1rem; padding: 12px 20px; }

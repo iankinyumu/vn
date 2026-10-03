@@ -2,12 +2,38 @@
     const MODE_LABELS = Object.freeze({ DEMO: 'Practice', REAL: 'Real' });
     const find = (selector) => document.querySelector(selector);
     const text = (selector, value) => { const node = find(selector); if (node) node.textContent = value; };
-    const initials = (name) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0]).join('').toUpperCase() || '—';
+    const avatars = () => window.smartProfitAvatars;
     function showName(name) {
         text('[data-profile-name]', name);
-        text('[data-profile-avatar]', initials(name));
         const input = find('[data-profile-display-name]');
         if (input) input.value = name;
+    }
+
+    // The profile picture is a plush character (avatars.js), shown free: no frame or initials.
+    function showAvatar(id) {
+        const holder = find('[data-profile-avatar]');
+        const image = find('[data-profile-avatar-img]');
+        if (!holder || !image || !avatars()) return;
+        image.src = avatars().src(id);
+        image.hidden = false;
+        holder.dataset.avatar = id;
+        holder.setAttribute('aria-label', `Your character: ${avatars().nameOf(id)}`);
+    }
+
+    // A radio group of every character; choosing one saves it to the auth user metadata.
+    function renderPicker(current, save) {
+        const group = find('[data-avatar-options]');
+        if (!group || !avatars()) return;
+        group.replaceChildren(...avatars().list.map(({ id, name }) => {
+            const option = document.createElement('label');
+            option.className = 'avatar-option';
+            const input = Object.assign(document.createElement('input'), { type: 'radio', name: 'avatar', value: id, checked: id === current, className: 'visually-hidden' });
+            const image = Object.assign(document.createElement('img'), { src: avatars().src(id), alt: '', width: 72, height: 72, loading: 'lazy', decoding: 'async' });
+            const label = Object.assign(document.createElement('span'), { className: 'avatar-option-name', textContent: name });
+            option.append(input, image, label);
+            return option;
+        }));
+        group.addEventListener('change', (event) => { if (event.target.name === 'avatar') save(event.target.value); });
     }
 
     function bindTabs() {
@@ -39,6 +65,17 @@
         const user = await window.getAuthenticatedUser();
         if (!user) return;
         showName(user.user_metadata?.display_name || user.user_metadata?.full_name || user.email);
+        let avatar = avatars()?.forUser(user);
+        if (avatar) { showAvatar(avatar); avatars().markShown(avatar); }
+        // A character picked on another device (or tab) arrives here: show it and tick it in the picker.
+        document.addEventListener('smartprofit:avatar-changed', (event) => {
+            const id = event.detail?.avatar;
+            if (!avatars()?.valid(id) || id === avatar) return;
+            avatar = id;
+            showAvatar(id);
+            const radio = find(`[data-avatar-options] input[value="${id}"]`);
+            if (radio) radio.checked = true;
+        });
         text('[data-profile-email]', user.email);
         const emailInput = find('[data-profile-email-input]');
         if (emailInput) emailInput.value = user.email || '';
@@ -50,6 +87,26 @@
         if (error) throw error;
         if (profile?.display_name) showName(profile.display_name);
         if (profile?.created_at) text('[data-profile-created]', new Intl.DateTimeFormat(undefined, { month: 'short', year: 'numeric' }).format(new Date(profile.created_at)));
+
+        avatars()?.listen();
+        renderPicker(avatar, async (choice) => {
+            const status = find('[data-avatar-status]');
+            const previous = avatar;
+            showAvatar(choice);
+            if (status) status.textContent = 'Saving…';
+            const { error: avatarError } = await client.auth.updateUser({ data: { avatar: choice } });
+            if (avatarError) {
+                console.error(avatarError);
+                showAvatar(previous);
+                const radio = find(`[data-avatar-options] input[value="${previous}"]`);
+                if (radio) radio.checked = true;
+                if (status) status.textContent = 'Your character could not be saved. Please try again.';
+                return;
+            }
+            avatar = choice;
+            document.dispatchEvent(new CustomEvent('smartprofit:avatar-changed', { detail: { avatar: choice } }));
+            if (status) status.textContent = `Character saved: ${avatars().nameOf(choice)}.`;
+        });
 
         const form = find('#profileForm');
         if (form) form.addEventListener('submit', async (event) => {
@@ -72,5 +129,5 @@
             await window.refreshRestrictionBanner?.();
         }
     }
-    window.addEventListener('DOMContentLoaded', () => start().catch((error) => { console.error(error); text('[data-profile-status]', 'Some profile details are temporarily unavailable.'); }));
+    window.addEventListener('DOMContentLoaded', () => start().catch((error) => { console.error(error); text('[data-profile-status]', 'Some profile details are temporarily unavailable.'); }).finally(() => window.smartProfitLoader?.pageReady()));
 })();

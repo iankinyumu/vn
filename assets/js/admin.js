@@ -163,6 +163,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         } finally { if (epoch === generation) el('adminSignOut').disabled = false; }
     });
 
+    // The manual setup key, wired here rather than inline so the Content-Security-Policy can forbid inline handlers.
+    const keyToggle = el('mfaKeyToggle');
+    keyToggle?.addEventListener('click', () => {
+        const panel = el('mfaKeyPanel');
+        if (!panel) return;
+        panel.hidden = !panel.hidden;
+        keyToggle.setAttribute('aria-expanded', String(!panel.hidden));
+        keyToggle.textContent = panel.hidden ? "Can't scan? Copy the key manually" : 'Hide key';
+    });
+    const keyCopy = el('mfaKeyCopy');
+    keyCopy?.addEventListener('click', () => {
+        navigator.clipboard?.writeText(el('mfaSecret').value).then(() => {
+            keyCopy.textContent = 'Copied';
+            setTimeout(() => { keyCopy.textContent = 'Copy'; }, 1800);
+        }).catch(() => { el('mfaSecret').select(); });
+    });
+
     el('mfaEnroll').addEventListener('click', async () => {
         if (mfaBusy || !context || context.required_step !== 'mfa') return;
         mfaBusy = true;

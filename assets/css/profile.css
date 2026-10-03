@@ -9,11 +9,9 @@
 
 .profile-header-card {
     background: var(--glass-bg);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--glass-border);
-    border-radius: 24px;
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+    border-radius: var(--radius-control);
+    box-shadow: none;
     padding: 35px;
     margin-bottom: 24px;
     display: flex;
@@ -30,9 +28,9 @@
 .avatar-img {
     width: 100px;
     height: 100px;
-    border-radius: 50%;
+    border-radius: var(--radius-control);
     object-fit: cover;
-    border: 3px solid #6366f1;
+    border: 3px solid var(--accent);
     padding: 3px;
     background: var(--glass-bg)
 }
@@ -41,7 +39,7 @@ div.avatar-img {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #fff;
+    color: var(--on-accent);
     font-size: 30px;
     font-weight: 700;
     letter-spacing: 1px;
@@ -55,20 +53,20 @@ div.avatar-img {
     width: 32px;
     height: 32px;
     background: var(--purple-grad);
-    border-radius: 50%;
+    border-radius: var(--radius-control);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
+    color: var(--on-accent);
     font-size: 13px;
     cursor: pointer;
-    border: 2px solid #070b1a;
-    transition: all 0.3s
+    border: 2px solid var(--bg);
+    transition: color var(--dur-fast) ease, background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, opacity var(--dur-fast) ease
 }
 
 .avatar-edit:hover {
-    transform: scale(1.1);
-    box-shadow: 0 5px 15px rgba(99, 102, 241, 0.4)
+    transform: none;
+    box-shadow: none
 }
 
 .profile-info {
@@ -87,10 +85,10 @@ div.avatar-img {
 
 .verified-badge {
     background: var(--blue-grad);
-    color: white;
+    color: var(--on-accent);
     font-size: 11px;
     padding: 4px 12px;
-    border-radius: 20px;
+    border-radius: var(--radius-control);
     font-weight: 600;
     letter-spacing: 0.5px
 }
@@ -129,13 +127,13 @@ div.avatar-img {
 
 .btn-action {
     padding: 10px 22px;
-    border-radius: 12px;
+    border-radius: var(--radius-control);
     font-weight: 500;
     font-size: 14px;
-    transition: all 0.3s;
+    transition: color var(--dur-fast) ease, background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, opacity var(--dur-fast) ease;
     cursor: pointer;
     border: 1px solid var(--glass-border);
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--fill-hover);
     color: var(--text-primary);
     text-decoration: none;
     display: inline-flex;
@@ -144,18 +142,18 @@ div.avatar-img {
 }
 
 .btn-action:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: white
+    background: var(--fill-pressed);
+    color: var(--label)
 }
 
 .btn-action.danger {
-    color: #f87171;
-    border-color: rgba(239, 68, 68, 0.3)
+    color: var(--negative);
+    border-color: color-mix(in srgb, var(--negative) 30%, transparent)
 }
 
 .btn-action.danger:hover {
-    background: rgba(239, 68, 68, 0.15);
-    border-color: rgba(239, 68, 68, 0.5)
+    background: color-mix(in srgb, var(--negative) 15%, transparent);
+    border-color: color-mix(in srgb, var(--negative) 50%, transparent)
 }
 
 .tab-nav {
@@ -163,10 +161,9 @@ div.avatar-img {
     gap: 6px;
     margin-bottom: 24px;
     flex-wrap: wrap;
-    background: rgba(18, 22, 45, 0.5);
-    backdrop-filter: blur(15px);
+    background: var(--bg-2);
     border: 1px solid var(--glass-border);
-    border-radius: 16px;
+    border-radius: var(--radius-control);
     padding: 6px
 }
 
@@ -174,13 +171,13 @@ div.avatar-img {
     flex: 1;
     min-width: 120px;
     padding: 12px 20px;
-    border-radius: 12px;
+    border-radius: var(--radius-control);
     border: none;
     background: transparent;
     color: var(--text-secondary);
     font-weight: 500;
     font-size: 14px;
-    transition: all 0.3s;
+    transition: color var(--dur-fast) ease, background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, opacity var(--dur-fast) ease;
     cursor: pointer;
     white-space: nowrap;
     display: flex;
@@ -190,18 +187,18 @@ div.avatar-img {
 }
 
 .tab-btn i {
-    font-size: 16px
+    font-size: 19px
 }
 
 .tab-btn.active {
     background: var(--purple-grad);
-    color: white;
-    box-shadow: 0 5px 15px rgba(99, 102, 241, 0.3)
+    color: var(--on-accent);
+    box-shadow: none
 }
 
 .tab-btn:hover:not(.active) {
-    background: rgba(255, 255, 255, 0.05);
-    color: white
+    background: var(--fill-hover);
+    color: var(--label)
 }
 
 .tab-content {
@@ -214,11 +211,9 @@ div.avatar-img {
 
 .settings-card {
     background: var(--glass-bg);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--glass-border);
-    border-radius: 20px;
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+    border-radius: var(--radius-control);
+    box-shadow: none;
     padding: 28px;
     margin-bottom: 20px
 }
@@ -262,29 +257,29 @@ div.avatar-img {
 }
 
 .input-wrapper:focus-within .form-icon {
-    color: #818cf8
+    color: var(--accent)
 }
 
 .form-input {
     width: 100%;
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--fill-hover);
     border: 1px solid var(--glass-border);
-    border-radius: 14px;
+    border-radius: var(--radius-control);
     padding: 12px 16px 12px 42px;
     color: var(--text-primary);
     font-size: 14px;
-    transition: all 0.3s ease;
+    transition: color var(--dur-fast) ease, background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, opacity var(--dur-fast) ease;
     outline: none
 }
 
 .form-input:focus {
-    border-color: #6366f1;
-    background: rgba(255, 255, 255, 0.06);
-    box-shadow: 0 0 20px rgba(99, 102, 241, 0.15)
+    border-color: var(--accent);
+    background: var(--fill-hover);
+    box-shadow: none
 }
 
 .form-input::placeholder {
-    color: rgba(148, 163, 184, 0.5)
+    color: color-mix(in srgb, var(--label-2) 50%, transparent)
 }
 
 .form-label {
@@ -335,8 +330,8 @@ div.avatar-img {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 26px;
+    background: var(--fill-pressed);
+    border-radius: var(--radius-control);
     transition: 0.3s
 }
 
@@ -347,8 +342,8 @@ div.avatar-img {
     width: 20px;
     left: 3px;
     bottom: 3px;
-    background: white;
-    border-radius: 50%;
+    background: var(--bg-2);
+    border-radius: var(--radius-control);
     transition: 0.3s
 }
 
@@ -362,19 +357,19 @@ div.avatar-img {
 
 .badge-status {
     padding: 4px 12px;
-    border-radius: 20px;
+    border-radius: var(--radius-control);
     font-size: 11px;
     font-weight: 600
 }
 
 .badge-active {
-    background: rgba(16, 185, 129, 0.15);
-    color: #34d399
+    background: color-mix(in srgb, var(--positive) 15%, transparent);
+    color: var(--positive)
 }
 
 .badge-inactive {
-    background: rgba(239, 68, 68, 0.15);
-    color: #f87171
+    background: color-mix(in srgb, var(--negative) 15%, transparent);
+    color: var(--negative)
 }
 
 .api-key-row {
@@ -382,8 +377,8 @@ div.avatar-img {
     justify-content: space-between;
     align-items: center;
     padding: 14px 16px;
-    background: rgba(255, 255, 255, 0.02);
-    border-radius: 12px;
+    background: var(--fill-subtle);
+    border-radius: var(--radius-control);
     margin-bottom: 8px;
     flex-wrap: wrap;
     gap: 10px
@@ -405,9 +400,9 @@ div.avatar-img {
     font-family: 'Courier New', monospace;
     font-size: 12px;
     color: var(--text-secondary);
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--fill-hover);
     padding: 4px 10px;
-    border-radius: 6px
+    border-radius: var(--radius-control)
 }
 
 .api-key-actions {
@@ -426,7 +421,7 @@ div.avatar-img {
 }
 
 .transaction-table th {
-    text-align: left;
+    text-align: start;
     padding: 12px 14px;
     font-size: 12px;
     color: var(--text-secondary);
@@ -442,11 +437,11 @@ div.avatar-img {
 }
 
 .transaction-table tbody tr {
-    transition: all 0.3s
+    transition: color var(--dur-fast) ease, background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, opacity var(--dur-fast) ease
 }
 
 .transaction-table tbody tr:hover {
-    background: rgba(255, 255, 255, 0.02)
+    background: var(--fill-subtle)
 }
 
 .tx-type {
@@ -458,19 +453,19 @@ div.avatar-img {
 .tx-dot {
     width: 8px;
     height: 8px;
-    border-radius: 50%
+    border-radius: var(--radius-control)
 }
 
 .tx-dot.deposit {
-    background: #34d399
+    background: var(--positive)
 }
 
 .tx-dot.withdraw {
-    background: #f87171
+    background: var(--negative)
 }
 
 .tx-dot.trade {
-    background: #818cf8
+    background: var(--accent-fill)
 }
 
 .kyc-progress {
@@ -504,8 +499,8 @@ div.avatar-img {
 .kyc-step-circle {
     width: 38px;
     height: 38px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-control);
+    background: var(--fill-hover);
     border: 2px solid var(--glass-border);
     display: flex;
     align-items: center;
@@ -513,20 +508,20 @@ div.avatar-img {
     margin: 0 auto 8px;
     font-size: 14px;
     color: var(--text-secondary);
-    transition: all 0.3s
+    transition: color var(--dur-fast) ease, background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, opacity var(--dur-fast) ease
 }
 
 .kyc-step.completed .kyc-step-circle {
-    background: rgba(16, 185, 129, 0.2);
-    border-color: #34d399;
-    color: #34d399
+    background: color-mix(in srgb, var(--positive) 20%, transparent);
+    border-color: var(--positive);
+    color: var(--positive)
 }
 
 .kyc-step.current .kyc-step-circle {
-    background: rgba(99, 102, 241, 0.2);
-    border-color: #818cf8;
-    color: #818cf8;
-    box-shadow: 0 0 15px rgba(99, 102, 241, 0.3)
+    background: color-mix(in srgb, var(--accent) 20%, transparent);
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: none
 }
 
 .kyc-step-label {
@@ -535,11 +530,11 @@ div.avatar-img {
 }
 
 .kyc-step.completed .kyc-step-label {
-    color: #34d399
+    color: var(--positive)
 }
 
 .kyc-step.current .kyc-step-label {
-    color: #818cf8
+    color: var(--accent)
 }
 
 @media (max-width:576px) {
@@ -578,3 +573,12 @@ div.avatar-img {
         overflow-x: auto
     }
 }
+
+/* Notification preference: the whole row is the 44px target. */
+.notify-pref { display: flex; align-items: center; gap: 12px; min-height: var(--target); margin-bottom: 8px; cursor: pointer; }
+.notify-pref .form-check-input { flex: none; width: 20px; height: 20px; margin: 0; border-radius: var(--radius-control); cursor: pointer; }
+
+.pref-group { margin: 0 0 var(--space-4); padding: 0; border: 0; }
+.pref-group legend { margin-bottom: var(--space-1); font-size: 1rem; font-weight: 700; }
+.pref-option { display: flex; align-items: center; gap: var(--space-3); min-height: var(--target); cursor: pointer; }
+.pref-option input { flex: none; width: 20px; height: 20px; margin: 0; accent-color: var(--label); }

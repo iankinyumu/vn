@@ -3,21 +3,26 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0, viewport-fit=cover">
     <meta name="description"
         content="How SmartProfit generates its indices, settles digit contracts and lets you verify published results.">
     <title>About — SmartProfit</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0..1,0&amp;icon_names=account_circle,add,admin_panel_settings,alternate_email,area_chart,arrow_back,arrow_downward,arrow_forward,arrow_right_alt,arrow_upward,balance,bar_chart,block,bolt,calendar_month,campaign,cancel,casino,category,check,check_circle,chevron_left,chevron_right,circle,close,contrast,currency_exchange,dark_mode,difference,edit,equal,error,expand_more,format_list_numbered,graphic_eq,group,help,history,home,hourglass_top,inbox,info,key,keyboard_double_arrow_left,keyboard_double_arrow_right,layers,light_mode,list,lock,lock_open,login,logout,mail,menu,menu_book,mood,notifications,percent,person,person_off,pie_chart,qr_code,refresh,save,schedule,search,send,settings,shield,show_chart,smartphone,sort,speed,sports_score,star,support_agent,swap_horiz,table,tag,timer,tune,undo,upload,visibility,warning&amp;display=block" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
+    <script src="../assets/js/consent.js"></script><script src="../assets/js/theme.js"></script>
+    <link href="../assets/css/tokens.css" rel="stylesheet">
     <link href="../assets/css/glassmorphism.css" rel="stylesheet">
     <link href="../assets/css/style.css" rel="stylesheet">
     <link href="../assets/css/about.css" rel="stylesheet">
     <link href="../assets/css/public-shell.css" rel="stylesheet">
     <style>
-        .public-shell .mission-icon { background: rgba(173,255,86,.08); border: 1px solid rgba(173,255,86,.28); color: var(--flat-accent); }
-        .public-shell .mission-list li i { color: var(--flat-accent); }
+        /* About (DESIGN.md, Impeccable critique): mascot hero, no icon tiles, a plain ruled list. */
+        .about-mascot { display: block; width: 120px; height: 120px; margin: 0 auto 12px; object-fit: contain; }
+        .public-shell .mission-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--separator); }
+        .public-shell .mission-list li { display: block; padding: 12px 0; border-bottom: 1px solid var(--separator); color: var(--label-table); }
+        .public-shell .cta-card .btn { font-size: 1rem; padding: 12px 20px; }
     </style>
 </head>
 
@@ -27,26 +32,24 @@
     <main class="about-wrapper">
         <div class="container-fluid px-4 py-4">
             <section class="premium-glass-card about-hero text-center mb-4" aria-labelledby="aboutTitle">
-                <div class="about-hero-icon"><i class="fas fa-scale-balanced" aria-hidden="true"></i></div>
-                <h1 class="about-hero-title" id="aboutTitle">About <span class="text-gradient-animated">SmartProfit</span></h1>
+                <img class="about-mascot" src="../assets/img/mascots/cloud-pencil.webp" width="120" height="120" alt="" aria-hidden="true" decoding="async">
+                <h1 class="about-hero-title" id="aboutTitle">About SmartProfit</h1>
                 <p class="about-hero-subtitle">A practice workspace for digit contracts, built so that every settled outcome can be re-checked afterwards.</p>
             </section>
 
             <section class="row g-3 mb-4" aria-label="How the product works">
                 <div class="col-md-6">
                     <div class="premium-glass-card mission-card h-100">
-                        <div class="mission-icon"><i class="fas fa-chart-simple" aria-hidden="true"></i></div>
                         <h2 class="h4">From an index to a digit</h2>
                         <p>SmartProfit runs five self-generated indices, SPI10 to SPI100. Each one ticks on a fixed cadence and publishes a price with three decimal places.</p>
-                        <p class="mb-0">A contract settles on the final digit of the tick that closes it. The digit comes from a keyed stream over the tick number, so it is fixed the moment the tick exists and does not depend on the price path or on any previous digit.</p>
+                        <p class="mb-0">A contract settles on the final digit of the tick that closes it. New ticks come from a seeded price generator: the price is published first, and its final decimal digit is the outcome. Each possible final digit remains equally likely.</p>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="premium-glass-card mission-card h-100">
-                        <div class="mission-icon"><i class="fas fa-coins" aria-hidden="true"></i></div>
-                        <h2 class="h4">Practice now, real later</h2>
-                        <p>A practice account carries virtual USD credits and runs the identical engine path a funded account would use: the same quote, the same purchase, the same settlement and the same ledger.</p>
-                        <p class="mb-0">Practice credits have no cash value, cannot be withdrawn and are not a forecast of any funded result. A funded account type is designed for but deliberately not built yet.</p>
+                        <h2 class="h4">Practice and Real accounts</h2>
+                        <p>Every customer gets a Practice account with virtual USD credit and a Real account for trading with their own money. Both run the identical engine path: the same quote, the same purchase, the same settlement and the same ledger.</p>
+                        <p class="mb-0">Switch between them at any time from the account menu at the top of every page.</p>
                     </div>
                 </div>
             </section>
@@ -54,11 +57,11 @@
             <section class="premium-glass-card mission-card mb-4" aria-labelledby="expectTitle">
                 <h2 class="h4" id="expectTitle">What to expect</h2>
                 <ul class="mission-list">
-                    <li><i class="fas fa-circle-info" aria-hidden="true"></i><span>Only practice trading is available. There is no deposit, withdrawal, payment or identity-verification path in the product.</span></li>
-                    <li><i class="fas fa-circle-info" aria-hidden="true"></i><span>Every quote is computed on the server from the published policy version. The browser never sends a price, a payout or an outcome.</span></li>
-                    <li><i class="fas fa-circle-info" aria-hidden="true"></i><span>Payouts are floored to the cent and a small stake can round slightly above the nominal margin. That rounding always favours the house.</span></li>
-                    <li><i class="fas fa-circle-info" aria-hidden="true"></i><span>Accounts can carry restrictions that limit stake size, open contracts or daily losses. When one applies, the reason and any expiry are shown on the page.</span></li>
-                    <li><i class="fas fa-circle-info" aria-hidden="true"></i><span>Commit–reveal proves a seed was not swapped after it was committed. It does not prove the operator picked that seed in good faith, and it does not make outcomes predictable.</span></li>
+                    <li><span>Real accounts are funded and paid out through supported payment methods, starting with M-Pesa.</span></li>
+                    <li><span>Every quote is computed on the server from the published policy version. The browser never sends a price, a payout or an outcome.</span></li>
+                    <li><span>Every payout is quoted before you buy and is paid to the cent.</span></li>
+                    <li><span>Accounts can carry restrictions that limit stake size, open contracts or daily losses. When one applies, the reason and any expiry are shown on the page.</span></li>
+                    <li><span>Commit–reveal proves a seed was not swapped after it was committed, and anyone can re-check a settled tick.</span></li>
                 </ul>
             </section>
 
@@ -66,8 +69,8 @@
                 <h2 id="continueTitle">Look at the engine yourself</h2>
                 <p>Open the trading page to watch ticks and standing quotes, or run the verifier against a revealed epoch.</p>
                 <div class="cta-buttons">
-                    <a href="trade.html" class="btn btn-premium-primary btn-lg">Open the trading page</a>
-                    <a href="fairness.html" class="btn btn-glass-premium btn-lg">Verify a tick range</a>
+                    <a href="trade.html" class="btn btn-premium-primary">Open the trading page</a>
+                    <a href="fairness.html" class="btn btn-glass-premium">Verify a tick range</a>
                 </div>
             </section>
         </div>
@@ -75,7 +78,7 @@
 
     <div data-shell-footer></div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
     <script src="../assets/js/auth.js"></script>
     <script src="../assets/js/shell.js"></script>
 </body>

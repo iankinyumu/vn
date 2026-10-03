@@ -27,7 +27,14 @@
         }
     };
 
-    function loadScript(url) {
+    // supabase-js is pinned to one release and checked with Subresource Integrity, so a new or
+    // tampered upload on the CDN cannot run with access to sessions. To upgrade, change both
+    // values together (staff-auth.js has the same pair). Browser tests serve a fake client and set
+    // window.SMARTPROFIT_TEST_CDN before any page script runs, which skips the hash check.
+    const SUPABASE_JS_URL = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js';
+    const SUPABASE_JS_SRI = 'sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok';
+
+    function loadScript(url, integrity) {
         return new Promise((resolve, reject) => {
             const existing = Array.from(document.scripts).find((script) => script.src === url);
             if (existing) {
@@ -36,6 +43,7 @@
                 return;
             }
             const script = document.createElement('script');
+            if (integrity && !window.SMARTPROFIT_TEST_CDN) { script.integrity = integrity; script.crossOrigin = 'anonymous'; }
             script.src = url;
             script.onload = resolve;
             script.onerror = () => reject(new Error('Unable to load an authentication dependency.'));
@@ -56,7 +64,7 @@
             clientPromise = (async () => {
                 const assetBase = new URL('.', authScriptUrl || window.location.href);
                 await loadScript(new URL('supabase-config.js', assetBase).href);
-                await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js');
+                await loadScript(SUPABASE_JS_URL, SUPABASE_JS_SRI);
                 const config = window.SMARTPROFIT_SUPABASE_CONFIG;
                 if (!config || !config.url || !config.publishableKey) throw new Error('Supabase browser configuration is missing.');
                 return window.supabase.createClient(config.url, config.publishableKey, {
@@ -77,13 +85,67 @@
     window.getSupabaseClient = getSupabaseClient;
     window.getAuthenticatedUser = async () => (await getSession())?.user || null;
     window.isAuthenticated = async () => Boolean(await getSession());
+    /* Onboarding: the welcome answers (goal, experience, interests, where to start).
+       - The gate: a signed-in customer who has not answered or skipped them is sent to
+         onboarding.html from every signed-in page except that page and help. If the status cannot
+         be read the page stays open; it is guidance, not a security control.
+       - The answers: pages tailor themselves with window.smartProfitOnboarding.answers() (for
+         example the trade page opens on a contract the customer chose). They are kept for the tab
+         in essential session storage, so each page does not ask the server again. */
+    const ONBOARDING_OPEN_PAGES = new Set(['onboarding.html', 'contact.html', 'faq.html', 'support.html']);
+    const onboardingKey = (userId) => `smartprofit:onboarding:${userId}`;
+    async function currentUserId(client) {
+        const { data: { session } } = await client.auth.getSession();
+        return session?.user?.id || null;
+    }
+    function cacheOnboarding(userId, view) {
+        if (!userId || view?.status !== 'completed') return;
+        try { sessionStorage.setItem(onboardingKey(userId), JSON.stringify({ status: view.status, data: view.data || {} })); } catch (_) { /* asked again next page */ }
+    }
+    let onboardingRead = null;
+    async function readOnboarding() {
+        const client = await getSupabaseClient();
+        const userId = await currentUserId(client);
+        if (!userId) return null;
+        try { const cached = JSON.parse(sessionStorage.getItem(onboardingKey(userId))); if (cached?.status) return cached; } catch (_) { /* ask the server */ }
+        onboardingRead ||= client.rpc('get_my_onboarding').then(({ data, error }) => {
+            if (error || !data?.status) return null;
+            cacheOnboarding(userId, data);
+            return data;
+        }).finally(() => { onboardingRead = null; });
+        return onboardingRead;
+    }
+    async function onboardingFinished() {
+        const view = await readOnboarding();
+        return !view || view.status === 'completed';
+    }
+    // Called after the customer answers, skips or changes their answers (onboarding and profile pages).
+    window.markOnboardingComplete = async function markOnboardingComplete(view) {
+        try {
+            const client = await getSupabaseClient();
+            const userId = await currentUserId(client);
+            if (!userId) return;
+            if (view?.status) cacheOnboarding(userId, view);
+            else sessionStorage.setItem(onboardingKey(userId), JSON.stringify({ status: 'completed', data: {} }));
+        } catch (_) { /* The next page asks the server instead. */ }
+    };
+    window.smartProfitOnboarding = Object.freeze({
+        // The customer's answers ({ goal, experience, interests, start_with }), or {} if unknown.
+        answers: async () => { try { return (await readOnboarding())?.data || {}; } catch (_) { return {}; } }
+    });
+
     window.requireAuth = async function requireAuth() {
+        const currentPath = window.location.pathname.split('/').pop() || 'dashboard.html';
         try {
             if (!await window.isAuthenticated()) {
-                const currentPath = window.location.pathname.split('/').pop() || 'dashboard.html';
                 window.location.replace(`login.html?redirect=${encodeURIComponent(currentPath)}`);
+                return;
             }
-        } catch (_) { window.location.replace('login.html?error=auth_unavailable'); }
+        } catch (_) { window.location.replace('login.html?error=auth_unavailable'); return; }
+        if (ONBOARDING_OPEN_PAGES.has(currentPath)) return;
+        try {
+            if (!await onboardingFinished()) window.location.replace('onboarding.html');
+        } catch (_) { /* Status unknown: leave the page open. */ }
     };
     window.redirectIfAuthenticated = async function redirectIfAuthenticated() {
         try { if (await window.isAuthenticated()) window.location.replace('dashboard.html'); } catch (_) { /* Keep form available. */ }
@@ -92,7 +154,7 @@
         window.smartProfitCache?.clear();
         // Public pages do not load account-cache.js but must still clear its data.
         try {
-            Object.keys(sessionStorage).filter((key) => key.startsWith('smartprofit:account:')).forEach((key) => sessionStorage.removeItem(key));
+            Object.keys(sessionStorage).filter((key) => key.startsWith('smartprofit:account:') || key.startsWith('smartprofit:onboarding:')).forEach((key) => sessionStorage.removeItem(key));
         } catch (_) { /* Storage may be disabled. */ }
         try { await (await getSupabaseClient()).auth.signOut(); }
         finally { window.location.replace('index.html'); }

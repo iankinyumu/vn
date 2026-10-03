@@ -1,5 +1,4 @@
 (function () {
-    const resetMessages = Object.freeze({ account_not_available: 'This account cannot reset Practice funds.', open_contracts_exist: 'Practice funds can be reset after all open contracts settle.', reset_not_available: 'Your Practice balance is not eligible for reset.', reset_rate_limited: 'Practice funds can be reset once every 24 hours.' });
     // Index prices and the chart refresh on this cadence while the tab is visible; the trade page carries the live feed.
     const MARKET_REFRESH_MS = 10000;
     const CHART_TICKS = 120;
@@ -47,7 +46,13 @@
             }));
         }
 
+        let chartLoader = null, chartShown = null;
+        const endChartLoader = () => { chartLoader?.remove(); chartLoader = null; };
         async function refreshChart() {
+            if (chartShown !== chartIndex && !chartLoader) chartLoader = window.smartProfitLoader?.mount(find('[data-index-chart]')?.parentElement, { label: 'Loading prices' }) || null;
+            try { await drawChart(); } finally { endChartLoader(); }
+        }
+        async function drawChart() {
             const index = indices.find((item) => item.code === chartIndex);
             if (!index) { text('[data-chart-status]', 'No indices are configured yet.'); return; }
             const recent = (await rpc('get_recent_ticks', { p_index: index.code, p_limit: CHART_TICKS }) || []).slice().reverse();
@@ -55,6 +60,7 @@
             text('[data-chart-title]', `${index.display_name || index.code} price`);
             const canvas = find('[data-index-chart]');
             if (canvas && window.drawIndexChart) window.drawIndexChart(canvas, recent);
+            chartShown = index.code;
             text('[data-chart-status]', recent.length ? '' : `No ticks published yet for ${index.display_name || index.code}.`);
             const latest = find('[data-latest-ticks]');
             if (!latest) return;
@@ -97,7 +103,33 @@
             find('[data-index-rows]')?.replaceChildren(noteRow(7, 'Index data could not be loaded. It will retry automatically.'));
         }
 
-        const refresh = () => Promise.all([refreshChart().catch(chartFailed), refreshIndexTable().catch(tableFailed)]);
+        // Observed volatility of version 3 indices, labelled with its window and sample size.
+        // Measured history only: it is never presented as a constant or a forecast.
+        async function refreshVolatility() {
+            const rows = ((await rpc('get_engine_v3_status', {})) || []).filter((row) => row.engine_generation === 3 && row.volatility_1d);
+            let panel = find('[data-v3-volatility]');
+            if (!rows.length) { if (panel) panel.hidden = true; return; }
+            if (!panel) {
+                panel = Object.assign(document.createElement('section'), { className: 'v3-volatility' });
+                panel.dataset.v3Volatility = '';
+                panel.setAttribute('aria-labelledby', 'v3-volatility-heading');
+                panel.append(Object.assign(document.createElement('h2'), { id: 'v3-volatility-heading', textContent: 'Observed volatility' }),
+                    Object.assign(document.createElement('ul'), { className: 'v3-volatility-list' }),
+                    Object.assign(document.createElement('p'), { className: 'text-secondary', textContent: 'Measured from published ticks over the stated window. It describes past movement, not future prices or digits.' }));
+                (find('[data-index-rows]')?.closest('section, .card, .dashboard-card') || find('main'))?.after(panel);
+            }
+            panel.hidden = false;
+            const percent = (x) => `${(Number(x) * 100).toFixed(2)}%`;
+            panel.querySelector('ul').replaceChildren(...rows.map((row) => {
+                const v = row.volatility_1d, item = document.createElement('li');
+                const hours = (Number(v.window_ticks) * 2 / 3600).toFixed(1);
+                item.textContent = v.observed_annual == null
+                    ? `${row.index_code}: not enough ticks yet (target ${percent(v.target_annual)} a year).`
+                    : `${row.index_code}: ${percent(v.observed_annual)} a year, observed over the last ${Number(v.window_ticks).toLocaleString('en-US')} ticks (about ${hours} h); target ${percent(v.target_annual)}${v.status === 'insufficient_data' ? '. A full day of ticks is needed before the alert band applies.' : v.status === 'alert' ? '. Outside the expected band: under review.' : '.'}`;
+                return item;
+            }));
+        }
+        const refresh = () => Promise.all([refreshChart().catch(chartFailed), refreshIndexTable().catch(tableFailed), refreshVolatility().catch(() => {})]);
         renderIndexFacts();
         timer = setInterval(() => { if (!document.hidden) refresh(); }, MARKET_REFRESH_MS);
         return { refresh, stop: () => clearInterval(timer) };
@@ -109,15 +141,19 @@
        discarded. */
     function clearAccountView() {
         for (const selector of ['[data-practice-balance]', '[data-net-result]', '[data-wins]', '[data-losses]', '[data-win-rate]', '[data-voids]', '[data-settled-count]']) text(selector, '—');
-        find('[data-contract-rows]')?.replaceChildren(noteRow(5, 'Loading contracts…'));
-        find('[data-open-contracts]')?.replaceChildren(noteRow(5, 'Loading open contracts…'));
-        const reset = find('[data-reset]');
-        if (reset) reset.hidden = true;
+        // Rows reload in place (after an account switch or a reset) behind a compact loader.
+        const loading = (label) => window.smartProfitLoader?.row(5, label) || noteRow(5, `${label}…`);
+        find('[data-contract-rows]')?.replaceChildren(loading('Loading contracts'));
+        find('[data-open-contracts]')?.replaceChildren(loading('Loading open contracts'));
     }
 
     async function renderAccount(client, config) {
         const account = window.smartProfitAccount.get();
-        const call = (name, args) => client.rpc(name, args).then((result) => { if (result.error) throw result.error; return result.data; });
+        // The Real view has no server-side account yet: it is a zero balance with no contracts.
+        const PREVIEW = { get_account_summary: { available: 0, currency: 'USD' }, get_account_stats: { wins: 0, losses: 0, voids: 0, open: 0, net_result: 0, currency: 'USD' }, list_my_contracts: [] };
+        const call = account.preview
+            ? (name) => Promise.resolve(PREVIEW[name])
+            : (name, args) => client.rpc(name, args).then((result) => { if (result.error) throw result.error; return result.data; });
         const [summary, stats, latest, open] = await Promise.allSettled([
             call('get_account_summary', { p_account_id: account.accountId }),
             call('get_account_stats', { p_account_id: account.accountId }),
@@ -155,9 +191,6 @@
             find('[data-open-contracts]')?.replaceChildren(...(rows.length ? rows.map((contract) => cellRow([contract.index_code, contractType(contract), Number(contract.stake).toFixed(2), Number(contract.payout).toFixed(2), `${contract.entry_tick_no} → ${contract.settle_tick_no}`])) : [noteRow(5, 'No open contracts.')]));
         } else { find('[data-open-contracts]')?.replaceChildren(noteRow(5, 'Open contracts could not be loaded.')); failed.push(['open contracts', open.reason]); }
 
-        const accountConfig = (config.accounts || []).find((item) => item.id === account.accountId);
-        const canReset = summary.status === 'fulfilled' && stats.status === 'fulfilled' && account.mode === 'DEMO' && Number(stats.value.open) === 0 && Number(summary.value.available) < Number(accountConfig?.limits?.min_stake);
-        find('[data-reset]').hidden = !canReset;
         failed.forEach(([part, reason]) => console.error(`[smartprofit] ${part} could not be loaded`, { code: reason?.code ?? null, message: reason?.message ?? String(reason) }));
         status(failed.length ? `Some account data could not be loaded: ${failed.map(([part]) => part).join(', ')}. Market data below is unaffected; reload to try again.` : '');
     }
@@ -178,11 +211,12 @@
             return;
         }
         const render = () => { clearAccountView(); return renderAccount(client, accountConfig || config).catch((error) => { console.error(error); status('Your account data could not be loaded. Reload to try again.'); }); };
-        find('[data-reset]').addEventListener('click', async () => { const { error } = await client.rpc('reset_practice_balance', { p_account_id: window.smartProfitAccount.get().accountId }); status(error ? (resetMessages[errorCode(error)] || 'Practice funds could not be reset.') : 'Practice balance reset.'); if (!error) await render(); });
         document.addEventListener('smartprofit:account-changed', render);
+        // A practice reset from the mode menu changes the balance and the results shown here.
+        document.addEventListener('smartprofit:balance-changed', render);
         await render();
         await window.refreshRestrictionBanner?.().catch?.(console.error);
         await marketLoaded;
     }
-    window.addEventListener('DOMContentLoaded', () => start().catch((error) => { console.error(error); status('The dashboard could not load. Reload the page to try again.'); })); window.smartProfitDashboard = { resetMessages };
+    window.addEventListener('DOMContentLoaded', () => start().catch((error) => { console.error(error); status('The dashboard could not load. Reload the page to try again.'); }).finally(() => window.smartProfitLoader?.pageReady()));
 })();

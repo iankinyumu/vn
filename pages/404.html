@@ -3,20 +3,19 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0, viewport-fit=cover">
     <meta name="description" content="This SmartProfit page does not exist. Links to the home page, guides, FAQ, fairness verifier and support.">
     <title>404 — Page not found | SmartProfit</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0..1,0&amp;icon_names=account_circle,add,admin_panel_settings,alternate_email,area_chart,arrow_back,arrow_downward,arrow_forward,arrow_right_alt,arrow_upward,balance,bar_chart,block,bolt,calendar_month,campaign,cancel,casino,category,check,check_circle,chevron_left,chevron_right,circle,close,contrast,currency_exchange,dark_mode,difference,edit,equal,error,expand_more,format_list_numbered,graphic_eq,group,help,history,home,hourglass_top,inbox,info,key,keyboard_double_arrow_left,keyboard_double_arrow_right,layers,light_mode,list,lock,lock_open,login,logout,mail,menu,menu_book,mood,notifications,percent,person,person_off,pie_chart,qr_code,refresh,save,schedule,search,send,settings,shield,show_chart,smartphone,sort,speed,sports_score,star,support_agent,swap_horiz,table,tag,timer,tune,undo,upload,visibility,warning&amp;display=block" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
+    <script src="../assets/js/consent.js"></script><script src="../assets/js/theme.js"></script>
+    <link href="../assets/css/tokens.css" rel="stylesheet">
     <link href="../assets/css/glassmorphism.css" rel="stylesheet">
     <link href="../assets/css/style.css" rel="stylesheet">
     <link href="../assets/css/404.css" rel="stylesheet">
     <link href="../assets/css/public-shell.css" rel="stylesheet">
-    <style>
-        .public-shell .error-coin { background: rgba(173,255,86,.08); border: 1px solid rgba(173,255,86,.28); color: var(--flat-accent); }
-    </style>
 </head>
 
 <body class="premium-theme public-shell" data-shell-surface="public">
@@ -25,43 +24,25 @@
     <main class="error-wrapper">
         <div class="error-content">
 
-            <div class="error-illustration" aria-hidden="true">
-                <div class="error-circle">
-                    <span class="error-digit">4</span>
-                    <div class="error-coin">
-                        <i class="fas fa-dice"></i>
-                    </div>
-                    <span class="error-digit">4</span>
-                </div>
-                <div class="error-shadow"></div>
-            </div>
+            <img class="error-mascot" src="../assets/img/mascots/violet-heart-binoculars.webp" width="160" height="160" alt="" aria-hidden="true" decoding="async">
 
             <div class="error-card">
-                <div class="error-icon-wrapper">
-                    <i class="fas fa-triangle-exclamation"></i>
-                </div>
+                <p class="error-code">Error 404</p>
                 <h1 class="error-title">Page Not Found</h1>
                 <p class="error-message">This page does not exist or has been moved. The links below cover everything a visitor can reach.</p>
-                <div class="error-divider"></div>
-                <div class="error-suggestions">
-                    <h6><i class="fas fa-lightbulb me-2"></i>Try one of these:</h6>
-                    <div class="error-links">
-                        <a href="index.html" class="error-link"><i class="fas fa-house"></i> Home</a>
-                        <a href="about.html" class="error-link"><i class="fas fa-circle-info"></i> About</a>
-                        <a href="faq.html" class="error-link"><i class="fas fa-circle-question"></i> FAQ</a>
-                        <a href="blog.html" class="error-link"><i class="fas fa-book-open"></i> Guides</a>
-                        <a href="fairness.html" class="error-link"><i class="fas fa-scale-balanced"></i> Fairness</a>
-                        <a href="contact.html" class="error-link"><i class="fas fa-headset"></i> Support</a>
-                    </div>
-                </div>
                 <div class="error-actions">
-                    <a href="index.html" class="btn btn-premium-primary btn-lg">
-                        <i class="fas fa-house me-2"></i> Back to the homepage
-                    </a>
-                    <a href="trade.html" class="btn btn-glass-premium btn-lg">
-                        <i class="fas fa-chart-simple me-2"></i> Trading page
-                    </a>
+                    <a href="index.html" class="btn btn-premium-primary">Back to the homepage</a>
+                    <a href="trade.html" class="btn btn-glass-premium">Trading page</a>
                 </div>
+                <nav class="error-suggestions" aria-labelledby="errorLinksTitle">
+                    <h2 id="errorLinksTitle">Or try one of these</h2>
+                    <ul class="error-links">
+                        <li><a href="index.html" class="error-link">Home</a></li>
+                        <li><a href="about.html" class="error-link">About</a></li>
+                        <li><a href="fairness.html" class="error-link">Fairness</a></li>
+                        <li><a href="login.html" class="error-link">Sign in</a></li>
+                    </ul>
+                </nav>
             </div>
 
         </div>
@@ -69,7 +50,7 @@
 
     <div data-shell-footer></div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
     <script src="../assets/js/auth.js"></script>
     <script src="../assets/js/shell.js"></script>
 </body>

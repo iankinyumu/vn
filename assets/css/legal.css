@@ -1,0 +1,256 @@
+/* Legal documents: Terms, Privacy, Cookies, Risk. One readable column on the page, grouped by
+   headings and 1px separators (DESIGN.md: no cards). */
+
+.legal-main {
+    width: 100%;
+    max-width: calc(72ch + 2 * var(--space-4));
+    margin: 0 auto;
+    padding: var(--space-6) var(--space-4) var(--space-7);
+    color: var(--label);
+    font-family: var(--font-text);
+    line-height: 1.65;
+}
+
+.legal-main h1 {
+    margin: 0 0 var(--space-2);
+    font-size: clamp(1.75rem, 1.4rem + 1.5vw, 2.25rem);
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.legal-updated {
+    margin: 0 0 var(--space-5);
+    color: var(--label-2);
+    font-size: var(--text-footnote);
+}
+
+.legal-summary {
+    margin: 0 0 var(--space-5);
+    padding: var(--space-3) 0 var(--space-3) var(--space-4);
+    border-inline-start: 2px solid var(--label);
+}
+
+.legal-summary p {
+    margin: 0;
+}
+
+.legal-summary p + p {
+    margin-top: var(--space-2);
+}
+
+.legal-toc {
+    margin: 0 0 var(--space-6);
+    padding: var(--space-4) 0;
+    border-block: 1px solid var(--separator);
+}
+
+.legal-toc h2 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--text-subhead);
+    font-weight: 700;
+}
+
+.legal-toc ol {
+    margin: 0;
+    padding-inline-start: 1.25rem;
+}
+
+.legal-toc li {
+    padding: 2px 0;
+}
+
+.legal-main section {
+    padding-top: var(--space-5);
+    margin-top: var(--space-5);
+    border-top: 1px solid var(--separator);
+    scroll-margin-top: var(--space-7);
+}
+
+.legal-main h2 {
+    margin: 0 0 var(--space-3);
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.legal-main h3 {
+    margin: var(--space-4) 0 var(--space-2);
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.legal-main p,
+.legal-main ul,
+.legal-main ol {
+    margin: 0 0 var(--space-3);
+}
+
+.legal-main ul,
+.legal-main section ol {
+    padding-inline-start: 1.25rem;
+}
+
+.legal-main li + li {
+    margin-top: var(--space-1);
+}
+
+/* DESIGN.md: links are the text colour and underlined. */
+.legal-main a {
+    color: var(--label);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.legal-main a:hover {
+    text-decoration-thickness: 2px;
+}
+
+.legal-main a:focus-visible,
+.legal-main button:focus-visible,
+.legal-main input:focus-visible {
+    outline: 2px solid var(--label);
+    outline-offset: 2px;
+}
+
+.legal-table-wrap {
+    margin: 0 0 var(--space-4);
+    overflow-x: auto;
+}
+
+.legal-table {
+    width: 100%;
+    min-width: 560px;
+    border-collapse: collapse;
+    font-size: var(--text-footnote);
+}
+
+.legal-table caption {
+    caption-side: top;
+    padding: 0 0 var(--space-2);
+    color: var(--label-2);
+    text-align: start;
+}
+
+.legal-table th,
+.legal-table td {
+    padding: var(--space-2) var(--space-3) var(--space-2) 0;
+    border-bottom: 1px solid var(--separator);
+    text-align: start;
+    vertical-align: top;
+}
+
+.legal-table th {
+    font-weight: 700;
+}
+
+.legal-table code {
+    color: var(--label);
+    font-family: var(--font-mono);
+    font-size: .95em;
+    overflow-wrap: anywhere;
+}
+
+/* Cookie settings form on the cookie policy page. */
+.consent-settings {
+    margin: var(--space-3) 0 0;
+    padding: var(--space-4) 0;
+    border-block: 1px solid var(--separator);
+}
+
+.consent-settings fieldset {
+    margin: 0 0 var(--space-3);
+    padding: 0;
+    border: 0;
+}
+
+.consent-settings legend {
+    margin-bottom: var(--space-2);
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.consent-option {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    min-height: var(--target);
+    padding: var(--space-2) 0;
+}
+
+.consent-option input {
+    width: 20px;
+    height: 20px;
+    margin-top: 2px;
+    flex-shrink: 0;
+    accent-color: var(--label);
+}
+
+.consent-option span {
+    display: block;
+    color: var(--label-2);
+    font-size: var(--text-footnote);
+}
+
+.consent-option strong {
+    display: block;
+    color: var(--label);
+}
+
+.consent-save {
+    min-height: var(--target);
+    padding: 0 var(--space-4);
+    border: 1px solid var(--label);
+    border-radius: var(--radius-control);
+    background: var(--label);
+    color: var(--bg);
+    font: 600 var(--text-subhead) / 1 var(--font-text);
+    cursor: pointer;
+    transition: opacity var(--dur-fast) ease-out;
+}
+
+.consent-save:hover {
+    opacity: .88;
+}
+
+.consent-save:active {
+    opacity: .76;
+}
+
+.consent-status {
+    min-height: 1.5em;
+    margin: var(--space-2) 0 0;
+    color: var(--label-2);
+    font-size: var(--text-footnote);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .consent-save {
+        transition: none;
+    }
+}
+
+@media print {
+    .legal-toc,
+    .consent-settings,
+    [data-shell-header],
+    [data-shell-footer] {
+        display: none;
+    }
+}
+
+/* A button that reads as a link inside running text (it opens the cookie settings). */
+.link-inline {
+    display: inline;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--label);
+    font: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+}
+
+.link-inline:hover {
+    text-decoration-thickness: 2px;
+}

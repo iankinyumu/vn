@@ -4,52 +4,43 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0, viewport-fit=cover">
     <meta name="description" content="SmartProfitBinary - Staff sign in">
     <meta name="robots" content="noindex, nofollow">
     <title>Staff Sign In - SmartProfitBinary</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0..1,0&amp;icon_names=account_circle,add,admin_panel_settings,alternate_email,area_chart,arrow_back,arrow_downward,arrow_forward,arrow_right_alt,arrow_upward,balance,bar_chart,block,bolt,calendar_month,campaign,cancel,casino,category,check,check_circle,chevron_left,chevron_right,circle,close,contrast,currency_exchange,dark_mode,difference,edit,equal,error,expand_more,format_list_numbered,graphic_eq,group,help,history,home,hourglass_top,inbox,info,key,keyboard_double_arrow_left,keyboard_double_arrow_right,layers,light_mode,list,lock,lock_open,login,logout,mail,menu,menu_book,mood,notifications,percent,person,person_off,pie_chart,qr_code,refresh,save,schedule,search,send,settings,shield,show_chart,smartphone,sort,speed,sports_score,star,support_agent,swap_horiz,table,tag,timer,tune,undo,upload,visibility,warning&amp;display=block" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
+    <script src="../assets/js/consent.js"></script><script src="../assets/js/theme.js"></script>
+    <link href="../assets/css/tokens.css" rel="stylesheet">
     <link href="../assets/css/glassmorphism.css" rel="stylesheet">
     <link href="../assets/css/login.css" rel="stylesheet">
     <link href="../assets/css/public-shell.css" rel="stylesheet">
     <style>
-        .staff-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 14px;
-            padding: 6px 14px;
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            border-radius: 999px;
-            color: #cfd7e3;
-            font-family: 'DM Mono', monospace;
-            font-size: 11px;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-        }
+        .staff-title-icon { margin-inline-end: 10px; color: var(--label-2); font-size: .8em; }
 
         .staff-login-status {
             min-height: 20px;
             margin: 14px 0 0;
-            color: #9aa4b2;
+            color: var(--label-2);
             font-size: 13px;
             text-align: center;
         }
 
-        .staff-login-status.is-error { color: #fca5a5; }
+        .staff-login-status.is-error { color: var(--negative); }
 
         .staff-scope-note {
             margin: 20px 0 0;
             padding-top: 16px;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-            color: #7f8a99;
-            font-size: 11px;
+            border-top: 1px solid var(--separator);
+            color: var(--label-2);
+            font-size: var(--text-caption);
             line-height: 1.6;
             text-align: center;
         }
+
+        .staff-scope-note a { color: var(--label); text-decoration: underline; text-underline-offset: 2px; }
     </style>
 </head>
 
@@ -64,28 +55,27 @@
         <div class="particle particle-6"></div>
     </div>
 
-    <div class="back-home"><a href="index.html"><i class="fas fa-arrow-left"></i> Back to Home</a></div>
+    <div class="back-home"><a href="index.html"><i class="ms" data-icon="arrow_back" aria-hidden="true"></i> Back to Home</a></div>
 
-    <div class="auth-wrapper">
+    <main class="auth-wrapper">
         <div class="auth-card">
 
-            <div class="staff-badge"><i class="fas fa-user-shield"></i> Staff access</div>
-            <h2 class="auth-title">Staff Sign In</h2>
+            <h1 class="auth-title"><i class="ms staff-title-icon" data-icon="admin_panel_settings" aria-hidden="true"></i>Staff Sign In</h1>
             <p class="auth-subtitle">Sign in with your staff account to open the operations console.</p>
 
-            <form id="staffLoginForm" onsubmit="handleStaffLogin(event)">
+            <form id="staffLoginForm" novalidate>
                 <div class="form-group">
                     <label for="email">Staff Email Address</label>
-                    <i class="fas fa-envelope form-icon"></i>
+                    <i class="ms form-icon" data-icon="mail" aria-hidden="true"></i>
                     <input type="email" id="email" class="form-input" placeholder="you@smartprofitbinary.com" required
-                        autocomplete="username">
+                        autocomplete="username" maxlength="254" spellcheck="false" autocapitalize="off">
                 </div>
 
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <i class="fas fa-lock form-icon"></i>
+                    <i class="ms form-icon" data-icon="lock" aria-hidden="true"></i>
                     <input type="password" id="password" class="form-input" placeholder="••••••••" required
-                        autocomplete="current-password" minlength="8">
+                        autocomplete="current-password" minlength="8" maxlength="72">
                 </div>
 
                 <button type="submit" class="btn-signin">Sign In to Console</button>
@@ -95,14 +85,15 @@
             <p class="staff-scope-note">
                 Staff sessions are stored separately from customer sessions and are never shared between them.
                 Customer accounts and password resets use the
-                <a href="login.html" style="color:#cfd7e3;">customer sign-in page</a>.
+                <a href="login.html">customer sign-in page</a>.
             </p>
 
         </div>
-    </div>
+    </main>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
     <script src="../assets/js/staff-auth.js"></script>
+    <script src="../assets/js/form-guard.js"></script>
     <script src="../assets/js/staff-login.js"></script>
 
 </body>

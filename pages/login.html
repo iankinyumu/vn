@@ -4,13 +4,15 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0, viewport-fit=cover">
     <meta name="description" content="SmartProfit - Sign in to your account">
     <title>Sign In - SmartProfit</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0..1,0&amp;icon_names=account_circle,add,admin_panel_settings,alternate_email,area_chart,arrow_back,arrow_downward,arrow_forward,arrow_right_alt,arrow_upward,balance,bar_chart,block,bolt,calendar_month,campaign,cancel,casino,category,check,check_circle,chevron_left,chevron_right,circle,close,contrast,currency_exchange,dark_mode,difference,edit,equal,error,expand_more,format_list_numbered,graphic_eq,group,help,history,home,hourglass_top,inbox,info,key,keyboard_double_arrow_left,keyboard_double_arrow_right,layers,light_mode,list,lock,lock_open,login,logout,mail,menu,menu_book,mood,notifications,percent,person,person_off,pie_chart,qr_code,refresh,save,schedule,search,send,settings,shield,show_chart,smartphone,sort,speed,sports_score,star,support_agent,swap_horiz,table,tag,timer,tune,undo,upload,visibility,warning&amp;display=block" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
+    <script src="../assets/js/consent.js"></script><script src="../assets/js/theme.js"></script>
+    <link href="../assets/css/tokens.css" rel="stylesheet">
     <link href="../assets/css/glassmorphism.css" rel="stylesheet">
     <link href="../assets/css/login.css" rel="stylesheet">
     <link href="../assets/css/public-shell.css" rel="stylesheet">
@@ -27,27 +29,28 @@
         <div class="particle particle-6"></div>
     </div>
 
-    <div class="back-home"><a href="index.html"><i class="fas fa-arrow-left"></i> Back to Home</a> · <a href="fairness.html">Fairness</a></div>
+    <nav class="back-home" aria-label="Site"><a href="index.html"><i class="ms" data-icon="arrow_back" aria-hidden="true"></i> Back to Home</a><a href="fairness.html">Fairness</a></nav>
 
-    <div class="auth-wrapper">
+    <main class="auth-wrapper">
         <div class="auth-card">
 
-            <h2 class="auth-title">Welcome Back</h2>
+            <img src="../assets/img/mascots/ivory-heart-sunglasses.webp" class="auth-mascot" width="96" height="96" alt="" aria-hidden="true" decoding="async">
+            <h1 class="auth-title">Welcome Back</h1>
             <p class="auth-subtitle">Sign in to access your SmartProfit practice dashboard</p>
 
-            <form id="loginForm" onsubmit="handleLogin(event)">
+            <form id="loginForm" novalidate>
                 <div class="form-group">
                     <label for="email">Email Address</label>
-                    <i class="fas fa-envelope form-icon"></i>
+                    <i class="ms form-icon" data-icon="mail" aria-hidden="true"></i>
                     <input type="email" id="email" class="form-input" placeholder="your@email.com" required
-                        autocomplete="email">
+                        autocomplete="email" maxlength="254" spellcheck="false" autocapitalize="off">
                 </div>
 
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <i class="fas fa-lock form-icon"></i>
+                    <i class="ms form-icon" data-icon="lock" aria-hidden="true"></i>
                     <input type="password" id="password" class="form-input" placeholder="••••••••" required
-                        autocomplete="current-password" minlength="8">
+                        autocomplete="current-password" minlength="8" maxlength="72">
                 </div>
 
                 <div class="remember-row">
@@ -57,16 +60,30 @@
 
                 <button type="submit" class="btn-signin">Sign In</button>
             </form>
-            <p id="loginStatus" class="strength-text" role="status" aria-live="polite"
-                style="font-size:13px;margin:12px 0 0;min-height:18px;text-align:center"></p>
+            <p id="loginStatus" class="strength-text login-status" role="status" aria-live="polite"></p>
+
+            <details class="signin-help" data-signin-help>
+                <summary>Can't sign in?</summary>
+                <div class="signin-help-body">
+                    <h2 class="signin-help-title">Forgot your password</h2>
+                    <p>We email you a link to choose a new one. <a href="forgot-password.html">Reset your password</a></p>
+                    <h2 class="signin-help-title">Never got the confirmation email</h2>
+                    <p>Enter your email address above, then send it again. Check your spam folder too.</p>
+                    <button type="button" class="signin-help-btn" data-resend-confirmation>Resend confirmation email</button>
+                    <p class="signin-help-status" data-resend-status role="status" aria-live="polite"></p>
+                    <h2 class="signin-help-title">Still stuck</h2>
+                    <p>After several failed attempts, sign-in pauses for a few minutes. Wait, then try again, or reset your password.</p>
+                </div>
+            </details>
 
             <p class="auth-footer">Don't have an account? <a href="register.html">Create Account</a></p>
 
         </div>
-    </div>
+    </main>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
     <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/form-guard.js"></script>
     <script src="../assets/js/login.js"></script>
 
 </body>

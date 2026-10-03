@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200"><title>Rose Belt</title><style>
+.breathe{transform-box:fill-box;transform-origin:50% 100%;animation:breathe 4.2s ease-in-out 0s infinite}
+.blink{transform-box:fill-box;transform-origin:50% 50%;animation:blink 7s ease-in-out 2.8s infinite}
+.sway{transform-box:fill-box;transform-origin:50% 0;animation:sway 3.6s ease-in-out -1s infinite}
+@keyframes breathe{0%,100%{transform:scale(1,1)}50%{transform:scale(1.02,.975)}}
+@keyframes blink{0%,94%,100%{transform:scaleY(1)}96.5%{transform:scaleY(.1)}}
+@keyframes sway{0%,100%{rotate:-4deg}50%{rotate:4deg}}
+@media (prefers-reduced-motion:reduce){.breathe,.blink,.sway{animation:none}}
+</style><g class="breathe"><ellipse cx="100" cy="110" rx="70" ry="66" fill="#f199ad"/><ellipse cx="76" cy="76" rx="22" ry="12" fill="#fff" opacity=".22"/><g class="blink"><ellipse cx="82" cy="98" rx="6.5" ry="9" fill="#1b1b1b"/><circle cx="84" cy="94.5" r="2" fill="#fff"/><ellipse cx="118" cy="98" rx="6.5" ry="9" fill="#1b1b1b"/><circle cx="120" cy="94.5" r="2" fill="#fff"/></g><rect x="30" y="122" width="140" height="20" rx="6" fill="#1b1b1b"/><rect x="88" y="118" width="24" height="28" rx="5" fill="#3a3a3a" stroke="#555" stroke-width="2"/><rect x="95" y="126" width="10" height="12" rx="2" fill="#1b1b1b"/></g></svg>

@@ -1,0 +1,122 @@
+/* Welcome questions (pages/onboarding.html). DESIGN.md: flat and neutral, one column, no cards.
+   Answers are 44px-tall rows with a 1px outline; the chosen one gets a text-colour edge and bold
+   text, never a tint. Progress is a neutral 2px rule plus "1 of 3" in words. */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+.onboarding-body {
+    min-height: 100vh;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    color: var(--label);
+    font-family: var(--font-text);
+    font-size: 1rem;
+    line-height: 1.55;
+}
+
+.visually-hidden { position: absolute !important; width: 1px !important; height: 1px !important; margin: -1px !important; padding: 0 !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important; }
+
+.ob-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-3) max(var(--space-4), env(safe-area-inset-right)) var(--space-3) max(var(--space-4), env(safe-area-inset-left));
+    border-bottom: 1px solid var(--separator);
+}
+.ob-brand { font-weight: 800; font-size: 1.05rem; }
+.ob-brand span + span { color: var(--label-2); }
+.ob-mode { padding: 2px 0; border-bottom: 1px solid var(--label); font: 600 var(--text-caption) var(--font-mono); letter-spacing: .08em; }
+.ob-text-btn {
+    min-height: var(--target);
+    margin-inline-start: auto;
+    padding: 0 var(--space-2);
+    border: 0;
+    border-radius: var(--radius-control);
+    background: none;
+    color: var(--label);
+    font: 600 var(--text-subhead) var(--font-text);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+}
+.ob-text-btn:hover:not(:disabled) { text-decoration-thickness: 2px; }
+
+.ob-main { flex: 1; width: 100%; max-width: 560px; margin: 0 auto; padding: var(--space-6) var(--space-4) var(--space-7); }
+.ob-mascot { display: block; width: 80px; height: 80px; margin-bottom: var(--space-3); object-fit: contain; }
+
+.ob-progress-text { margin: 0 0 var(--space-2); color: var(--label-2); font-size: var(--text-footnote); font-variant-numeric: tabular-nums; }
+.ob-progress { height: 2px; margin-bottom: var(--space-5); background: var(--separator); }
+.ob-progress span { display: block; height: 100%; width: 0; background: var(--label); transition: width var(--dur-fast) ease-out; }
+
+.ob-step h1 { margin: 0 0 var(--space-2); font-size: var(--text-title-1); font-weight: 800; line-height: 1.2; }
+.ob-step h1:focus { outline: none; }
+.ob-why { margin: 0 0 var(--space-5); color: var(--label-2); }
+
+.ob-field { margin: 0 0 var(--space-5); padding: 0; border: 0; min-width: 0; }
+.ob-field legend { margin-bottom: var(--space-2); padding: 0; font-weight: 700; font-size: 1rem; }
+.ob-optional { color: var(--label-2); font-weight: 500; font-size: var(--text-footnote); }
+
+.ob-choices { display: grid; gap: var(--space-2); }
+.ob-choice {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: var(--target);
+    padding: var(--space-3);
+    border: 1px solid var(--separator-strong);
+    border-radius: var(--radius-control);
+    cursor: pointer;
+    transition: border-color var(--dur-fast) ease-out, background-color var(--dur-fast) ease-out;
+}
+.ob-choice:hover { border-color: var(--label-2); background: var(--fill-hover); }
+.ob-choice:active { background: var(--fill-pressed); }
+.ob-choice:has(input:checked) { border-color: var(--label); outline: 1px solid var(--label); outline-offset: -2px; }
+.ob-choice:has(input:checked) strong { font-weight: 800; }
+.ob-choice:has(input:focus-visible) { outline: 2px solid var(--label); outline-offset: 2px; }
+.ob-choice input { flex: none; width: 20px; height: 20px; margin: 0; accent-color: var(--label); }
+.ob-choice strong { display: block; font-weight: 600; }
+.ob-choice strong + span { display: block; color: var(--label-2); font-size: var(--text-footnote); }
+
+.ob-callout { margin: var(--space-3) 0 0; padding: var(--space-2) 0 var(--space-2) var(--space-3); border-inline-start: 2px solid var(--label); font-size: var(--text-footnote); }
+
+.ob-actions { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-2); margin-top: var(--space-5); }
+.ob-primary, .ob-secondary {
+    min-height: var(--target);
+    min-width: 120px;
+    padding: 0 var(--space-5);
+    border-radius: var(--radius-control);
+    font: 700 1rem var(--font-text);
+    cursor: pointer;
+    transition: opacity var(--dur-fast) ease-out, background-color var(--dur-fast) ease-out;
+}
+.ob-primary { margin-inline-start: auto; border: 1px solid var(--label); background: var(--label); color: var(--bg); }
+.ob-primary:hover:not(:disabled) { opacity: .88; }
+.ob-primary:active:not(:disabled) { opacity: .76; }
+.ob-secondary { border: 1px solid var(--separator-strong); background: transparent; color: var(--label); }
+.ob-secondary:hover:not(:disabled) { background: var(--fill-hover); }
+.ob-secondary:active:not(:disabled) { background: var(--fill-pressed); }
+.ob-primary:disabled, .ob-secondary:disabled, .ob-text-btn:disabled { opacity: .5; cursor: progress; }
+
+.onboarding-body :focus-visible { outline: 2px solid var(--label); outline-offset: 2px; }
+
+.ob-status { min-height: 1.5em; margin: var(--space-3) 0 0; color: var(--label-2); font-size: var(--text-footnote); }
+
+.ob-footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0 var(--space-4);
+    padding: var(--space-3) var(--space-4) max(var(--space-4), env(safe-area-inset-bottom));
+    border-top: 1px solid var(--separator);
+    font-size: var(--text-caption);
+}
+.ob-footer a { display: inline-flex; align-items: center; min-height: var(--target); color: var(--label-2); }
+
+@media (prefers-reduced-motion: reduce) {
+    .ob-progress span, .ob-choice, .ob-primary, .ob-secondary { transition: none; }
+}
+@media (prefers-contrast: more) {
+    .ob-why, .ob-optional, .ob-choice strong + span, .ob-footer a { color: var(--label); }
+}

@@ -58,14 +58,98 @@
     function accountFields(account) {
         return { accountId: account.id, mode: account.execution_mode, currency: account.currency };
     }
-    function markUnavailable(select) {
-        if (!select) return;
-        select.replaceChildren(new Option('Account unavailable', ''));
-        select.disabled = true;
+    // The Daraja sandbox page (sandbox-deposit.html) is a staff drill page reached by its URL;
+    // when it calls init({ realSandbox: true }) the switch shows Real without selecting an account.
+    const REAL_SANDBOX = 'real-sandbox';
+    async function sandboxOverview(client) {
+        try {
+            const { data, error } = await client.rpc('funding_sandbox_overview');
+            return !error && data?.available === true ? data : null;
+        } catch (_) { return null; }
     }
 
-    async function init() {
-        const select = document.querySelector('[data-account-switcher]');
+    const RESET_MESSAGES = Object.freeze({
+        open_contracts_exist: 'Wait for open trades to settle before resetting.',
+        reset_rate_limited: 'Practice funds can be reset once every 24 hours.',
+        reset_not_available: 'Practice funds can be reset once the balance is below the minimum stake.',
+    });
+    const money = (value, currency = 'USD') => new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(Number(value));
+    const errorCode = (error) => String(error?.message || error?.code || '').match(/[a-z_]+/)?.[0];
+
+    function element(tag, className, text) {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text !== undefined) node.textContent = text;
+        return node;
+    }
+
+    /* The mode switch is a plain text button (mode, balance, caret) that opens a
+       menu of accounts. It renders into [data-account-switcher]. */
+    function buildSwitch(host) {
+        host.classList.add('mode-switch');
+        const toggle = element('button', 'mode-switch-toggle');
+        toggle.type = 'button';
+        toggle.setAttribute('aria-haspopup', 'menu');
+        toggle.setAttribute('aria-expanded', 'false');
+        toggle.setAttribute('aria-controls', 'modeSwitchMenu');
+        const label = element('span', 'mode-switch-label', '');
+        label.dataset.modeLabel = '';
+        const balance = element('span', 'mode-switch-balance', '—');
+        balance.dataset.modeBalance = '';
+        balance.setAttribute('aria-live', 'polite');
+        const caret = element('i', 'ms mode-switch-caret');
+        caret.dataset.icon = 'expand_more';
+        caret.setAttribute('aria-hidden', 'true');
+        caret.setAttribute('aria-hidden', 'true');
+        toggle.append(label, balance, caret);
+        const menu = element('div', 'mode-menu');
+        menu.id = 'modeSwitchMenu';
+        menu.setAttribute('role', 'menu');
+        menu.setAttribute('aria-label', 'Account');
+        menu.hidden = true;
+        const note = element('p', 'mode-menu-note');
+        note.dataset.modeNote = '';
+        note.setAttribute('role', 'status');
+        note.hidden = true;
+        host.replaceChildren(toggle, menu, note);
+
+        const items = () => [...menu.querySelectorAll('[role^="menuitem"]:not([disabled]):not([hidden])')];
+        const close = (focus = false) => { menu.hidden = true; toggle.setAttribute('aria-expanded', 'false'); if (focus) toggle.focus(); };
+        const open = () => { note.hidden = true; menu.hidden = false; toggle.setAttribute('aria-expanded', 'true'); (menu.querySelector('[aria-checked="true"]:not([disabled])') || items()[0])?.focus(); };
+        toggle.addEventListener('click', () => (menu.hidden ? open() : close()));
+        toggle.addEventListener('keydown', (event) => { if (event.key === 'ArrowDown' && menu.hidden) { event.preventDefault(); open(); } });
+        menu.addEventListener('keydown', (event) => {
+            const list = items(); const at = list.indexOf(document.activeElement);
+            if (event.key === 'Escape') { event.preventDefault(); close(true); }
+            else if (event.key === 'ArrowDown') { event.preventDefault(); list[(at + 1) % list.length]?.focus(); }
+            else if (event.key === 'ArrowUp') { event.preventDefault(); list[(at - 1 + list.length) % list.length]?.focus(); }
+            else if (event.key === 'Tab') close();
+        });
+        document.addEventListener('pointerdown', (event) => { if (!host.contains(event.target)) close(); });
+        return { toggle, label, balance, menu, note, close };
+    }
+
+    function menuItem(role, text, detail) {
+        const item = element('button', 'mode-menu-item');
+        item.type = 'button';
+        item.setAttribute('role', role);
+        item.append(element('span', 'mode-menu-name', text));
+        const aside = element('span', 'mode-menu-detail', detail || '');
+        item.append(aside);
+        return item;
+    }
+
+    function markUnavailable(host) {
+        if (!host) return;
+        const ui = host.querySelector('.mode-switch-toggle') ? null : buildSwitch(host);
+        const toggle = host.querySelector('.mode-switch-toggle');
+        if (ui) ui.label.textContent = 'Account';
+        host.querySelector('[data-mode-balance]').textContent = 'Unavailable';
+        toggle.disabled = true;
+    }
+
+    async function init({ realSandbox = false } = {}) {
+        const host = document.querySelector('[data-account-switcher]');
         try {
             const { client, config } = await loadEngineConfig();
             await rpc(client, 'enroll_practice_account');
@@ -73,34 +157,115 @@
             if (!Array.isArray(accounts)) throw new StartupError('list_my_accounts', new Error('The accounts response was not a list.'));
             const practice = accounts.find((account) => account.execution_mode === 'DEMO' && account.status === 'ACTIVE');
             if (!practice) throw new StartupError('practice_unavailable', new Error('Practice account is unavailable.'));
+            const real = accounts.find((account) => account.execution_mode === 'REAL');
             const choose = (account) => {
                 window.smartProfitAccount?.set(accountFields(account));
                 document.dispatchEvent(new CustomEvent('smartprofit:account-changed', { detail: window.smartProfitAccount.get() }));
             };
-            if (select) {
-                select.replaceChildren();
-                select.disabled = false;
-                accounts.forEach((account) => {
-                    const option = new Option(account.execution_mode === 'DEMO' ? 'Practice' : 'Real — Not available yet', account.id);
-                    option.disabled = account.execution_mode === 'REAL' && !config.real_enabled;
-                    select.add(option);
+            const sandbox = realSandbox ? await sandboxOverview(client) : null;
+            // Until Real deposits and withdrawals are connected, Real is a view with a zero balance whose
+            // actions stay disabled (account-context.js). Once Real is enabled server-side, the real account is used.
+            const realOpen = Boolean(real && real.status === 'ACTIVE' && config.real_enabled);
+            const realPreview = { id: window.smartProfitAccount.previewId, execution_mode: 'REAL', currency: 'USD', status: 'ACTIVE' };
+            const realTarget = realOpen ? real : realPreview;
+            if (host) {
+                const ui = buildSwitch(host);
+                const practiceItem = menuItem('menuitemradio', 'Practice', 'Virtual funds');
+                practiceItem.dataset.accountId = practice.id;
+                const realItem = menuItem('menuitemradio', 'Real', realOpen ? '' : money(0));
+                realItem.dataset.accountId = realTarget.id;
+                const reset = menuItem('menuitem', 'Reset practice funds', '');
+                reset.dataset.resetPractice = '';
+                reset.hidden = true;
+                const divider = element('div', 'mode-menu-divider');
+                divider.setAttribute('role', 'separator');
+                divider.hidden = true;
+                ui.menu.append(practiceItem, realItem, divider, reset);
+
+                const current = () => {
+                    if (realSandbox) return REAL_SANDBOX;
+                    try { return window.smartProfitAccount.get().accountId; } catch (_) { return practice.id; }
+                };
+                const paint = () => {
+                    const id = current();
+                    const isReal = id !== practice.id;
+                    practiceItem.setAttribute('aria-checked', String(!isReal));
+                    realItem.setAttribute('aria-checked', String(isReal));
+                    ui.label.textContent = isReal ? 'Real' : 'Practice';
+                    host.dataset.mode = isReal ? 'real' : 'demo';
+                    // Deposit and Withdraw belong to Real mode only, and stay disabled in the Real view.
+                    const comingSoon = isReal && !realSandbox && window.smartProfitAccount.isPreview();
+                    document.querySelectorAll('[data-funding-actions]').forEach((actions) => {
+                        actions.hidden = !isReal;
+                        actions.querySelectorAll('[data-funding-open]').forEach((button) => {
+                            const name = button.dataset.fundingOpen === 'withdraw' ? 'Withdraw' : 'Deposit';
+                            button.disabled = comingSoon;
+                            button.title = comingSoon ? `${name}s are coming soon` : '';
+                            button.setAttribute('aria-label', comingSoon ? `${name}, coming soon` : name);
+                        });
+                    });
+                    ui.toggle.setAttribute('aria-label', `Account: ${ui.label.textContent}, balance ${ui.balance.textContent}. Change account`);
+                };
+                let balanceRequest = 0;
+                const refreshBalance = async () => {
+                    const request = ++balanceRequest;
+                    if (realSandbox) {
+                        const fresh = await sandboxOverview(client);
+                        if (request !== balanceRequest) return;
+                        ui.balance.textContent = fresh ? money(fresh.test_balance_usd) : 'Unavailable';
+                        if (fresh) realItem.querySelector('.mode-menu-detail').textContent = money(fresh.test_balance_usd);
+                        paint();
+                        return;
+                    }
+                    let active;
+                    try { active = window.smartProfitAccount.get(); } catch (_) { return; }
+                    if (active.preview) { ui.balance.textContent = money(0); reset.hidden = true; divider.hidden = true; paint(); return; }
+                    const { data, error } = await client.rpc('get_account_summary', { p_account_id: active.accountId });
+                    if (request !== balanceRequest) return;
+                    if (error || !data || !Number.isFinite(Number(data.available))) { ui.balance.textContent = 'Unavailable'; reset.hidden = true; divider.hidden = true; paint(); return; }
+                    ui.balance.textContent = money(data.available, data.currency || 'USD');
+                    const minimum = Number(config.accounts?.find((account) => account.id === active.accountId)?.limits?.min_stake);
+                    reset.hidden = !(active.mode === 'DEMO' && Number.isFinite(minimum) && Number(data.available) < minimum);
+                    divider.hidden = reset.hidden;
+                    paint();
+                };
+                const say = (message) => { ui.note.textContent = message; ui.note.hidden = !message; };
+                practiceItem.addEventListener('click', () => {
+                    ui.close(true);
+                    if (realSandbox) { window.location.assign('dashboard.html'); return; }
+                    if (current() !== practice.id) select(practice);
                 });
-                // Sessions start in Practice; the picker must show it whatever order the accounts arrive in.
-                select.value = practice.id;
-                select.addEventListener('change', () => {
-                    const selected = accounts.find((account) => account.id === select.value);
-                    if (!selected || selected.status !== 'ACTIVE') return;
+                realItem.addEventListener('click', () => {
+                    ui.close(true);
+                    if (realSandbox) return;
+                    if (current() !== realTarget.id) select(realTarget);
+                });
+                reset.addEventListener('click', async () => {
+                    ui.close(true);
+                    const { error } = await client.rpc('reset_practice_balance', { p_account_id: practice.id });
+                    say(error ? (RESET_MESSAGES[errorCode(error)] || 'Practice funds could not be reset.') : '');
+                    if (!error) document.dispatchEvent(new Event('smartprofit:balance-changed'));
+                });
+                const select = (account) => {
+                    if (!account || account.status !== 'ACTIVE') return;
                     window.smartProfitAccountKeys?.clearAccountScoped();
                     window.smartProfitCache?.clear();
                     document.dispatchEvent(new Event('smartprofit:clear-trade-state'));
-                    choose(selected);
-                });
+                    ui.balance.textContent = '—';
+                    choose(account);
+                };
+                document.addEventListener('smartprofit:account-changed', () => { paint(); refreshBalance().catch(() => {}); });
+                document.addEventListener('smartprofit:balance-changed', () => refreshBalance().catch(() => {}));
+                window.smartProfitBalance = Object.freeze({ refresh: refreshBalance });
+                paint();
+                if (realSandbox) refreshBalance().catch(() => {});
             }
-            choose(practice);
-            return { client, config, accounts };
+            // The Real sandbox page never activates a trading account; sessions otherwise start in Practice.
+            if (!realSandbox) choose(practice);
+            return { client, config, accounts, sandbox };
         } catch (error) {
             const failure = error instanceof StartupError ? error : new StartupError('client', error);
-            markUnavailable(select);
+            markUnavailable(host);
             logStartupFailure(failure);
             throw failure;
         }
@@ -108,5 +273,10 @@
 
     window.loadEngineConfig = loadEngineConfig;
     window.initAccountSwitcher = init;
+    // Signed-in pages without account logic of their own (guides, FAQ, contact) opt in with
+    // data-account-switcher-auto on <body>, so their top bar still shows PRACTICE or REAL.
+    const autoStart = () => { if (document.body?.hasAttribute('data-account-switcher-auto')) init().catch(() => { /* The switch shows its own unavailable state. */ }); };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', autoStart, { once: true });
+    else autoStart();
     window.smartProfitStartup = Object.freeze({ message: startupMessage, log: logStartupFailure, StartupError });
 })();

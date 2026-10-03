@@ -1,0 +1,76 @@
+{
+  "spec": "v3.1",
+  "generated_at": "2026-09-28T02:01:43.126Z",
+  "commit": "6b7ca3bbe23943ed84d8e0635dff1484bc8be2d0",
+  "engine_files_uncommitted": false,
+  "generator_sha256": "8c915e3d44ca9145ccbd4e2159c8ca71536d32cb447a78a692de65f670d08949",
+  "node": "v24.20.0",
+  "command": "node scripts/engine-v3-calibrate.mjs --ticks 15768000 --seeds 1 --first-seed 0 --indices SPI75 --out docs/calibration/engine-v3-1y-SPI75",
+  "bands": {
+    "volFull": 0.01,
+    "volDay": 0.03,
+    "driftZ": 5,
+    "acfZ": 5,
+    "kurtosis": [
+      -0.15,
+      -0.05
+    ],
+    "maxAbsE": 6,
+    "digitChi": 33.72,
+    "pairChi": 137.20528580249547,
+    "runPerMillion": 12,
+    "logDevSd": 8,
+    "walkDevSd": 5
+  },
+  "results": [
+    {
+      "metrics": {
+        "index": "SPI75",
+        "seed": "calibration-0",
+        "ticks": 15768000,
+        "seconds": 1238.143,
+        "target_vol": 0.749999999484405,
+        "realised_vol": 0.7496695177349595,
+        "vol_ratio_error": -0.00044064233289686783,
+        "worst_day_vol_error": 0.011990736394878798,
+        "drift_z": 0.018302633527346648,
+        "lag1_acf_z": -1.5192941871003727,
+        "excess_kurtosis": -0.09817124447761527,
+        "max_abs_e": 4.885015669404652,
+        "digit_chi2": 15.255374175545406,
+        "pair_chi2": 89.36021067312038,
+        "longest_run_per_million": 8,
+        "min_price": 5828.846,
+        "max_price": 14575.32,
+        "max_log_dev_sd": 0.7196880723689506,
+        "anchorless": true,
+        "soft_range_exits": 0,
+        "digits": [
+          1577111,
+          1576681,
+          1576579,
+          1573024,
+          1577957,
+          1577592,
+          1577649,
+          1575061,
+          1578452,
+          1577894
+        ]
+      },
+      "checks": {
+        "vol": true,
+        "vol_day": true,
+        "drift": true,
+        "acf": true,
+        "kurtosis": true,
+        "tails": true,
+        "digits": true,
+        "pairs": true,
+        "runs": true,
+        "range": true
+      },
+      "pass": true
+    }
+  ]
+}

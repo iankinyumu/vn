@@ -13,6 +13,8 @@ test('engine internals and unrevealed seeds are never callable by API roles', as
     try {
         await as(db, null, 'anon');
         await assert.rejects(db.query('select public.engine_advance()'), /permission denied/);
+        await assert.rejects(db.query("select public.engine_price_units_v2(decode('00','hex'),'DEMO','SPI10',1,1000000,1000000,200,.003)"), /permission denied/);
+        await assert.rejects(db.query("select * from public.get_tick_verification_data('00000000-0000-4000-8000-000000000006','SPI10',0,1)"), /permission denied/);
         await assert.rejects(db.query('select * from engine_private.epoch_seeds'), /permission denied/);
 
         await as(db, 'customer');

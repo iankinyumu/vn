@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="robots" content="noindex">
+    <meta name="description" content="Your Real account: balance and deposits.">
+    <title>Real account — SmartProfit</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0..1,0&amp;icon_names=account_circle,add,admin_panel_settings,alternate_email,area_chart,arrow_back,arrow_downward,arrow_forward,arrow_right_alt,arrow_upward,balance,bar_chart,block,bolt,calendar_month,campaign,cancel,casino,category,check,check_circle,chevron_left,chevron_right,circle,close,contrast,currency_exchange,dark_mode,difference,edit,equal,error,expand_more,format_list_numbered,graphic_eq,group,help,history,home,hourglass_top,inbox,info,key,keyboard_double_arrow_left,keyboard_double_arrow_right,layers,light_mode,list,lock,lock_open,login,logout,mail,menu,menu_book,mood,notifications,percent,person,person_off,pie_chart,qr_code,refresh,save,schedule,search,send,settings,shield,show_chart,smartphone,sort,speed,sports_score,star,support_agent,swap_horiz,table,tag,timer,tune,undo,upload,visibility,warning&amp;display=block" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="../assets/js/consent.js"></script><script src="../assets/js/theme.js"></script>
+    <link href="../assets/css/tokens.css" rel="stylesheet">
+    <link href="../assets/css/glassmorphism.css" rel="stylesheet">
+    <link href="../assets/css/app-shell.css" rel="stylesheet">
+    <link href="../assets/css/mode-tokens.css" rel="stylesheet">
+    <link href="../assets/css/loader.css" rel="stylesheet">
+    <link href="../assets/css/real-account.css" rel="stylesheet">
+</head>
+
+<body class="premium-theme app-shell" data-shell-surface="app" data-shell-active="" data-shell-mode="real-sandbox" data-mode="real" data-page-loader="Loading account">
+    <script src="../assets/js/auth.js"></script>
+    <script>requireAuth()</script>
+    <script src="../assets/js/loader.js"></script>
+
+    <div data-shell-header></div>
+
+    <main class="real-main">
+        <h1 class="visually-hidden">Real account</h1>
+        <p class="real-status" data-sandbox-status role="status" aria-live="polite"></p>
+
+        <section class="real-panel" data-sandbox-unavailable hidden>
+            <p class="real-empty">Real trading is not enabled on this account yet. Contact support to enable it.</p>
+        </section>
+
+        <div data-sandbox-available hidden>
+            <section class="real-panel real-balance-panel" aria-labelledby="realBalanceLabel">
+                <div>
+                    <p class="real-label" id="realBalanceLabel">Balance</p>
+                    <p class="real-balance">$<span data-sandbox-balance>—</span></p>
+                </div>
+            </section>
+
+            <section class="real-panel" aria-labelledby="realHistoryHeading">
+                <h2 class="real-heading" id="realHistoryHeading">Deposits</h2>
+                <div class="real-table-wrap">
+                    <table class="real-table">
+                        <thead><tr><th>Date</th><th>USD</th><th>KES</th><th>Status</th><th>Receipt</th></tr></thead>
+                        <tbody data-sandbox-history><tr><td colspan="5">Loading…</td></tr></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <div data-shell-footer></div>
+
+    <script src="../assets/js/shell.js"></script>
+    <script src="../assets/js/account-context.js"></script>
+    <script src="../assets/js/account-keys.js"></script>
+    <script src="../assets/js/account-switcher.js"></script>
+    <script src="../assets/js/deposit-sheet.js"></script>
+    <script src="../assets/js/notifications.js"></script>
+    <script src="../assets/js/sandbox-deposit.js"></script>
+</body>
+
+</html>

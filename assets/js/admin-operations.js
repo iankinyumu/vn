@@ -14,6 +14,8 @@
         ['tabCustomers', 'customersPanel', 'customers.read'],
         ['tabContracts', 'contractsPanel', 'contracts.read'],
         ['tabEngine', 'enginePanel', 'engine.read'],
+        ['tabFunding', 'fundingPanel', 'funding.read'],
+        ['tabNotifications', 'notificationsPanel', 'announcements.manage'],
         ['tabStaff', 'staffPanel', 'staff.manage'],
         ['tabAudit', 'auditPanel', 'audit.read'],
     ];
@@ -28,6 +30,7 @@
         rate_limited: 'Too many changes in a short time. Wait a moment and try again.',
         self_role_change_forbidden: 'You cannot change your own role.',
         last_owner_required: 'At least one active owner must remain.',
+        rate_invalid: 'The rate must be between 50 and 500 KES per USD with at most four decimals, dated today or earlier (Nairobi time).',
     });
     const STALE = Symbol('stale');
     const codeOf = (error) => String(error?.message || '').match(/^[a-z_]+/)?.[0];
@@ -62,6 +65,23 @@
     const badge = (text, tone) => h('span', { className: `badge-${tone}`, text });
     const emptyRow = (columns, text) => h('tr', {}, [h('td', { text, attrs: { colspan: String(columns) }, className: 'text-muted ps-3' })]);
     const button = (label, className, onClick) => h('button', { className, text: label, attrs: { type: 'button' }, onClick });
+    // Customer-facing copy never promises profit or presses for haste (CLAUDE.md, Responsibility).
+    const PRESSURE = /\b(guarantee[ds]?|risk[- ]free|sure (win|profit|thing)|win big|easy money|get rich|double your|act now|hurry|last chance|don'?t miss|limited time|only today)\b/i;
+    const copyProblem = (text) => {
+        const found = String(text).match(PRESSURE);
+        return found ? `Remove "${found[0]}": messages to customers must not promise profit or create urgency.` : null;
+    };
+    // Same-site page links only, as the server requires (for example "faq.html" or "support.html").
+    const PAGE_LINK = /^[a-z0-9-]+\.html(\?[A-Za-z0-9=&_.-]{0,200})?$/;
+    function messageDraft(title, body, link, reason) {
+        const draft = { title: title.trim(), body: body.trim(), link: link.trim() || null, reason: reason.trim() };
+        if (!draft.title || draft.title.length > 120) draft.problem = 'Give a title of up to 120 characters.';
+        else if (!draft.body || draft.body.length > 1000) draft.problem = 'Write a message of up to 1000 characters.';
+        else if (draft.link && !PAGE_LINK.test(draft.link)) draft.problem = 'Links must be a page on this site, such as faq.html.';
+        else if (draft.reason.length < 3) draft.problem = 'Give a reason of at least 3 characters.';
+        else draft.problem = copyProblem(`${draft.title} ${draft.body}`);
+        return draft;
+    }
     const setOptions = (select, values, label = (value) => value, keep = select.value) => {
         select.replaceChildren(...values.map((value) => new Option(label(value), value)));
         if (values.includes(keep)) select.value = keep;
@@ -114,6 +134,8 @@
             this.bindContractEvents();
             this.bindEngineEvents();
             this.bindStaffEvents();
+            this.bindFundingEvents();
+            this.bindNotificationEvents();
         }
 
         switchTab(panelId) {
@@ -127,6 +149,8 @@
             else if (panelId === 'contractsPanel') this.loadContracts();
             else if (panelId === 'enginePanel') this.loadEngine();
             else if (panelId === 'staffPanel') this.loadStaff();
+            else if (panelId === 'fundingPanel') this.loadFunding();
+            else if (panelId === 'notificationsPanel') this.loadAnnouncements();
             else if (panelId === 'auditPanel') { const audit = el('auditOpen'); if (audit && !audit.hidden) audit.click(); }
         }
 
@@ -166,17 +190,17 @@
                 const data = await this.call('get_platform_overview');
                 const today = data.contracts_today || {};
                 const card = (label, value, icon, note) => h('div', { className: 'card-kpi stat-card' }, [
-                    h('div', { className: 'stat-icon-wrapper' }, [h('i', { className: `fas ${icon}` })]),
+                    h('div', { className: 'stat-icon-wrapper' }, [h('i', { className: `ms ${icon.split(' ').slice(1).join(' ')}`.trim(), attrs: { 'data-icon': icon.split(' ')[0], 'aria-hidden': 'true' } })]),
                     h('div', { className: 'stat-content' }, [h('div', { className: 'stat-label', text: label }), h('div', { className: 'stat-value', text: value }), h('div', { className: 'stat-badge', text: note })]),
                 ]);
                 grid.replaceChildren(
-                    card('Open tickets', data.open_tickets, 'fa-headset text-primary', 'Active queue'),
-                    card('Unassigned', data.unassigned_tickets, 'fa-inbox text-warning', 'Needs review'),
-                    card('Registered accounts', data.total_customers, 'fa-users text-info', 'Platform total'),
-                    card('Active restrictions', data.active_restrictions, 'fa-user-slash text-danger', 'Unexpired'),
-                    card('Contracts today', `${(today.DEMO ?? 0) + (today.REAL ?? 0)}`, 'fa-exchange-alt text-success', `Practice ${today.DEMO ?? 0} · Real ${today.REAL ?? 0}`),
-                    card('Active staff', data.active_staff, 'fa-user-shield text-primary', 'Operations'),
-                    card('Engine', String(data.engine_health || 'unavailable').toUpperCase(), `fa-bolt ${{ healthy: 'text-success', watch: 'text-warning', alert: 'text-danger', degraded: 'text-danger' }[data.engine_health] || 'text-secondary'}`, 'Details in the Engine tab'),
+                    card('Open tickets', data.open_tickets, 'support_agent text-primary', 'Active queue'),
+                    card('Unassigned', data.unassigned_tickets, 'inbox text-warning', 'Needs review'),
+                    card('Registered accounts', data.total_customers, 'group text-info', 'Platform total'),
+                    card('Active restrictions', data.active_restrictions, 'person_off text-danger', 'Unexpired'),
+                    card('Contracts today', `${(today.DEMO ?? 0) + (today.REAL ?? 0)}`, 'swap_horiz text-success', `Practice ${today.DEMO ?? 0} · Real ${today.REAL ?? 0}`),
+                    card('Active staff', data.active_staff, 'admin_panel_settings text-primary', 'Operations'),
+                    card('Engine', String(data.engine_health || 'unavailable').toUpperCase(), `bolt ${{ healthy: 'text-success', watch: 'text-warning', alert: 'text-danger', degraded: 'text-danger' }[data.engine_health] || 'text-secondary'}`, 'Details in the Engine tab'),
                 );
                 status.textContent = `Live as of ${new Date(data.timestamp).toLocaleTimeString()}`;
             } catch (error) {
@@ -272,8 +296,10 @@
             el('customerDetailMeta').textContent = '';
             el('customerAccountsList').replaceChildren();
             el('customerRestrictionsList').replaceChildren();
+            el('customerOnboarding')?.replaceChildren();
             el('restrictionListStatus').textContent = '';
             this.renderRestrictionChoices();
+            this.resetCustomerMessage();
             try {
                 const data = await this.call('get_admin_customer_detail', { p_user_id: userId });
                 if (this.customerId !== userId) return;
@@ -283,6 +309,35 @@
                 el('customerRestrictionsList').replaceChildren(...(data.restrictions?.length ? data.restrictions.map((row) => this.restrictionItem(row, userId)) : [h('li', { className: 'list-group-item text-muted', text: 'No restrictions recorded for this customer.' })]));
             } catch (error) {
                 if (error !== STALE) el('customerDetailName').textContent = `Could not load customer detail. ${explain(error)}`;
+                return;
+            }
+            this.renderOnboarding(userId);
+        }
+
+        // What the customer told us at onboarding (staff_get_customer_onboarding, customers.read).
+        async renderOnboarding(userId) {
+            const list = el('customerOnboarding');
+            if (!list) return;
+            const LABELS = {
+                goal: { learn: 'Learn how digit contracts work', fun: 'Trade short-term contracts', extra_income: 'Grow their trading', exploring: 'Test a strategy' },
+                experience: { new: 'Beginner', some: 'Intermediate', experienced: 'Experienced' },
+                start_with: { tour: 'A trade', guides: 'A guide', dashboard: 'The dashboard' },
+                interests: { evenodd: 'Even / Odd', matches: 'Matches / Differs', overunder: 'Over / Under' },
+            };
+            const row = (label, value) => [h('dt', { text: label }), h('dd', { text: value || 'Not answered' })];
+            try {
+                const view = await this.call('staff_get_customer_onboarding', { p_user_id: userId });
+                if (this.customerId !== userId) return;
+                const d = view.data || {};
+                list.replaceChildren(...[
+                    row('Status', view.status === 'not_started' ? 'Not seen yet' : view.status === 'completed' ? `${view.skipped ? 'Skipped' : 'Answered'} ${when(view.completed_at)}` : 'Started'),
+                    row('Here for', LABELS.goal[d.goal]),
+                    row('Experience', LABELS.experience[d.experience]),
+                    row('Interested in', (d.interests || []).map((key) => LABELS.interests[key]).join(', ')),
+                    row('Started with', LABELS.start_with[d.start_with]),
+                ].flat());
+            } catch (error) {
+                if (error !== STALE && this.customerId === userId) list.replaceChildren(h('dd', { text: `Could not load onboarding answers. ${explain(error)}` }));
             }
         }
 
@@ -407,6 +462,178 @@
                 status.textContent = 'Contract voided and the stake refunded.';
                 if (this.contract?.id === contractId) await this.openContract(contractId);
                 if (this.activeTab === 'enginePanel') this.loadStuck();
+            } catch (error) { this.report(status, error); }
+        }
+
+        // ================= FUNDING =================
+        /* The KES/USD reference rate and the treasury snapshot are data, not code:
+           an owner (funding.manage, with a recent authenticator code) publishes
+           them here. The server validates and audits every change. */
+        bindFundingEvents() {
+            el('fundingRefresh').onclick = () => this.loadFunding();
+            el('fundingEnvironment').onchange = () => this.loadFunding();
+            el('fundingRateForm').onsubmit = (event) => { event.preventDefault(); this.publishRate(); };
+            el('fundingTreasuryForm').onsubmit = (event) => { event.preventDefault(); this.recordTreasury(); };
+            el('fundingDecisionForm').onsubmit = (event) => { event.preventDefault(); this.decideRate(); };
+            el('fundingDecisionCancel').onclick = () => { el('fundingDecisionForm').hidden = true; };
+            ['fundingRateInput', 'fundingRateDate'].forEach((id) => { el(id).oninput = () => { this.rateConfirmed = null; el('fundingRateCheck').hidden = true; }; });
+        }
+
+        async loadFunding() {
+            const status = el('fundingStatus');
+            const manage = this.can('funding.manage');
+            el('fundingRateForm').hidden = !manage;
+            el('fundingTreasuryForm').hidden = !manage;
+            if (!el('fundingRateDate').value) el('fundingRateDate').value = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Nairobi' }).format(new Date());
+            status.textContent = 'Loading funding status…';
+            try {
+                const overview = await this.call('funding_staff_overview', { p_environment: el('fundingEnvironment').value });
+                this.funding = overview;
+                const rate = overview.rate || {};
+                el('fundingRateValue').textContent = rate.kes_per_usd ? `KES ${Number(rate.kes_per_usd).toFixed(4)}` : 'No rate';
+                el('fundingRateMeta').textContent = rate.version ? `Version ${rate.version}, dated ${rate.rate_date}. ${rate.stale ? 'STALE: quotes are paused until a new rate is published.' : 'Fresh.'}` : '';
+                el('fundingRateMeta').classList.toggle('text-danger', Boolean(rate.stale));
+                const treasury = overview.treasury || {};
+                const coverage = treasury.coverage_bp != null ? ` · ${(Number(treasury.coverage_bp) / 100).toFixed(2)}%` : '';
+                el('fundingTreasuryValue').textContent = treasury.status === 'UNKNOWN' ? 'Unknown' : `${treasury.status || '—'}${coverage}`;
+                el('fundingTreasuryMeta').textContent = treasury.snapshot_at
+                    ? `Reserve KES ${Number(treasury.kes_liquid_reserve).toLocaleString('en-KE')} recorded ${new Date(treasury.snapshot_at).toLocaleString()}; next snapshot due by ${new Date(new Date(treasury.snapshot_at).getTime() + 24 * 3600 * 1000).toLocaleString()}.`
+                    : 'No snapshot recorded.';
+                el('fundingTreasuryMeta').classList.toggle('text-danger', treasury.status !== 'OK');
+                this.loadRateSync();
+                this.loadTreasuryChain();
+                status.textContent = `${overview.environment} · sandbox module ${overview.sandbox_module ? 'on' : 'off'} · production module ${overview.production_module ? 'on' : 'off'}`;
+            } catch (error) { this.report(status, error); }
+        }
+
+        /* The automatic CBK import: when it last looked, what it saw, and any
+           rate it held because the move was larger than its band. */
+        async loadRateSync() {
+            const meta = el('fundingSyncMeta');
+            const body = el('fundingPendingBody');
+            try {
+                const sync = await this.call('funding_rate_sync_status');
+                const last = sync.last;
+                const band = `${(Number(sync.band_bp) / 100).toFixed(1)}%`;
+                const outcome = {
+                    PUBLISHED: 'published automatically', UNCHANGED: 'no newer CBK rate', PENDING_APPROVAL: 'held for approval',
+                    APPROVED: 'approved', REJECTED: 'rejected', INVALID: 'ignored as implausible', FAILED: 'could not read the CBK page',
+                };
+                meta.textContent = last
+                    ? `Last check ${new Date(last.last_seen_at).toLocaleString()}: ${outcome[last.outcome] || last.outcome}${last.outcome === 'FAILED' ? ` (${last.detail})` : ` (KES ${Number(last.kes_per_usd).toFixed(4)} posted ${last.rate_date})`}. New CBK rates within ${band} of the current rate publish automatically; larger moves wait for an owner.`
+                    : `No automatic check has run yet. New CBK rates within ${band} of the current rate will publish automatically; larger moves wait for an owner.`;
+                meta.classList.toggle('text-danger', last?.outcome === 'FAILED');
+                const manage = this.can('funding.manage');
+                if (!sync.pending.length) { body.replaceChildren(emptyRow(5, 'Nothing is waiting for approval.')); return; }
+                body.replaceChildren(...sync.pending.map((row) => {
+                    const cells = [row.rate_date, `KES ${Number(row.kes_per_usd).toFixed(4)}`, row.change_bp == null ? '—' : `${(Number(row.change_bp) / 100).toFixed(2)}%`, row.detail || ''];
+                    const actions = h('td', { className: 'text-end pe-3' });
+                    if (manage) {
+                        const decide = (approve) => () => this.openRateDecision(row, approve);
+                        actions.append(
+                            h('button', { className: 'btn btn-premium-primary btn-sm me-1', text: 'Approve', attrs: { type: 'button' }, onClick: decide(true) }),
+                            h('button', { className: 'btn btn-light btn-sm border', text: 'Reject', attrs: { type: 'button' }, onClick: decide(false) }));
+                    }
+                    return h('tr', {}, [...cells.map((value, i) => h('td', { className: i === 0 ? 'ps-3' : '', text: value })), actions]);
+                }));
+            } catch (error) {
+                if (error !== STALE) { meta.textContent = `Could not load the automatic import. ${explain(error)}`; body.replaceChildren(); }
+            }
+        }
+
+        /* Sandbox snapshots are carried forward automatically from the last owner
+           figure for up to 30 days; production ones never are. */
+        async loadTreasuryChain() {
+            const line = el('fundingTreasuryChain');
+            try {
+                const chain = await this.call('funding_treasury_snapshot_status', { p_environment: el('fundingEnvironment').value });
+                if (!chain.automatic) { line.textContent = 'Production snapshots are never automatic: record each one from provider or bank evidence.'; return; }
+                if (!chain.owner_snapshot_id) { line.textContent = 'Automatic refresh is waiting for a first owner-recorded sandbox figure.'; return; }
+                const due = new Date(chain.owner_confirmation_due);
+                const overdue = due.getTime() < Date.now();
+                line.textContent = `${chain.latest_automatic ? 'Latest snapshot was carried forward automatically' : 'Latest snapshot was recorded by an owner'} from the owner figure of KES ${Number(chain.owner_kes_liquid_reserve).toLocaleString('en-KE')} (${new Date(chain.owner_recorded_at).toLocaleString()}). ${overdue ? 'Automatic refresh has stopped: record a new owner figure.' : `Automatic refresh continues until ${due.toLocaleString()}; record a new figure before then.`}`;
+                line.classList.toggle('text-danger', overdue);
+            } catch (error) {
+                if (error !== STALE) line.textContent = `Could not load the snapshot history. ${explain(error)}`;
+            }
+        }
+
+        openRateDecision(row, approve) {
+            el('fundingDecisionForm').hidden = false;
+            el('fundingDecisionId').value = String(row.id);
+            el('fundingDecisionApprove').value = approve ? 'yes' : 'no';
+            el('fundingDecisionSummary').textContent = `${approve ? 'Publish' : 'Reject'} KES ${Number(row.kes_per_usd).toFixed(4)} per USD posted ${row.rate_date}.`;
+            el('fundingDecisionStatus').textContent = '';
+            el('fundingDecisionReason').focus?.();
+        }
+
+        async decideRate() {
+            const status = el('fundingDecisionStatus');
+            const reason = el('fundingDecisionReason').value.trim();
+            if (reason.length < 10) { status.textContent = 'Give a reason of at least 10 characters.'; return; }
+            const approve = el('fundingDecisionApprove').value === 'yes';
+            status.textContent = approve ? 'Publishing rate…' : 'Rejecting…';
+            try {
+                let result;
+                if (!await this.runProtected(el('fundingDecisionForm'), status, async () => {
+                    result = await this.call('funding_decide_rate_observation', { p_observation: Number(el('fundingDecisionId').value), p_approve: approve, p_reason: reason });
+                })) return;
+                el('fundingDecisionReason').value = '';
+                el('fundingDecisionForm').hidden = true;
+                status.textContent = approve ? `Approved and published as rate version ${result.version}.` : 'Rejected. The current rate is unchanged.';
+                await this.loadFunding();
+            } catch (error) { this.report(status, error); }
+        }
+
+        async publishRate() {
+            const status = el('fundingRateStatus');
+            const check = el('fundingRateCheck');
+            const value = el('fundingRateInput').value.trim();
+            const date = el('fundingRateDate').value;
+            const reason = el('fundingRateReason').value.trim();
+            if (!/^\d+(\.\d{1,4})?$/.test(value) || Number(value) < 50 || Number(value) > 500) { status.textContent = 'Enter a rate between 50 and 500 with at most four decimals.'; return; }
+            if (!date) { status.textContent = 'Choose the rate date.'; return; }
+            if (reason.length < 10) { status.textContent = 'Give a reason of at least 10 characters.'; return; }
+            // A large move is more often a typo than a market: ask for a second submit.
+            const current = Number(this.funding?.rate?.kes_per_usd);
+            const change = current ? Math.abs(Number(value) - current) / current : 0;
+            const key = `${value}|${date}`;
+            if (change > 0.03 && this.rateConfirmed !== key) {
+                this.rateConfirmed = key;
+                check.hidden = false;
+                check.textContent = `KES ${value} differs from the current KES ${current.toFixed(4)} by ${(change * 100).toFixed(1)}%. Check the figure, then submit again to publish it.`;
+                return;
+            }
+            status.textContent = 'Publishing rate…';
+            try {
+                let result;
+                if (!await this.runProtected(el('fundingRateForm'), status, async () => {
+                    result = await this.call('funding_publish_rate', { p_kes_per_usd: Number(value), p_rate_date: date, p_source_reference: el('fundingRateSource').value.trim(), p_reason: reason });
+                })) return;
+                this.rateConfirmed = null;
+                check.hidden = true;
+                el('fundingRateReason').value = '';
+                el('fundingRateInput').value = '';
+                status.textContent = `Published rate version ${result.version}: KES ${Number(result.kes_per_usd).toFixed(4)} per USD dated ${result.rate_date}.`;
+                await this.loadFunding();
+            } catch (error) { this.report(status, error); }
+        }
+
+        async recordTreasury() {
+            const status = el('fundingTreasuryStatus');
+            const value = el('fundingTreasuryInput').value.trim();
+            const note = el('fundingTreasuryNote').value.trim();
+            if (!/^\d+(\.\d{1,2})?$/.test(value)) { status.textContent = 'Enter the reserve in KES with at most two decimals.'; return; }
+            if (note.length < 10) { status.textContent = 'Give a note of at least 10 characters.'; return; }
+            status.textContent = 'Recording snapshot…';
+            try {
+                let result;
+                if (!await this.runProtected(el('fundingTreasuryForm'), status, async () => {
+                    result = await this.call('funding_record_treasury_snapshot', { p_environment: el('fundingEnvironment').value, p_kes_liquid_reserve: Number(value), p_note: note });
+                })) return;
+                el('fundingTreasuryNote').value = '';
+                status.textContent = `Snapshot recorded. Coverage status: ${result.status}.`;
+                await this.loadFunding();
             } catch (error) { this.report(status, error); }
         }
 
@@ -573,6 +800,154 @@
         }
 
         // ================= STAFF MANAGEMENT (OWNER ONLY) =================
+        // ================= NOTIFICATIONS =================
+        /* Announcements reach every matching customer, so publishing is two steps: Review shows a
+           preview and the number of customers it reaches, then Publish sends. Copy that promises
+           profit or presses for haste is refused before it reaches the server. */
+        bindNotificationEvents() {
+            const form = el('announcementForm');
+            const fields = ['announcementTitle', 'announcementBody', 'announcementSeverity', 'announcementLink'];
+            const edited = () => { this.renderAnnouncementPreview(); el('announcementConfirm').hidden = true; el('announcementReview').hidden = false; };
+            for (const id of [...fields, 'announcementAudience', 'announcementStarts', 'announcementEnds']) el(id).oninput = edited;
+            form.onsubmit = async (event) => {
+                event.preventDefault();
+                const status = el('announcementStatus');
+                const draft = this.announcementDraft();
+                if (draft.problem) { status.textContent = draft.problem; return; }
+                status.textContent = 'Counting the audience…';
+                try {
+                    const count = await this.call('staff_announcement_audience_count', { p_audience: draft.audience });
+                    const timing = draft.startsAt ? `from ${when(draft.startsAt)}` : 'now';
+                    el('announcementConfirmText').textContent = `Show "${draft.title}" to ${count} customer${count === 1 ? '' : 's'} ${timing}${draft.endsAt ? ` until ${when(draft.endsAt)}` : ''}?`;
+                    el('announcementConfirm').hidden = false;
+                    el('announcementReview').hidden = true;
+                    status.textContent = '';
+                    el('announcementConfirmSend').focus();
+                } catch (error) { this.report(status, error); }
+            };
+            el('announcementConfirmCancel').onclick = () => { el('announcementConfirm').hidden = true; el('announcementReview').hidden = false; el('announcementTitle').focus(); };
+            el('announcementConfirmSend').onclick = async () => {
+                const status = el('announcementStatus');
+                const send = el('announcementConfirmSend');
+                const draft = this.announcementDraft();
+                if (draft.problem) { status.textContent = draft.problem; return; }
+                // One request id per intended announcement, reused if the same publish is retried.
+                if (!form.dataset.requestId) form.dataset.requestId = window.crypto.randomUUID();
+                send.disabled = true; send.setAttribute('aria-busy', 'true');
+                status.textContent = 'Publishing…';
+                try {
+                    if (!await this.runProtected(form, status, () => this.call('staff_publish_announcement', {
+                        p_title: draft.title, p_body: draft.body, p_link: draft.link, p_severity: draft.severity, p_audience: draft.audience,
+                        p_starts_at: draft.startsAt, p_ends_at: draft.endsAt, p_reason: draft.reason, p_request_id: form.dataset.requestId,
+                    }))) return;
+                    delete form.dataset.requestId;
+                    form.reset();
+                    edited();
+                    status.textContent = draft.startsAt ? 'Announcement scheduled.' : 'Announcement published.';
+                    await this.loadAnnouncements();
+                } catch (error) { this.report(status, error); }
+                finally { send.disabled = false; send.removeAttribute('aria-busy'); }
+            };
+            el('announcementsRefresh').onclick = () => this.loadAnnouncements();
+            const withdraw = el('withdrawAnnouncementForm');
+            withdraw.onsubmit = async (event) => {
+                event.preventDefault();
+                const status = el('withdrawAnnouncementStatus');
+                const reason = el('withdrawAnnouncementReason').value.trim();
+                if (reason.length < 3) { status.textContent = 'Give a reason of at least 3 characters.'; return; }
+                status.textContent = 'Withdrawing…';
+                try {
+                    if (!await this.runProtected(withdraw, status, () => this.call('staff_withdraw_announcement', { p_id: el('withdrawAnnouncementId').value, p_reason: reason }))) return;
+                    withdraw.hidden = true;
+                    await this.loadAnnouncements();
+                    el('announcementsStatus').textContent = 'Announcement withdrawn. Customers no longer see it.';
+                } catch (error) { this.report(status, error); }
+            };
+            el('withdrawAnnouncementCancel').onclick = () => { withdraw.hidden = true; };
+            const message = el('customerMessageForm');
+            message.onsubmit = async (event) => {
+                event.preventDefault();
+                const status = el('customerMessageStatus');
+                const userId = this.customerId;
+                const draft = messageDraft(el('customerMessageTitle').value, el('customerMessageBody').value, el('customerMessageLink').value, el('customerMessageReason').value);
+                if (!userId) return;
+                if (draft.problem) { status.textContent = draft.problem; return; }
+                if (!message.dataset.requestId) message.dataset.requestId = window.crypto.randomUUID();
+                status.textContent = 'Sending…';
+                try {
+                    await this.call('staff_send_notification', { p_user_id: userId, p_title: draft.title, p_body: draft.body, p_link: draft.link, p_ticket_id: null, p_reason: draft.reason, p_request_id: message.dataset.requestId });
+                    if (this.customerId !== userId) return;
+                    this.resetCustomerMessage();
+                    el('customerMessageStatus').textContent = 'Message sent. It is in the customer\'s notification centre.';
+                } catch (error) { this.report(status, error); }
+            };
+            this.renderAnnouncementPreview();
+        }
+
+        announcementDraft() {
+            const draft = messageDraft(el('announcementTitle').value, el('announcementBody').value, el('announcementLink').value, el('announcementReason').value);
+            const at = (id) => (el(id).value ? new Date(el(id).value) : null);
+            const starts = at('announcementStarts'), ends = at('announcementEnds');
+            draft.severity = el('announcementSeverity').value;
+            draft.audience = el('announcementAudience').value;
+            draft.startsAt = starts && starts > new Date() ? starts.toISOString() : null;
+            draft.endsAt = ends ? ends.toISOString() : null;
+            if (!draft.problem && ends && ends <= (starts && starts > new Date() ? starts : new Date())) draft.problem = 'The end must be after the start.';
+            return draft;
+        }
+
+        // Shows the announcement as a customer will read it in the notification centre.
+        renderAnnouncementPreview() {
+            const title = el('announcementTitle').value.trim();
+            const body = el('announcementBody').value.trim();
+            const important = el('announcementSeverity').value === 'important';
+            const problem = copyProblem(`${title} ${body}`);
+            el('announcementCheck').hidden = !problem;
+            el('announcementCheck').textContent = problem || '';
+            el('announcementPreview').replaceChildren(...(title || body ? [
+                h('p', { className: 'small text-secondary mb-1', text: `${important ? 'Important announcement' : 'Announcement'} · now · Unread` }),
+                h('p', { className: 'fw-bold mb-1', text: title || 'Title' }),
+                h('p', { className: 'small mb-0', text: body || 'Message' }),
+            ] : [h('p', { className: 'small text-secondary mb-0', text: 'Write a title and message to see the preview.' })]));
+        }
+
+        async loadAnnouncements() {
+            const status = el('announcementsStatus');
+            const body = el('announcementsBody');
+            status.textContent = 'Loading announcements…';
+            try {
+                const rows = await this.call('staff_list_announcements', { p_limit: 50 }) || [];
+                status.textContent = rows.length ? `${rows.length} announcement${rows.length === 1 ? '' : 's'}, newest first` : '';
+                const AUDIENCE = { all: 'All customers', real: 'Real holders', practice: 'Practice holders' };
+                const STATE = { live: 'Live', scheduled: 'Scheduled', ended: 'Ended', withdrawn: 'Withdrawn' };
+                body.replaceChildren(...(rows.length ? rows.map((row) => h('tr', { attrs: { 'data-announcement': row.id } }, [
+                    h('td', { className: 'ps-3' }, [h('strong', { text: row.title }), h('br'), h('small', { className: 'text-muted', text: `${row.severity === 'important' ? 'Important · ' : ''}${row.body}` })]),
+                    cell(AUDIENCE[row.audience] || row.audience),
+                    cell(STATE[row.state] || row.state),
+                    cell(`${when(row.starts_at)}${row.ends_at ? ` to ${when(row.ends_at)}` : ''}`, 'text-muted'),
+                    cell(String(row.reads ?? 0), 'mono'),
+                    h('td', { className: 'text-end pe-3' }, ['live', 'scheduled'].includes(row.state) ? [button('Withdraw', 'btn btn-light btn-sm border', () => {
+                        el('withdrawAnnouncementId').value = row.id;
+                        el('withdrawAnnouncementTitle').textContent = `Withdraw "${row.title}"? Customers stop seeing it at once.`;
+                        el('withdrawAnnouncementReason').value = '';
+                        el('withdrawAnnouncementStatus').textContent = '';
+                        el('withdrawAnnouncementForm').hidden = false;
+                        el('withdrawAnnouncementReason').focus();
+                    })] : []),
+                ])) : [emptyRow(6, 'No announcements yet.')]));
+            } catch (error) {
+                if (error !== STALE) { body.replaceChildren(); status.textContent = `Could not load announcements. ${explain(error)}`; }
+            }
+        }
+
+        resetCustomerMessage() {
+            const form = el('customerMessageForm');
+            form.hidden = !this.can('notifications.send');
+            form.reset();
+            delete form.dataset.requestId;
+            el('customerMessageStatus').textContent = '';
+        }
+
         bindStaffEvents() {
             const form = el('staffRoleForm');
             form.onsubmit = async (event) => {
@@ -635,13 +1010,13 @@
             this.capabilities = new Set();
             this.customerId = null;
             this.contract = null;
-            for (const id of ['overviewCards', 'customersTableBody', 'customerAccountsList', 'customerRestrictionsList', 'contractsTableBody', 'contractDetailContent', 'engineHealthBody', 'enginePolicyHistory', 'engineExposureBody', 'engineEpochsBody', 'engineStuckBody', 'staffTableBody']) el(id)?.replaceChildren();
-            for (const id of ['overviewStatus', 'customersStatus', 'restrictionStatus', 'restrictionListStatus', 'contractsStatus', 'contractVoidStatus', 'engineStatus', 'enginePolicyCurrent', 'policyPublishStatus', 'indexStatusMessage', 'engineVoidStatus', 'staffStatus', 'staffRoleStatus']) { const node = el(id); if (node) node.textContent = ''; }
-            for (const id of ['customerDetailModal', 'contractDetailCard', 'indexStatusCard', 'engineVoidCard', 'staffRoleCard']) { const node = el(id); if (node) node.hidden = true; }
+            for (const id of ['overviewCards', 'customersTableBody', 'customerAccountsList', 'customerRestrictionsList', 'contractsTableBody', 'contractDetailContent', 'engineHealthBody', 'enginePolicyHistory', 'engineExposureBody', 'engineEpochsBody', 'engineStuckBody', 'staffTableBody', 'announcementsBody']) el(id)?.replaceChildren();
+            for (const id of ['overviewStatus', 'customersStatus', 'restrictionStatus', 'restrictionListStatus', 'contractsStatus', 'contractVoidStatus', 'engineStatus', 'enginePolicyCurrent', 'policyPublishStatus', 'indexStatusMessage', 'engineVoidStatus', 'staffStatus', 'staffRoleStatus', 'announcementsStatus', 'announcementStatus', 'withdrawAnnouncementStatus', 'customerMessageStatus']) { const node = el(id); if (node) node.textContent = ''; }
+            for (const id of ['customerDetailModal', 'contractDetailCard', 'indexStatusCard', 'engineVoidCard', 'staffRoleCard', 'withdrawAnnouncementForm', 'customerMessageForm', 'announcementConfirm']) { const node = el(id); if (node) node.hidden = true; }
             document.querySelectorAll('[data-reverify]').forEach((wrap) => { wrap.hidden = true; wrap.querySelectorAll('input').forEach((input) => { input.value = ''; }); });
         }
     }
 
     window.adminOperations = new AdminOperations();
-    window.smartProfitAdminRules = Object.freeze({ restrictionCapability, restrictionAllowed });
+    window.smartProfitAdminRules = Object.freeze({ restrictionCapability, restrictionAllowed, copyProblem, messageDraft });
 })();

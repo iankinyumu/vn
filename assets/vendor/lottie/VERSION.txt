@@ -1,0 +1,1 @@
+lottie-web 5.12.2 (build/player/lottie_light.min.js), MIT, from the npm package. SVG renderer only.

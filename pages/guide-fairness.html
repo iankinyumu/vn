@@ -3,29 +3,35 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0, viewport-fit=cover">
     <meta name="description"
         content="How SmartProfit commits to each day's seed, how to recompute published digits with the fairness verifier, and what the proof cannot establish.">
     <title>How to verify fairness — SmartProfit Guides</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0..1,0&amp;icon_names=account_circle,add,admin_panel_settings,alternate_email,area_chart,arrow_back,arrow_downward,arrow_forward,arrow_right_alt,arrow_upward,balance,bar_chart,block,bolt,calendar_month,campaign,cancel,casino,category,check,check_circle,chevron_left,chevron_right,circle,close,contrast,currency_exchange,dark_mode,difference,edit,equal,error,expand_more,format_list_numbered,graphic_eq,group,help,history,home,hourglass_top,inbox,info,key,keyboard_double_arrow_left,keyboard_double_arrow_right,layers,light_mode,list,lock,lock_open,login,logout,mail,menu,menu_book,mood,notifications,percent,person,person_off,pie_chart,qr_code,refresh,save,schedule,search,send,settings,shield,show_chart,smartphone,sort,speed,sports_score,star,support_agent,swap_horiz,table,tag,timer,tune,undo,upload,visibility,warning&amp;display=block" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
+    <script src="../assets/js/consent.js"></script><script src="../assets/js/theme.js"></script>
+    <link href="../assets/css/tokens.css" rel="stylesheet">
     <link href="../assets/css/glassmorphism.css" rel="stylesheet">
     <link href="../assets/css/style.css" rel="stylesheet">
     <link href="../assets/css/public-shell.css" rel="stylesheet">
+    <link href="../assets/css/app-shell.css" rel="stylesheet">
+    <link href="../assets/css/mode-tokens.css" rel="stylesheet">
     <link href="../assets/css/guides.css" rel="stylesheet">
 </head>
 
-<body class="premium-theme public-shell" data-shell-surface="public" data-shell-active="blog">
+<body class="premium-theme app-shell" data-shell-surface="app" data-shell-active="blog" data-account-switcher-auto>
+    <script src="../assets/js/auth.js"></script>
+    <script>requireAuth()</script>
     <div data-shell-header></div>
 
-    <main class="guides-wrapper">
+    <main class="guides-wrapper help-content">
         <article class="guide-article" aria-labelledby="guideTitle">
             <header class="guides-header">
                 <div class="guides-kicker"><a href="blog.html">Guides</a> · Fairness</div>
                 <h1 id="guideTitle">How to verify fairness, and what the proof cannot show</h1>
-                <p>Every digit comes from a secret seed that is committed to before it is used and revealed after. This guide explains that commit–reveal scheme, how to check published digits yourself, and where the proof stops.</p>
+                <p>Every tick comes from a secret seed that is committed to before it is used and revealed after. This guide explains that commit–reveal scheme, how to check published outcomes yourself, and where the proof stops.</p>
             </header>
 
             <h2>Seeds, epochs and commitments</h2>
@@ -36,24 +42,24 @@
                 <li>After the epoch ends, and once no open contract still depends on it (at the earliest 10 minutes after it ends), the seed is <strong>revealed</strong>.</li>
             </ul>
 
-            <h2>How a digit is derived from the seed</h2>
-            <p>For tick number <var>n</var> of an index, the engine computes HMAC-SHA-256 blocks keyed with the seed:</p>
+            <h2>How a price and digit are derived from the seed</h2>
+            <p>Older ticks (generation version 1) use HMAC-SHA-256 blocks keyed with the seed:</p>
             <code class="guide-formula">block = HMAC-SHA-256(key = seed, message = "digit|DEMO|&lt;index&gt;|&lt;n&gt;|&lt;k&gt;")   for k = 0, 1, 2, …<br>take the first byte b below 250; digit = b mod 10</code>
-            <p>Bytes of 250 or more are skipped so that every digit is exactly equally likely. <code>DEMO</code> is the Practice account type. Because the digit depends only on the seed, the index and the tick number, it is independent of every other tick and of the price path.</p>
+            <p>Version 1 skips bytes of 250 or more so every digit is equally likely. From each index's announced start, shown on the Trade page, ticks use version 2: one keyed <code>price-v2</code> stream generates the next price from the previous published price, an index-specific movement setting, a pull toward its base and a small uniform decimal component. The contract digit is read from that finished price. The uniform component keeps each final digit equally likely even after previous prices are known. <code>DEMO</code> means Practice.</p>
 
             <h2>Running the verifier</h2>
             <ol>
                 <li>Sign in and open the <a href="fairness.html">Fairness</a> page. It uses the account type you have selected.</li>
                 <li>Choose an index and a range of tick numbers, up to 5,000 at a time. The form starts on the latest 20 ticks.</li>
-                <li>Select <em>Verify range</em>. Your browser fetches the published ticks and the epoch proofs, checks that each revealed seed hashes to its commitment, then recomputes every digit locally with the browser's built-in SHA-256 and HMAC functions.</li>
+                <li>Select <em>Verify range</em>. Your browser fetches the published ticks and epoch proofs, checks that each revealed seed hashes to its commitment, then recomputes version 1 digits or version 2 prices and digits locally with built-in SHA-256 and HMAC functions. For adjacent version 2 ticks it also checks that the next tick uses the previous published price.</li>
             </ol>
-            <p>The result reports how many digits were verified, how many did not match, and how many are not yet verifiable because their epoch has not been revealed. Each epoch is listed with whether its commitment matched. To check a contract you held, take the settle tick number from your contract history and include it in the range.</p>
+            <p>The result reports how many ticks were verified, how many did not match, and how many are not yet verifiable because their epoch has not been revealed. Each epoch is listed with whether its commitment matched. To check a contract you held, take the settle tick number from your contract history and include it in the range.</p>
             <p>The verifier does not recompute the chain hash. If you want to check the chain as well, apply the formula above to consecutive epochs.</p>
 
             <h2>What the proof establishes</h2>
             <ul>
                 <li>The seed behind a revealed epoch was fixed before the epoch began, and it was not swapped afterwards.</li>
-                <li>Every published digit in that epoch follows from that seed by the published rule. Nobody chose individual digits after seeing purchases.</li>
+                <li>Published version 1 digits and version 2 price updates follow from that seed by their respective rules, given the published previous price for each version 2 tick.</li>
             </ul>
 
             <h2>What the proof cannot establish</h2>
@@ -62,24 +68,39 @@
                 <li><strong>That future digits are secret from the operator.</strong> Practice seeds are stored in the platform's database until they are revealed, so anyone with direct database access could compute upcoming Practice digits. Moving seeds into isolated custody is a required step before any funded account type can open.</li>
                 <li><strong>Anything about the current day.</strong> Ticks from an epoch that has not been revealed cannot be checked until after it ends.</li>
                 <li><strong>That payouts and balances were posted correctly.</strong> The verifier checks digits, not accounting. Compare each settled contract's result with its settle digit and your balance history.</li>
-                <li><strong>Anything about the displayed price path</strong>, beyond its final digit. The price movement is cosmetic and is not part of the proof.</li>
+                <li><strong>Unbroken history outside the checked range.</strong> The verifier checks adjacent price continuity where both ticks are available. A missing or purged predecessor leaves that earlier link unchecked.</li>
                 <li><strong>What comes next.</strong> Verification looks backwards. Revealed seeds and past digits say nothing about the next digit.</li>
             </ul>
 
-            <p class="guide-note">Practice accounts use virtual USD credits. They have no cash value and cannot be withdrawn.</p>
+            <h2>Version 3 proofs</h2>
+            <p>No index uses version 3 yet. When one does, the fairness page shows a second check for it, and this is what that check adds:</p>
+            <ul>
+                <li><strong>Keys outside the database.</strong> Seeds are created and held by a separate engine service. The database stores only encrypted copies it cannot open.</li>
+                <li><strong>Signed and timestamped commitments.</strong> Each day's commitment, which covers the seed and every model setting, is signed by SmartProfit. It is also timestamped by two independent timestamp authorities, DigiCert and Sectigo, before that day's ticks begin.</li>
+                <li><strong>A chained, checkpointed history.</strong> Every tick names the one before it. Signed checkpoints let a check start partway through history instead of from the first tick.</li>
+                <li><strong>A package you can check yourself.</strong> Download the proof package and run the open verifier (<code>node verifier/v3/cli.mjs package.json</code>), with no need to trust this page.</li>
+            </ul>
+            <p>Results are shown separately: verified, not yet revealable, missing history, invalid signature or commitment, invalid witness, price mismatch, digit mismatch, broken continuity, and unwitnessed. Someone who controls both the engine service and its key permissions could still see the current day's outcomes ahead of time. The timestamps show when a commitment existed, not how its seed was chosen.</p>
+
 
             <nav class="guide-nav" aria-label="Guide navigation">
-                <a href="guide-payouts.html"><i class="fas fa-arrow-left me-2" aria-hidden="true"></i>Previous: the house margin and payouts</a>
-                <a href="blog.html">All guides<i class="fas fa-arrow-right ms-2" aria-hidden="true"></i></a>
+                <a href="guide-payouts.html"><i class="ms me-2" data-icon="arrow_back" aria-hidden="true"></i>Previous: the house margin and payouts</a>
+                <a href="blog.html">All guides<i class="ms ms-2" data-icon="arrow_forward" aria-hidden="true"></i></a>
             </nav>
         </article>
     </main>
 
     <div data-shell-footer></div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-    <script src="../assets/js/auth.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
     <script src="../assets/js/shell.js"></script>
+    <script src="../assets/js/engine-notice.js"></script>
+    <script src="../assets/js/account-context.js"></script>
+    <script src="../assets/js/account-keys.js"></script>
+    <script src="../assets/js/account-switcher.js"></script>
+    <script src="../assets/js/deposit-sheet.js"></script>
+    <script src="../assets/js/notifications.js"></script>
+    <script src="../assets/js/restriction-banner.js"></script>
 </body>
 
 </html>

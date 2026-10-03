@@ -1,0 +1,118 @@
+/* Cookie and storage consent banner (assets/js/consent.js). A floating layer, so per DESIGN.md it
+   is solid --bg-3 with a 1px separator: no shadow, blur or rounded card. Both choices share one
+   style so neither is pushed. While it shows, the page keeps room for it at the bottom so it never
+   covers the last controls on a page. */
+
+html.has-consent-banner body {
+    padding-bottom: var(--consent-space, 0px);
+}
+
+.consent-banner {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 1090;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3) var(--space-5);
+    max-height: 60vh;
+    overflow-y: auto;
+    padding: var(--space-4) max(var(--space-4), env(safe-area-inset-right)) max(var(--space-4), env(safe-area-inset-bottom)) max(var(--space-4), env(safe-area-inset-left));
+    border-top: 1px solid var(--separator-strong);
+    background: var(--bg-3);
+    color: var(--label);
+    font-family: var(--font-text);
+}
+
+.consent-banner[hidden] {
+    display: none;
+}
+
+.consent-copy {
+    flex: 1 1 360px;
+    min-width: 0;
+    max-width: 72ch;
+}
+
+.consent-title {
+    margin: 0 0 var(--space-1);
+    font-size: var(--text-subhead);
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.consent-title:focus {
+    outline: none;
+}
+
+.consent-title:focus-visible {
+    outline: 2px solid var(--label);
+    outline-offset: 2px;
+}
+
+.consent-text {
+    margin: 0;
+    color: var(--label-2);
+    font-size: var(--text-footnote);
+    line-height: 1.5;
+}
+
+.consent-text a {
+    color: var(--label);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.consent-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.consent-btn {
+    min-height: var(--target, 44px);
+    min-width: 44px;
+    padding: 0 var(--space-4);
+    border: 1px solid var(--separator-strong);
+    border-radius: var(--radius-control);
+    background: transparent;
+    color: var(--label);
+    font: 600 var(--text-subhead) / 1 var(--font-text);
+    cursor: pointer;
+    transition: background-color var(--dur-fast) ease-out, border-color var(--dur-fast) ease-out;
+}
+
+.consent-btn:hover {
+    background: var(--fill-hover);
+    border-color: var(--label-2);
+}
+
+.consent-btn:active {
+    background: var(--fill-pressed);
+}
+
+.consent-btn:focus-visible {
+    outline: 2px solid var(--label);
+    outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+    .consent-actions,
+    .consent-btn {
+        flex: 1 1 auto;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .consent-btn {
+        transition: none;
+    }
+}
+
+@media (prefers-contrast: more) {
+    .consent-text {
+        color: var(--label);
+    }
+}

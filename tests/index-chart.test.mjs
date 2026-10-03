@@ -180,8 +180,52 @@ test('the whole trade line follows only the latest tick direction without changi
     log.strokes.length = 0;
     const flat = series(4, (n) => [1000, 1001, 1002, 1002][n - 1]);
     assert.equal(window.drawIndexChart(canvas, flat, { decimals: 2, directionColors: true }).direction, 'flat');
-    assert.deepEqual(log.strokes, ['#80d7ff'], 'an unchanged price should use the neutral line color');
+    assert.deepEqual(log.strokes, ['#f2f2f2'], 'an unchanged price should use the neutral line color');
     log.strokes.length = 0;
     window.drawIndexChart(canvas, ticks, { decimals: 2 });
-    assert.deepEqual(log.strokes, ['#80d7ff'], 'the shared dashboard chart gained trade-only colors');
+    assert.deepEqual(log.strokes, ['#f2f2f2'], 'the shared dashboard chart gained trade-only colors');
+});
+
+test('candles group ticks on tick-number boundaries with open, high, low and close, and the last one can still be forming', () => {
+    const window = loadCharts();
+    const prices = [10, 12, 9, 11, 13, 14, 12, 15];
+    const ticks = prices.map((price, position) => ({ tick_no: position + 3, price: String(price) }));
+    // Five ticks a candle: ticks 3-4 fall in bucket 0, 5-9 in bucket 1, 10 in bucket 2.
+    const candles = JSON.parse(JSON.stringify(window.indexChartCandles(ticks, 5).map(({ open, high, low, close, ticks: count, firstTick }) => ({ open, high, low, close, count, firstTick }))));
+    assert.deepEqual(candles, [
+        { open: 10, high: 12, low: 10, close: 12, count: 2, firstTick: 3 },
+        { open: 9, high: 14, low: 9, close: 12, count: 5, firstTick: 5 },
+        { open: 15, high: 15, low: 15, close: 15, count: 1, firstTick: 10 },
+    ]);
+    assert.equal(window.indexChartCandles(ticks, 0).length, ticks.length, 'a period below one tick is one tick per candle');
+});
+
+test('candle and OHLC charts draw one mark per candle right-aligned, with the axis, the latest close and an O/H/L/C readout', () => {
+    const window = loadCharts();
+    const ticks = series(300);
+    for (const style of ['candles', 'ohlc']) {
+        const { canvas, log } = fakeCanvas(600, 300);
+        const layout = window.drawIndexChart(canvas, ticks, { style, period: 10, decimals: 3 });
+        assert.equal(layout.style, style);
+        assert.equal(layout.candles, 31, 'ticks 1-300 at ten a candle, aligned on tick numbers: 1-9, 10-19 ... 290-299, 300');
+        assert.ok(layout.slot <= 22, 'few candles are not stretched across the plot');
+        const last = window.indexChartCandles(ticks, 10).at(-1);
+        assert.equal(layout.latestPrice, last.close);
+        assert.deepEqual({ ...layout.readout }, { O: last.open, H: last.high, L: last.low, C: last.close });
+        assert.ok(layout.labels.length >= 2, 'the price axis is drawn');
+        assert.ok(log.texts.some((item) => item.text === `$${last.close.toFixed(3)}`), 'the latest close is tagged on the axis');
+        assert.equal(log.lines.length, 0, 'no line is drawn');
+    }
+});
+
+test('the candle crosshair picks the candle under the pointer for the readout', () => {
+    const window = loadCharts();
+    const ticks = series(300);
+    const { canvas } = fakeCanvas(600, 300);
+    const layout = window.drawIndexChart(canvas, ticks, { style: 'candles', period: 10, decimals: 3, pointer: { x: 10, y: 50 } });
+    const candles = window.indexChartCandles(ticks, 10);
+    const hovered = candles[candles.length - layout.candles + layout.crosshair.candle];
+    assert.ok(layout.crosshair.candle < layout.candles - 1, 'a pointer near the left picks an older candle');
+    assert.equal(layout.readout.O, Number(hovered.open.toFixed(3)));
+    assert.equal(layout.readout.C, Number(hovered.close.toFixed(3)));
 });
