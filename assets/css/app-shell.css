@@ -153,13 +153,13 @@ body.has-rail.rail-expanded { padding-inline-start: calc(var(--rail-w-open) + va
 .app-fund-withdraw:active:not(:disabled) { background: var(--fill-pressed); }
 .app-fund-btn:focus-visible, .mode-switch-toggle:focus-visible, .app-topbar-menu:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
 .mode-switch { position: relative; min-width: 0; }
-.mode-switch-toggle { display: flex; align-items: baseline; gap: 10px; max-width: 100%; min-height: var(--target); padding: 4px 2px; border: 0; background: none; color: var(--label); cursor: pointer; }
+.mode-switch-toggle { display: flex; align-items: center; gap: 10px; max-width: 100%; min-height: var(--target); padding: 4px 2px; border: 0; background: none; color: var(--label); cursor: pointer; }
 .mode-switch-toggle:disabled { cursor: default; opacity: .7; }
 .mode-switch-toggle:active:not(:disabled) .mode-switch-balance { opacity: .7; }
 /* The account mode is spelled out ("PRACTICE" or "REAL"), never shown by colour alone. */
 .mode-switch-label { color: var(--label); font: 700 var(--text-caption-2) var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
 .mode-switch-balance { font: 500 var(--text-callout) var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mode-switch-caret { align-self: center; color: var(--label-2); font-size: 18px; transition: transform var(--dur-fast); }
+.mode-switch-caret { color: var(--label-2); font-size: 18px; vertical-align: 0; transition: transform var(--dur-fast); }
 .mode-switch-toggle[aria-expanded="true"] .mode-switch-caret { transform: rotate(180deg); }
 .mode-menu { position: absolute; top: calc(100% + 8px); inset-inline-start: 0; z-index: 1050; min-width: 240px; padding: 6px; background: var(--bg-3); border: 1px solid var(--separator); border-radius: var(--radius-card); box-shadow: var(--shadow-float); }
 .mode-menu[hidden] { display: none; }
@@ -217,9 +217,11 @@ body.has-rail.rail-expanded { padding-inline-start: calc(var(--rail-w-open) + va
     .app-topbar-actions { gap: 6px; }
     .app-fund-btn { padding: 0 10px; font-size: var(--text-caption); }
     .app-fund-btn i { display: none; }
-    .mode-switch-toggle { flex-direction: column; align-items: flex-start; justify-content: center; gap: 1px; padding: 2px; }
-    .mode-switch-balance { font-size: var(--text-subhead); overflow: visible; }
-    .mode-switch-caret { display: none; }
+    /* Two lines on phones: the mode with its caret, then the balance. */
+    .mode-switch-toggle { display: grid; grid-template-columns: auto auto; grid-template-areas: "label caret" "balance balance"; justify-content: start; align-content: center; align-items: center; column-gap: 2px; row-gap: 1px; padding: 2px; }
+    .mode-switch-label { grid-area: label; line-height: 1.2; }
+    .mode-switch-caret { grid-area: caret; font-size: 16px; }
+    .mode-switch-balance { grid-area: balance; font-size: var(--text-subhead); overflow: visible; }
 }
 @media (prefers-reduced-motion: reduce) { body.has-rail, .app-rail, .app-rail-text, .app-rail-expand i, .mode-switch-caret { transition: none; } }
 
