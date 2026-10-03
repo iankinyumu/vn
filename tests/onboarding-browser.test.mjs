@@ -80,3 +80,39 @@ test('"Skip for now" ends it at once and lands on the dashboard', async () => {
         await page.waitForURL(/dashboard\.html$/);
     } finally { await context.close(); }
 });
+
+// ---- The site follows the answers -----------------------------------------------------------
+
+test('the trade page opens on the contract the customer wanted to try', async () => {
+    const { page, context, errors } = await openApp(app, 'trade.html', { fake: tradeFake({}) + onboardingFake({ status: 'completed', data: { experience: 'some', interests: ['overunder'] } }) });
+    try {
+        await page.locator('[name="family"][value="overunder"]:checked').waitFor({ state: 'attached' });
+        assert.deepEqual(errors, []);
+    } finally { await context.close(); }
+});
+
+test('the first-visit tour runs for a newcomer and is skipped for an experienced trader', async () => {
+    for (const [experience, toured] of [['new', true], ['experienced', false]]) {
+        const { page, context } = await openApp(app, 'trade.html', { fake: tradeFake({}) + onboardingFake({ status: 'completed', data: { experience } }) });
+        try {
+            await page.locator('[data-companion]').waitFor();
+            await page.waitForTimeout(600);
+            const bubble = await page.locator('[data-companion-bubble]').isVisible();
+            assert.equal(bubble, toured, `${experience}: tour ${toured ? 'shown' : 'not shown'}`);
+        } finally { await context.close(); }
+    }
+});
+
+test('the profile shows the answers and saves changes to them', async () => {
+    const { page, context } = await openApp(app, 'profile.html', { fake: tradeFake({}) + onboardingFake({ status: 'completed', data: { experience: 'new', interests: ['evenodd'] } }) });
+    try {
+        await page.locator('[data-prefs-form] [name="experience"][value="new"]:checked').waitFor({ state: 'attached' });
+        await page.check('[data-prefs-form] [name="experience"][value="experienced"]');
+        await page.check('[data-prefs-form] [name="interests"][value="matches"]');
+        await page.click('[data-prefs-form] [type="submit"]');
+        await page.locator('[data-prefs-status]', { hasText: 'Saved' }).waitFor();
+        const saved = await page.evaluate(() => window.__RPC_LOG__.filter((call) => call.name === 'save_my_onboarding').map((call) => call.args).at(-1));
+        assert.deepEqual(saved.p_data, { experience: 'experienced', interests: ['evenodd', 'matches'] });
+        assert.equal(saved.p_finish, true);
+    } finally { await context.close(); }
+});

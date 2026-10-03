@@ -324,10 +324,14 @@
         refreshGate().catch(() => {});
         setInterval(() => refreshGate().catch(() => {}), 10000);
 
+        // The page opens on the contract the customer said they wanted to try (onboarding answers,
+        // changeable on the profile) until they choose another family here.
+        const INTEREST_FAMILY = { evenodd: 'evenodd', matches: 'matchdiffer', overunder: 'overunder' };
+        let preferredFamily = null, familyChosen = false;
         // Families and sides follow the live policy: a family appears when either of its types is enabled.
         const renderFamilies = () => {
             const available = FAMILIES.filter((item) => item.sides.some((type) => enabledTypes.has(type)));
-            if (!available.some((item) => item.key === family?.key)) family = available[0] || null;
+            if (!available.some((item) => item.key === family?.key)) family = available.find((item) => item.key === preferredFamily) || available[0] || null;
             familiesHost.querySelectorAll('.family-tab').forEach((node) => node.remove());
             familiesHost.append(...available.map((item) => { const tab = radio('family', item.key, item.label, 'family-tab'); tab.querySelector('input').checked = item.key === family?.key; return tab; }));
             // A single family needs no tabs: its two side buttons already name it.
@@ -577,8 +581,18 @@
             } catch (error) { report(error); notify({ tone: 'error', title: 'Order not placed', detail: status.textContent }); } finally { buying = false; delete button.dataset.busy; updateBuy(); }
         }
 
+        window.smartProfitOnboarding?.answers().then((answers) => {
+            preferredFamily = (answers.interests || []).map((key) => INTEREST_FAMILY[key]).find(Boolean) || null;
+            if (!preferredFamily || familyChosen || family?.key === preferredFamily) return;
+            if (!FAMILIES.find((item) => item.key === preferredFamily)?.sides.some((type) => enabledTypes.has(type))) return;
+            family = null;
+            renderFamilies();
+            changed();
+        }).catch(() => { /* No preference: the first family stays. */ });
+
         familiesHost.addEventListener('change', (event) => {
             if (event.target.name !== 'family') return;
+            familyChosen = true;
             family = FAMILIES.find((item) => item.key === event.target.value) || family;
             applyFamily();
             changed();

@@ -81,11 +81,25 @@
                     <p class="strength-text mt-2" data-profile-save-status role="status" aria-live="polite"></p>
                 </form>
             </div>
-            <section class="settings-card" aria-labelledby="verifyTitle" data-verification>
-                <h2 class="settings-title" id="verifyTitle"><i class="ms" data-icon="shield" aria-hidden="true"></i> Account verification</h2>
-                <p class="avatar-picker-hint">Optional while you use Practice. Verifying confirms who you are and checks that trading suits you; it will be needed before Real mode opens. It takes about five minutes and saves as you go.</p>
-                <p class="verify-status" data-verification-status role="status" aria-live="polite">Checking your verification…</p>
-                <a href="verification.html" class="btn btn-premium-primary mt-2" data-verification-link hidden>Start verification</a>
+            <section class="settings-card" aria-labelledby="prefsTitle">
+                <h2 class="settings-title" id="prefsTitle"><i class="ms" data-icon="tune" aria-hidden="true"></i> Your trading preferences</h2>
+                <p class="avatar-picker-hint">From your welcome answers. They decide how much guidance you see and which contract the trade page opens on.</p>
+                <form data-prefs-form novalidate>
+                    <fieldset class="pref-group">
+                        <legend>How familiar are you with trading?</legend>
+                        <label class="pref-option"><input type="radio" name="experience" value="new"> New to it: show the tour and tips</label>
+                        <label class="pref-option"><input type="radio" name="experience" value="some"> Tried it a bit</label>
+                        <label class="pref-option"><input type="radio" name="experience" value="experienced"> Trade regularly: keep hints to a minimum</label>
+                    </fieldset>
+                    <fieldset class="pref-group">
+                        <legend>Contracts you are interested in</legend>
+                        <label class="pref-option"><input type="checkbox" name="interests" value="evenodd"> Even / Odd</label>
+                        <label class="pref-option"><input type="checkbox" name="interests" value="matches"> Matches / Differs</label>
+                        <label class="pref-option"><input type="checkbox" name="interests" value="overunder"> Over / Under</label>
+                    </fieldset>
+                    <button type="submit" class="btn btn-premium-primary mt-2">Save preferences</button>
+                    <p class="strength-text mt-2" data-prefs-status role="status" aria-live="polite"></p>
+                </form>
             </section>
             <section class="settings-card" aria-labelledby="notifyPrefsTitle">
                 <h2 class="settings-title" id="notifyPrefsTitle"><i class="ms" data-icon="notifications" aria-hidden="true"></i> Notifications</h2>
@@ -130,7 +144,7 @@
     <script src="../assets/js/restriction-banner.js"></script>
     <script src="../assets/js/avatars.js"></script>
     <script src="../assets/js/profile-identity.js"></script>
-    <script src="../assets/js/profile-verification.js"></script>
+    <script src="../assets/js/profile-preferences.js"></script>
 </body>
 
 </html>

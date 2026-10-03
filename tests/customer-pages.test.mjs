@@ -36,7 +36,7 @@ test('every customer navigation surface links to the fairness verifier', () => {
     // Pages that mount the shared shell get their navigation from shell.js, whose public and app menus both list Fairness.
     const shell = fs.readFileSync('assets/js/shell.js', 'utf8');
     for (const menu of ['PUBLIC_LINKS', 'APP_LINKS']) assert.match(shell.match(new RegExp(`${menu} = Object\\.freeze\\(\\[([\\s\\S]*?)\\]\\)`))[1], /href: 'fairness\.html'/, menu);
-    for (const file of pages.filter((name) => !['404.html', 'forgot-password.html', 'onboarding.html', 'verification.html', 'staff-login.html', 'support.html', 'admin.html'].includes(name))) {
+    for (const file of pages.filter((name) => !['404.html', 'forgot-password.html', 'onboarding.html', 'staff-login.html', 'support.html', 'admin.html'].includes(name))) {
         const source = fs.readFileSync(path.join('pages', file), 'utf8');
         assert.ok(/fairness\.html/.test(source) || (/data-shell-header/.test(source) && source.includes('assets/js/shell.js')), file);
     }

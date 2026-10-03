@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { createTestDatabase, identities, claimsFor } from './helpers/test-db.mjs';
 
-const MIGRATIONS = ['supabase/migrations/20261003120000_customer_onboarding.sql', 'supabase/migrations/20261003130000_split_onboarding_and_verification.sql'];
+const MIGRATIONS = ['supabase/migrations/20261003120000_customer_onboarding.sql', 'supabase/migrations/20261003130000_split_onboarding_and_verification.sql', 'supabase/migrations/20261003140000_remove_verification.sql'];
 
-test('onboarding: a light, optional welcome that customers can answer or skip, kept apart from verification', async (t) => {
+test('onboarding: a light, optional welcome that customers can answer, skip or change later', async (t) => {
     const db = await createTestDatabase();
     for (const file of MIGRATIONS) await db.exec(fs.readFileSync(file, 'utf8'));
     const scalar = async (sql, args = []) => (await db.query(sql, args)).rows[0]?.result;
@@ -33,6 +33,10 @@ test('onboarding: a light, optional welcome that customers can answer or skip, k
         view = await save({ start_with: 'tour' }, true);
         assert.equal(view.status, 'completed');
         assert.equal(view.skipped, false);
+        const first = view.completed_at;
+        view = await save({ experience: 'experienced', interests: ['matches'] }, true);
+        assert.equal(view.data.experience, 'experienced', 'answers can be changed later, from the profile');
+        assert.equal(view.completed_at, first, 'changing answers keeps the original completion time');
     });
 
     await t.test('unknown answers are refused; clients cannot write the table', async () => {
@@ -62,18 +66,16 @@ test('onboarding: a light, optional welcome that customers can answer or skip, k
     });
 });
 
-test('the split keeps verification answers given before it', async () => {
+test('identity verification is gone: no table, no functions, no answers kept', async () => {
     const db = await createTestDatabase();
     await db.exec(fs.readFileSync(MIGRATIONS[0], 'utf8'));
     await db.query("select set_config('request.jwt.claims',$1,false)", [JSON.stringify(claimsFor('customer'))]);
     await db.exec('set role authenticated');
     await db.query('select public.save_my_onboarding_step(1,$1)', [JSON.stringify({ legal_first_name: 'Wanjiru', legal_last_name: 'Kamau', date_of_birth: '1994-05-17', nationality: 'KE', country_of_residence: 'KE', phone: '+254712345678' })]);
     await db.exec('reset role');
-    await db.exec(fs.readFileSync(MIGRATIONS[1], 'utf8'));
-    await db.exec('set role authenticated');
-    const view = (await db.query('select public.get_my_verification() as result')).rows[0].result;
-    assert.equal(view.current_step, 2);
-    assert.equal(view.data.legal_last_name, 'Kamau');
-    assert.equal((await db.query('select public.get_my_onboarding() as result')).rows[0].result.status, 'not_started', 'onboarding starts fresh');
-    await db.exec('reset role');
+    for (const file of MIGRATIONS.slice(1)) await db.exec(fs.readFileSync(file, 'utf8'));
+    const scalar = async (sql) => (await db.query(sql)).rows[0].result;
+    assert.equal(await scalar("select to_regclass('public.customer_verification') is null as result"), true);
+    assert.equal(await scalar("select count(*)::int as result from pg_proc where proname in ('get_my_verification', 'save_my_verification_step', 'complete_my_verification', 'staff_get_customer_verification', 'verification_view', 'verification_text', 'verification_choice', 'verification_bool')"), 0);
+    assert.equal(await scalar("select count(*)::int as result from information_schema.columns where table_schema = 'public' and column_name in ('date_of_birth', 'legal_last_name', 'tax_id', 'is_pep', 'address_line1')"), 0, 'no identity column remains anywhere in public');
 });

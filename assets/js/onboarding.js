@@ -48,7 +48,7 @@
     }
 
     async function leave(view) {
-        await window.markOnboardingComplete?.();
+        await window.markOnboardingComplete?.(view);
         window.location.replace(START_PAGES[view?.data?.start_with] || 'dashboard.html');
     }
 
@@ -87,7 +87,7 @@
             const { data: view, error } = await client.rpc('get_my_onboarding');
             if (error) throw error;
             // Already done: this page is not shown again.
-            if (view?.status === 'completed') { await window.markOnboardingComplete?.(); window.location.replace('dashboard.html'); return; }
+            if (view?.status === 'completed') { await window.markOnboardingComplete?.(view); window.location.replace('dashboard.html'); return; }
             fill(view?.data);
         } catch (_) { /* Start fresh; saving reports any problem. */ }
         show(1, { focus: false });

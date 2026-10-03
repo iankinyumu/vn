@@ -85,29 +85,54 @@
     window.getSupabaseClient = getSupabaseClient;
     window.getAuthenticatedUser = async () => (await getSession())?.user || null;
     window.isAuthenticated = async () => Boolean(await getSession());
-    /* Onboarding gate. A signed-in customer who has not finished account setup is sent to
-       onboarding.html from every signed-in page except the setup page itself and help. Finished
-       setup is remembered for the tab (essential session storage) so pages do not ask again. If the
-       status cannot be read the page stays open: this gate guides people, the server enforces. */
+    /* Onboarding: the welcome answers (goal, experience, interests, where to start).
+       - The gate: a signed-in customer who has not answered or skipped them is sent to
+         onboarding.html from every signed-in page except that page and help. If the status cannot
+         be read the page stays open; it is guidance, not a security control.
+       - The answers: pages tailor themselves with window.smartProfitOnboarding.answers() (for
+         example the trade page opens on a contract the customer chose). They are kept for the tab
+         in essential session storage, so each page does not ask the server again. */
     const ONBOARDING_OPEN_PAGES = new Set(['onboarding.html', 'contact.html', 'faq.html', 'support.html']);
-    const onboardingKey = (userId) => `smartprofit:onboarding:done:${userId}`;
-    async function onboardingFinished() {
-        const client = await getSupabaseClient();
+    const onboardingKey = (userId) => `smartprofit:onboarding:${userId}`;
+    async function currentUserId(client) {
         const { data: { session } } = await client.auth.getSession();
-        const userId = session?.user?.id;
-        if (!userId) return true;
-        try { if (sessionStorage.getItem(onboardingKey(userId)) === '1') return true; } catch (_) { /* ask the server */ }
-        const { data, error } = await client.rpc('get_my_onboarding');
-        if (error || !data || !data.status) return true;
-        if (data.status === 'completed') { try { sessionStorage.setItem(onboardingKey(userId), '1'); } catch (_) { /* asked again next page */ } }
-        return data.status === 'completed';
+        return session?.user?.id || null;
     }
-    window.markOnboardingComplete = async function markOnboardingComplete() {
+    function cacheOnboarding(userId, view) {
+        if (!userId || view?.status !== 'completed') return;
+        try { sessionStorage.setItem(onboardingKey(userId), JSON.stringify({ status: view.status, data: view.data || {} })); } catch (_) { /* asked again next page */ }
+    }
+    let onboardingRead = null;
+    async function readOnboarding() {
+        const client = await getSupabaseClient();
+        const userId = await currentUserId(client);
+        if (!userId) return null;
+        try { const cached = JSON.parse(sessionStorage.getItem(onboardingKey(userId))); if (cached?.status) return cached; } catch (_) { /* ask the server */ }
+        onboardingRead ||= client.rpc('get_my_onboarding').then(({ data, error }) => {
+            if (error || !data?.status) return null;
+            cacheOnboarding(userId, data);
+            return data;
+        }).finally(() => { onboardingRead = null; });
+        return onboardingRead;
+    }
+    async function onboardingFinished() {
+        const view = await readOnboarding();
+        return !view || view.status === 'completed';
+    }
+    // Called after the customer answers, skips or changes their answers (onboarding and profile pages).
+    window.markOnboardingComplete = async function markOnboardingComplete(view) {
         try {
-            const { data: { session } } = await (await getSupabaseClient()).auth.getSession();
-            if (session?.user?.id) sessionStorage.setItem(onboardingKey(session.user.id), '1');
+            const client = await getSupabaseClient();
+            const userId = await currentUserId(client);
+            if (!userId) return;
+            if (view?.status) cacheOnboarding(userId, view);
+            else sessionStorage.setItem(onboardingKey(userId), JSON.stringify({ status: 'completed', data: {} }));
         } catch (_) { /* The next page asks the server instead. */ }
     };
+    window.smartProfitOnboarding = Object.freeze({
+        // The customer's answers ({ goal, experience, interests, start_with }), or {} if unknown.
+        answers: async () => { try { return (await readOnboarding())?.data || {}; } catch (_) { return {}; } }
+    });
 
     window.requireAuth = async function requireAuth() {
         const currentPath = window.location.pathname.split('/').pop() || 'dashboard.html';

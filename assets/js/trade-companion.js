@@ -228,7 +228,12 @@
 
         applyHidden();
         evaluate();
-        if (!read().toured && !read().hidden) tour(0);
+        // The first-visit tour follows the onboarding answers: someone who trades regularly is not
+        // walked through it (it stays one tap away under help); everyone else gets it once.
+        if (!read().toured && !read().hidden) {
+            const answers = window.smartProfitOnboarding?.answers?.() || Promise.resolve({});
+            answers.then((given) => { if (given?.experience === 'experienced') write({ toured: true }); else tour(0); }).catch(() => tour(0));
+        }
     }
 
     // The character is the one picked on the profile (auth metadata), or the stable fallback.
