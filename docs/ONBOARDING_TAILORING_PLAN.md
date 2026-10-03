@@ -64,7 +64,7 @@ No change. It stays a one-time landing choice.
 ## Order
 
 1. Tailoring module and profile Goal field (items 1 and 6). **Done 2026-10-03:** `assets/js/tailoring.js` loaded on every signed-in page; trade page and tour read it; Goal is on the profile.
-2. Guidance levels (item 2).
+2. Guidance levels (item 2). **Done 2026-10-03:** "How this contract works" on the ticket (open at full, closed otherwise), Getting started on the dashboard at full only, light offers the tour. No answer means no level: the tour runs once as before, the explanation starts closed, no Getting started.
 3. Dashboard lead for `learn` and `short_term`, which reorder existing blocks (item 3, first half).
 4. Results summary and breakdown for `grow` and `strategy` (item 3, second half). Check data access first.
 5. Contract ordering on tabs and guides (item 4).

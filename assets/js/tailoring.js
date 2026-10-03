@@ -2,13 +2,15 @@
    itself. Pages read these settings, never the raw answers. Tailoring changes order and emphasis
    only; every page, contract and section stays reachable whatever the answers are.
 
-     guidance        'full' | 'light' | 'minimal'   from experience (new, some, experienced)
+     guidance        'full' | 'light' | 'minimal' | null   from experience (new, some, experienced)
      dashboardLead   'guides' | 'indices' | 'results' | 'breakdown' | null   from goal
      contracts       the contract families chosen, in a fixed order
 
-   No answer gives today's site: full guidance, the usual dashboard order, no preferred contract.
-   The settings are set on <html> as data-guidance and data-dashboard-lead, and kept for the tab
-   with the onboarding answers (cleared on logout) so they apply before the answers are read. */
+   No answer gives today's site: no guidance level (the tour still runs once), the usual dashboard
+   order, no preferred contract. The settings are set on <html> as data-guidance and
+   data-dashboard-lead, and kept for the tab with the onboarding answers (cleared on logout) so they
+   apply before the answers are read. Explanations marked data-guidance-open (a <details>) start
+   open at full guidance and closed otherwise; the customer can still open or close them. */
 (function () {
     'use strict';
 
@@ -16,12 +18,12 @@
     const GUIDANCE = { new: 'full', some: 'light', experienced: 'minimal' };
     const LEAD = { learn: 'guides', short_term: 'indices', grow: 'results', strategy: 'breakdown' };
     const CONTRACTS = ['evenodd', 'matches', 'overunder'];
-    const DEFAULTS = Object.freeze({ guidance: 'full', dashboardLead: null, contracts: Object.freeze([]) });
+    const DEFAULTS = Object.freeze({ guidance: null, dashboardLead: null, contracts: Object.freeze([]) });
 
     function derive(answers = {}) {
         const chosen = Array.isArray(answers?.interests) ? answers.interests : [];
         return Object.freeze({
-            guidance: GUIDANCE[answers?.experience] || DEFAULTS.guidance,
+            guidance: GUIDANCE[answers?.experience] || null,
             dashboardLead: LEAD[answers?.goal] || null,
             contracts: Object.freeze(CONTRACTS.filter((key) => chosen.includes(key))),
         });
@@ -40,7 +42,9 @@
 
     function apply(settings) {
         const root = document.documentElement;
-        root.dataset.guidance = settings.guidance;
+        if (settings.guidance) root.dataset.guidance = settings.guidance;
+        else delete root.dataset.guidance;
+        document.querySelectorAll('details[data-guidance-open]').forEach((node) => { node.open = settings.guidance === 'full'; });
         if (settings.dashboardLead) root.dataset.dashboardLead = settings.dashboardLead;
         else delete root.dataset.dashboardLead;
     }
@@ -56,6 +60,7 @@
     }
 
     apply(current);
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => apply(current), { once: true });
 
     const fresh = () => (window.smartProfitOnboarding?.answers?.() || Promise.resolve({}))
         .then(update, () => current);

@@ -133,11 +133,11 @@ test('tailoring turns the answers into settings and marks the page with them', a
                 unknown: derive({ goal: 'fun', experience: 'guru', interests: ['dice'] }),
             };
         });
-        assert.deepEqual(mapped.none, { guidance: 'full', dashboardLead: null, contracts: [] }, 'no answers keep today\'s site');
+        assert.deepEqual(mapped.none, { guidance: null, dashboardLead: null, contracts: [] }, 'no answers keep today\'s site');
         assert.equal(mapped.learn, 'guides');
         assert.equal(mapped.shortTerm, 'indices');
         assert.deepEqual(mapped.strategy, { guidance: 'minimal', dashboardLead: 'breakdown', contracts: [] });
-        assert.deepEqual(mapped.unknown, { guidance: 'full', dashboardLead: null, contracts: [] });
+        assert.deepEqual(mapped.unknown, { guidance: null, dashboardLead: null, contracts: [] });
         assert.deepEqual(errors.filter((text) => /tailoring|onboarding/.test(text)), []);
     } finally { await context.close(); }
 });
@@ -154,4 +154,44 @@ test('the profile changes the goal and the page follows at once', async () => {
         assert.equal(saved.p_data.goal, 'strategy');
         assert.equal(await page.evaluate(() => document.documentElement.dataset.dashboardLead), 'breakdown');
     } finally { await context.close(); }
+});
+
+test('guidance levels: full explains and tours, light offers the tour, minimal stays quiet', async () => {
+    const cases = [
+        { experience: 'new', open: true, bubble: /^1 of 3\./ },
+        { experience: 'some', open: false, bubble: /Take the tour/ },
+        { experience: 'experienced', open: false, bubble: null },
+        { experience: undefined, open: false, bubble: /^1 of 3\./ },
+    ];
+    for (const { experience, open, bubble } of cases) {
+        const data = experience ? { experience, interests: ['evenodd'] } : { interests: ['evenodd'] };
+        const { page, context, errors } = await openApp(app, 'trade.html', { fake: tradeFake({}) + onboardingFake({ status: 'completed', data }) });
+        try {
+            await page.locator('[name="family"][value="evenodd"]:checked').waitFor({ state: 'attached' });
+            await page.locator('[data-companion]').waitFor();
+            await page.waitForTimeout(600);
+            assert.equal(await page.locator('[data-ticket-help]').evaluate((node) => node.open), open, `${experience}: explanation ${open ? 'open' : 'closed'}`);
+            if (open) {
+                assert.ok(await page.locator('[data-help-family="evenodd"]').isVisible(), 'the selected contract is explained');
+                assert.equal(await page.locator('[data-help-family="overunder"]').isVisible(), false, 'other contracts are not');
+            }
+            const shown = await page.locator('[data-companion-bubble]').isVisible();
+            if (!bubble) assert.equal(shown, false, `${experience}: no tour prompt`);
+            else assert.match(await page.locator('[data-companion-text], [data-companion-actions]').allTextContents().then((parts) => parts.join(' ')), bubble);
+            assert.deepEqual(errors, []);
+        } finally { await context.close(); }
+    }
+});
+
+test('the dashboard shows Getting started only to customers who asked for full guidance', async () => {
+    for (const [experience, visible] of [['new', true], ['some', false], [undefined, false]]) {
+        const data = experience ? { experience } : {};
+        const { page, context } = await openApp(app, 'dashboard.html', { fake: tradeFake({}) + onboardingFake({ status: 'completed', data }) });
+        try {
+            await page.waitForFunction(() => window.smartProfitTailoring);
+            await page.evaluate(() => window.smartProfitTailoring.settings());
+            assert.equal(await page.locator('[data-getting-started]').isVisible(), visible, `${experience}: Getting started ${visible ? 'shown' : 'hidden'}`);
+            if (visible) assert.equal(await page.locator('[data-getting-started] a[href="guide-settlement.html"]').count(), 1);
+        } finally { await context.close(); }
+    }
 });
