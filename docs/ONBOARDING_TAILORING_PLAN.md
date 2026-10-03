@@ -1,77 +1,70 @@
-# Onboarding tailoring plan (2026-10-03)
+# Optimization engine plan (2026-10-03)
 
-The welcome questions tell customers we will "set the platform up around you". Most of that is not built yet.
-This plan covers what each answer should change, and in what order to build it.
+Owner direction, 2026-10-03: the welcome questions are onboarding only. Their answers never appear anywhere
+a customer can see, and customers don't edit them. The site learns the customer from what they do and
+adjusts as they progress. The answers are only the starting guess.
 
-## What the answers do today
+## Rules
 
-| Answer | Values | What it changes now |
-|---|---|---|
-| Goal | `learn`, `short_term`, `grow`, `strategy` | Nothing. Staff can read it in admin, and customers can't change it on the profile. |
-| Experience | `new`, `some`, `experienced` | Only the trade companion tour: `experienced` skips it, everyone else gets it once (`trade-companion.js`). `new` and `some` behave the same. |
-| Interests | `evenodd`, `matches`, `overunder` | The trade page opens on the first chosen contract family (`trade.js`). |
-| Start with | `trade`, `guides`, `dashboard` | Where the customer lands when they finish onboarding. Used once. |
+- **Answers are input only.** They aren't shown on the profile, the dashboard or anywhere else a customer
+  can see, and there's no "because you said…" copy. Staff still see them in admin.
+- **The engine is invisible.** It keeps an internal level that customers never see: no badges, no
+  "level up", nothing shown.
+- **It changes guidance and layout only.** It never pushes towards more trades, bigger stakes or longer
+  sessions, and never reacts to wins or losses. Break reminders and session limits are the same at every
+  level.
+- **Customers control things where they are.** Closing the contract explanation, hiding the companion,
+  skipping the tour and dismissing Getting started all work in place, and the engine treats each one as
+  a signal.
+- **Disclosure:** the privacy page says activity is used to adjust guidance. First-party only.
+- **No answer and no activity means today's site.**
 
-Skipping, or leaving a question blank, keeps today's site exactly as it is. That stays the default.
+## Done
 
-## Ground rules
+1. **Tailoring module** (`assets/js/tailoring.js`, 8570a15). Pages read settings (`guidance`,
+   `dashboardLead`, `contracts`), never raw answers. Answer values match their labels (migration
+   20261003150000).
+2. **Guidance levels** (3c157bd). The "How this contract works" explanation on the ticket, Getting
+   started on the dashboard, and the tour run, offered or skipped.
+3. **Customer-facing traces removed.** The profile preferences section, the dashboard "Shown because
+   you asked… Change this" line and the onboarding "change your answers on your profile" line are gone.
+   A test checks that the answers never show.
 
-- **Tailoring changes order and emphasis, never access.** Every page, contract and section can still be reached by everyone. Nothing gets hidden behind an answer.
-- **One place reads the answers.** Add `assets/js/tailoring.js`. It reads `window.smartProfitOnboarding.answers()` once and turns the answers into a small settings object, e.g. `{ guidance: 'full' | 'light' | 'minimal', dashboardLead: 'guides' | 'indices' | 'results' | 'breakdown', contracts: [...] }`. Pages use that object and never read raw answers themselves. This also means the label-versus-value mismatch can't come back.
-- **Changes are presentational.** Tailoring reorders and shows or collapses existing DOM. No trading, pricing or balance logic depends on it.
-- **No profit framing.** For example, `grow` must not lead to "earn more" copy. It only puts the customer's own results first. The neutral risk line stays on every variant.
-- **Easy to undo.** Every tailored page carries a quiet text link: "Tailored to your answers · Change". It goes to the profile preferences.
+## Next
 
-## Work items
+### 4. Signals (migration)
+- A `customer_signals` table: user, kind, at. A small fixed set of event kinds: `tour_finished`,
+  `tour_skipped`, `explain_opened`, `explain_closed`, `getting_started_dismissed`, `guide_opened`.
+- A `record_my_signal(kind)` function that only accepts those kinds, with rate limits, readable only by
+  its owner and staff.
+- Settled contracts (Practice and Real both count) are already on the server and need no new table.
 
-### 1. Tailoring module (foundation)
-- Create `assets/js/tailoring.js`, loaded after `auth.js` on customer pages through the shell.
-- Set `data-guidance` and `data-dashboard-lead` on `<html>`, so CSS and page scripts can react without async waits. Cache the result in sessionStorage alongside the onboarding cache, and clear it whenever `markOnboardingComplete` runs.
-- Move the companion tour's `experience === 'experienced'` check onto `guidance`.
+### 5. Engine (migration)
+`get_my_experience()` returns the settings `tailoring.js` already uses, computed from:
+- **Starting level** from the experience answer: new → new, some → learning, experienced → regular.
+- **Level from activity**, which only goes up. Starting thresholds, to be tuned on real usage:
+  - learning: 5 or more settled contracts
+  - regular: 20 or more settled contracts on 3 or more different days
+  - experienced: 100 or more settled contracts, or all three contract types used on 5 or more days
+- **Guidance:** new → full, learning → light, regular or experienced → minimal. Closing the explanation
+  twice, or skipping the tour, moves guidance one step lower.
+- **Contracts:** the most-traded type over the last 30 days, falling back to the onboarding picks.
+- **Dashboard lead:** from the goal at first. Once there are 20 or more settled contracts it follows use:
+  guides opened recently → guides; otherwise indices.
+- Getting started stays until it's dismissed or the level reaches regular.
 
-### 2. Guidance level (from Experience)
-- **`new` → full:** the tour runs. The order ticket shows a one-line explanation under each contract and under payout. The dashboard shows a "Getting started" block with links to the three guides (settlement, payouts, fairness).
-- **`some` → light:** the tour is offered, not started: a single "Take the tour" text button. Ticket explanations are collapsed behind an info icon. No getting-started block.
-- **`experienced` → minimal:** no tour prompt. Ticket explanations are collapsed. No getting-started block.
-- Right now `new` and `some` behave identically. This item is what makes them differ.
+### 6. Front end
+- `tailoring.js` reads `get_my_experience()` (cached for the tab as now) instead of deriving settings
+  from the answers.
+- The trade page, dashboard and companion record signals through `record_my_signal`.
+- Getting started gets a "Dismiss" control.
+- One line on the privacy page about activity-based guidance.
 
-### 3. Dashboard lead (from Goal)
-The dashboard today has Account, then Index overview. The goal picks one block to put directly under Account:
-- **`learn`:** "Getting started" guides block, with the next unread guide first.
-- **`short_term`:** Index overview first, with a direct "Trade" link on each index.
-- **`grow`:** a results summary: settled trades, win/loss count and net result, signed with `+`/`−` and drawn from existing history.
-- **`strategy`:** a results breakdown by contract type and index, linking to trade history filtered to that contract.
+### 7. Then the layout work
+- Dashboard order from `dashboardLead`.
+- The customer's main contract types listed first in the trade page's tabs and on the guides page.
+- Results summary and per-contract breakdown (on the history page, linked from the dashboard), checking
+  data access first.
 
-The results summary and breakdown are new presentational blocks over data the history page already loads. Check the RPC before building. If they need a new read RPC, that becomes a separate backend change.
-
-### 4. Contracts of interest (from Interests)
-- Already done: the trade page opens on the first chosen family.
-- Add: the trade page's family tabs list the chosen families first. The guides index puts guides for those contracts first. The getting-started block names the chosen contracts.
-
-### 5. Start with (one-off)
-No change. It stays a one-time landing choice.
-
-### 6. Profile preferences
-- Add **Goal** to the profile preferences form (`pages/profile.html`, `profile-preferences.js`). Step 1 promises "You can change your answers later on your profile", and today goal can't be changed there.
-- The profile labels for experience ("New to it", "Tried it a bit", "Trade regularly") differ from onboarding's ("Beginner", "Intermediate", "Experienced"). Use the onboarding labels in both places.
-- Change the save message from "The trade page will follow your new preferences" to "The site will follow your new preferences".
-
-### 7. Tests
-- Unit test `tailoring.js`: answers in, settings out, including empty answers mapping to today's defaults.
-- Browser tests: one dashboard run per goal, checking which block comes first. One trade run per guidance level, checking tour and explanation state. A test that skipping onboarding leaves the dashboard unchanged.
-- Keep the existing onboarding and companion tests passing.
-
-## Order
-
-1. Tailoring module and profile Goal field (items 1 and 6). **Done 2026-10-03:** `assets/js/tailoring.js` loaded on every signed-in page; trade page and tour read it; Goal is on the profile.
-2. Guidance levels (item 2). **Done 2026-10-03:** "How this contract works" on the ticket (open at full, closed otherwise), Getting started on the dashboard at full only, light offers the tour. No answer means no level: the tour runs once as before, the explanation starts closed, no Getting started.
-3. Dashboard lead for `learn` and `short_term`, which reorder existing blocks (item 3, first half).
-4. Results summary and breakdown for `grow` and `strategy` (item 3, second half). Check data access first.
-5. Contract ordering on tabs and guides (item 4).
-
-Each step ships on its own and passes `npm test` plus the DESIGN.md check before moving on.
-
-## Open questions for the owner
-
-- Should "Getting started" disappear by itself after the customer's first few settled trades, or stay until it's dismissed?
-- For `grow` and `strategy`, is a per-contract results breakdown wanted on the dashboard, or only on the history page?
+Each step ships on its own, passes `npm test` and the DESIGN.md check, and migrations are applied before
+the site deploy.

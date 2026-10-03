@@ -307,12 +307,11 @@ body.has-rail.rail-expanded { padding-inline-start: calc(var(--rail-w-open) + va
 /* Dashboard: Getting started appears only at full guidance (tailoring.js sets data-guidance). */
 .getting-started { display: none; }
 html[data-guidance="full"] .getting-started { display: block; }
-.getting-started-intro, .getting-started-note { margin: 0 0 var(--space-2); color: var(--label-2); font-size: var(--text-footnote); }
+.getting-started-intro { margin: 0 0 var(--space-2); color: var(--label-2); font-size: var(--text-footnote); }
 .getting-started-list { margin: 0 0 var(--space-2); padding: 0; list-style: none; border-top: 1px solid var(--separator); }
 .getting-started-list li { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-3); padding: var(--space-1) 0; border-bottom: 1px solid var(--separator); }
 .getting-started-list span { color: var(--label-2); font-size: var(--text-footnote); }
 .getting-started a { display: inline-flex; align-items: center; min-height: var(--target); color: var(--label); text-decoration: underline; font-weight: 600; }
-.getting-started-note a { font-weight: 500; }
 .getting-started a:hover { text-decoration-thickness: 2px; }
 .getting-started a:active { opacity: .7; }
 .getting-started a:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }

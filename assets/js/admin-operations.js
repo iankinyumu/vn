@@ -497,7 +497,7 @@
                 const coverage = treasury.coverage_bp != null ? ` · ${(Number(treasury.coverage_bp) / 100).toFixed(2)}%` : '';
                 el('fundingTreasuryValue').textContent = treasury.status === 'UNKNOWN' ? 'Unknown' : `${treasury.status || '—'}${coverage}`;
                 el('fundingTreasuryMeta').textContent = treasury.snapshot_at
-                    ? `Reserve KES ${Number(treasury.kes_liquid_reserve).toLocaleString('en-KE')} recorded ${new Date(treasury.snapshot_at).toLocaleString()}; next snapshot due by ${new Date(new Date(treasury.snapshot_at).getTime() + 24 * 3600 * 1000).toLocaleString()}.`
+                    ? `Reserve KES ${Number(treasury.kes_liquid_reserve).toLocaleString('en-US')} recorded ${new Date(treasury.snapshot_at).toLocaleString()}; next snapshot due by ${new Date(new Date(treasury.snapshot_at).getTime() + 24 * 3600 * 1000).toLocaleString()}.`
                     : 'No snapshot recorded.';
                 el('fundingTreasuryMeta').classList.toggle('text-danger', treasury.status !== 'OK');
                 this.loadRateSync();
@@ -551,7 +551,7 @@
                 if (!chain.owner_snapshot_id) { line.textContent = 'Automatic refresh is waiting for a first owner-recorded sandbox figure.'; return; }
                 const due = new Date(chain.owner_confirmation_due);
                 const overdue = due.getTime() < Date.now();
-                line.textContent = `${chain.latest_automatic ? 'Latest snapshot was carried forward automatically' : 'Latest snapshot was recorded by an owner'} from the owner figure of KES ${Number(chain.owner_kes_liquid_reserve).toLocaleString('en-KE')} (${new Date(chain.owner_recorded_at).toLocaleString()}). ${overdue ? 'Automatic refresh has stopped: record a new owner figure.' : `Automatic refresh continues until ${due.toLocaleString()}; record a new figure before then.`}`;
+                line.textContent = `${chain.latest_automatic ? 'Latest snapshot was carried forward automatically' : 'Latest snapshot was recorded by an owner'} from the owner figure of KES ${Number(chain.owner_kes_liquid_reserve).toLocaleString('en-US')} (${new Date(chain.owner_recorded_at).toLocaleString()}). ${overdue ? 'Automatic refresh has stopped: record a new owner figure.' : `Automatic refresh continues until ${due.toLocaleString()}; record a new figure before then.`}`;
                 line.classList.toggle('text-danger', overdue);
             } catch (error) {
                 if (error !== STALE) line.textContent = `Could not load the snapshot history. ${explain(error)}`;

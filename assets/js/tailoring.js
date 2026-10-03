@@ -66,7 +66,7 @@
         .then(update, () => current);
     let ready = fresh();
 
-    // The onboarding and profile pages announce new answers; follow them at once.
+    // The onboarding page announces new answers; follow them at once.
     document.addEventListener('smartprofit:onboarding-changed', (event) => { ready = Promise.resolve(update(event.detail?.data || {})); });
 
     window.smartProfitTailoring = Object.freeze({

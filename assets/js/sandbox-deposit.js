@@ -6,7 +6,7 @@
 (function () {
     const find = (selector) => document.querySelector(selector);
     const usd = (value) => Number(value).toFixed(2);
-    const kes = (value) => `KES ${Number(value).toLocaleString('en-KE', { maximumFractionDigits: 2 })}`;
+    const kes = (value) => `KES ${Number(value).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
     const STATES = Object.freeze({
         INITIATING: ['Pending', 'pending'], PENDING: ['Pending', 'pending'], VERIFYING: ['Pending', 'pending'], UNKNOWN: ['Pending', 'pending'],
         CONFIRMED: ['Confirmed', 'ok'], FAILED: ['Failed', 'bad'], REJECTED: ['Failed', 'bad'], EXPIRED: ['Expired', 'review'],

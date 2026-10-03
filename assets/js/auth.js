@@ -119,7 +119,7 @@
         const view = await readOnboarding();
         return !view || view.status === 'completed';
     }
-    // Called after the customer answers, skips or changes their answers (onboarding and profile pages).
+    // Called after the customer answers or skips the welcome questions (onboarding page).
     window.markOnboardingComplete = async function markOnboardingComplete(view) {
         try {
             const client = await getSupabaseClient();

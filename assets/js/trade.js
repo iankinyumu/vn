@@ -326,8 +326,8 @@
         refreshGate().catch(() => {});
         setInterval(() => refreshGate().catch(() => {}), 10000);
 
-        // The page opens on the contract the customer said they wanted to try (tailoring.js, from
-        // the onboarding answers, changeable on the profile) until they choose another family here.
+        // The page opens on the contract tailoring.js prefers for this customer until they choose
+        // another family here.
         const INTEREST_FAMILY = { evenodd: 'evenodd', matches: 'matchdiffer', overunder: 'overunder' };
         let preferredFamily = null, familyChosen = false;
         // Families and sides follow the live policy: a family appears when either of its types is enabled.

@@ -102,20 +102,6 @@ test('the first-visit tour runs for a newcomer and is skipped for an experienced
     }
 });
 
-test('the profile shows the answers and saves changes to them', async () => {
-    const { page, context } = await openApp(app, 'profile.html', { fake: tradeFake({}) + onboardingFake({ status: 'completed', data: { experience: 'new', interests: ['evenodd'] } }) });
-    try {
-        await page.locator('[data-prefs-form] [name="experience"][value="new"]:checked').waitFor({ state: 'attached' });
-        await page.check('[data-prefs-form] [name="experience"][value="experienced"]');
-        await page.check('[data-prefs-form] [name="interests"][value="matches"]');
-        await page.click('[data-prefs-form] [type="submit"]');
-        await page.locator('[data-prefs-status]', { hasText: 'Saved' }).waitFor();
-        const saved = await page.evaluate(() => window.__RPC_LOG__.filter((call) => call.name === 'save_my_onboarding').map((call) => call.args).at(-1));
-        assert.deepEqual(saved.p_data, { goal: null, experience: 'experienced', interests: ['evenodd', 'matches'] });
-        assert.equal(saved.p_finish, true);
-    } finally { await context.close(); }
-});
-
 test('tailoring turns the answers into settings and marks the page with them', async () => {
     const { page, context, errors } = await openApp(app, 'dashboard.html', { fake: tradeFake({}) + onboardingFake({ status: 'completed', data: { goal: 'grow', experience: 'some', interests: ['overunder', 'evenodd'] } }) });
     try {
@@ -139,20 +125,6 @@ test('tailoring turns the answers into settings and marks the page with them', a
         assert.deepEqual(mapped.strategy, { guidance: 'minimal', dashboardLead: 'breakdown', contracts: [] });
         assert.deepEqual(mapped.unknown, { guidance: null, dashboardLead: null, contracts: [] });
         assert.deepEqual(errors.filter((text) => /tailoring|onboarding/.test(text)), []);
-    } finally { await context.close(); }
-});
-
-test('the profile changes the goal and the page follows at once', async () => {
-    const { page, context } = await openApp(app, 'profile.html', { fake: tradeFake({}) + onboardingFake({ status: 'completed', data: { goal: 'learn', experience: 'new' } }) });
-    try {
-        await page.locator('[data-prefs-form] [name="goal"][value="learn"]:checked').waitFor({ state: 'attached' });
-        await page.waitForFunction(() => document.documentElement.dataset.dashboardLead === 'guides');
-        await page.check('[data-prefs-form] [name="goal"][value="strategy"]');
-        await page.click('[data-prefs-form] [type="submit"]');
-        await page.locator('[data-prefs-status]', { hasText: 'Saved' }).waitFor();
-        const saved = await page.evaluate(() => window.__RPC_LOG__.filter((call) => call.name === 'save_my_onboarding').map((call) => call.args).at(-1));
-        assert.equal(saved.p_data.goal, 'strategy');
-        assert.equal(await page.evaluate(() => document.documentElement.dataset.dashboardLead), 'breakdown');
     } finally { await context.close(); }
 });
 
@@ -194,4 +166,20 @@ test('the dashboard shows Getting started only to customers who asked for full g
             if (visible) assert.equal(await page.locator('[data-getting-started] a[href="guide-settlement.html"]').count(), 1);
         } finally { await context.close(); }
     }
+});
+
+test('the welcome answers never show anywhere a customer can see', async () => {
+    const data = { goal: 'learn', experience: 'new', interests: ['evenodd'] };
+    for (const path of ['profile.html', 'dashboard.html', 'trade.html']) {
+        const { page, context } = await openApp(app, path, { fake: tradeFake({}) + onboardingFake({ status: 'completed', data }) });
+        try {
+            await page.waitForFunction(() => window.smartProfitTailoring);
+            await page.evaluate(() => window.smartProfitTailoring.settings());
+            assert.equal(await page.locator('[name="goal"], [name="experience"], [name="interests"], [data-prefs-form]').count(), 0, `${path}: no answer fields`);
+            const text = await page.locator('body').innerText();
+            assert.doesNotMatch(text, /you asked for|your answers|trading preferences|Learn how digit contracts work/i, `${path}: no answers echoed`);
+        } finally { await context.close(); }
+    }
+    const onboarding = (await import('node:fs')).readFileSync(new URL('../pages/onboarding.html', import.meta.url), 'utf8');
+    assert.doesNotMatch(onboarding, /on your profile/);
 });

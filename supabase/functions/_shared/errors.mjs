@@ -18,7 +18,7 @@ export const ERROR_CODES = Object.freeze({
     method_not_allowed: { status: 405, message: 'This request is not supported.' },
     payload_too_large: { status: 413, message: 'This request is too large.' },
     validation_failed: { status: 400, message: 'Some details were missing or invalid. Please check and try again.' },
-    phone_invalid: { status: 400, message: 'Enter a Safaricom M-Pesa number, for example 0712 345 678.' },
+    phone_invalid: { status: 400, message: 'Enter the phone number your M-Pesa account uses.' },
     quote_not_found: { status: 404, message: 'This deposit quote was not found. Request a new quote.' },
     quote_expired: { status: 409, message: 'This quote has expired. Request a new quote to see the current rate.' },
     quote_used: { status: 409, message: 'This quote has already been used. Request a new quote.' },
