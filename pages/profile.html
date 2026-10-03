@@ -21,6 +21,7 @@
 <body class="premium-theme app-shell" data-shell-surface="app" data-shell-active="profile" data-page-loader="Loading profile">
     <script src="../assets/js/auth.js"></script>
     <script>requireAuth()</script>
+    <script src="../assets/js/tailoring.js"></script>
     <script src="../assets/js/loader.js"></script>
 
     <div class="animated-bg">
@@ -83,13 +84,20 @@
             </div>
             <section class="settings-card" aria-labelledby="prefsTitle">
                 <h2 class="settings-title" id="prefsTitle"><i class="ms" data-icon="tune" aria-hidden="true"></i> Your trading preferences</h2>
-                <p class="avatar-picker-hint">From your welcome answers. They decide how much guidance you see and which contract the trade page opens on.</p>
+                <p class="avatar-picker-hint">From your welcome answers. SmartProfit uses them to tailor itself to you: what you see first, how much it explains, and which contract the trade page opens on.</p>
                 <form data-prefs-form novalidate>
                     <fieldset class="pref-group">
+                        <legend>What is your main goal?</legend>
+                        <label class="pref-option"><input type="radio" name="goal" value="learn"> Learn how digit contracts work</label>
+                        <label class="pref-option"><input type="radio" name="goal" value="short_term"> Trade short-term contracts</label>
+                        <label class="pref-option"><input type="radio" name="goal" value="grow"> Grow my trading</label>
+                        <label class="pref-option"><input type="radio" name="goal" value="strategy"> Test a strategy</label>
+                    </fieldset>
+                    <fieldset class="pref-group">
                         <legend>How familiar are you with trading?</legend>
-                        <label class="pref-option"><input type="radio" name="experience" value="new"> New to it: show the tour and tips</label>
-                        <label class="pref-option"><input type="radio" name="experience" value="some"> Tried it a bit</label>
-                        <label class="pref-option"><input type="radio" name="experience" value="experienced"> Trade regularly: keep hints to a minimum</label>
+                        <label class="pref-option"><input type="radio" name="experience" value="new"> Beginner: show me the basics as I go</label>
+                        <label class="pref-option"><input type="radio" name="experience" value="some"> Intermediate: a few pointers help</label>
+                        <label class="pref-option"><input type="radio" name="experience" value="experienced"> Experienced: skip the tour</label>
                     </fieldset>
                     <fieldset class="pref-group">
                         <legend>Contracts you are interested in</legend>

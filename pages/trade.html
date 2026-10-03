@@ -17,6 +17,7 @@
 <body class="app-shell trade-page" data-shell-surface="app" data-shell-active="trade">
     <script src="../assets/js/auth.js"></script>
     <script>requireAuth()</script>
+    <script src="../assets/js/tailoring.js"></script>
     <script src="../assets/js/loader.js"></script>
     <div data-shell-header></div>
     <main class="trade-main">
@@ -55,6 +56,13 @@
 
             <section class="trade-ticket" aria-label="Trade">
                 <p class="ticket-mode">Account <strong><span class="ticket-mode-practice">Practice</span><span class="ticket-mode-real">Real</span></strong></p>
+                <details class="ticket-help" data-ticket-help data-guidance-open>
+                    <summary><i class="ms" data-icon="info" aria-hidden="true"></i>How this contract works</summary>
+                    <p data-help-family="evenodd">Pick Even or Odd. The last digit of the settle tick decides: 0, 2, 4, 6 and 8 are even; 1, 3, 5, 7 and 9 are odd.</p>
+                    <p data-help-family="matchdiffer">Pick a digit. Matches wins only if the settle tick ends in it; Differs wins on any other digit, so it pays less.</p>
+                    <p data-help-family="overunder">Pick a digit. Over wins if the settle digit is higher, Under if it is lower. A settle digit equal to yours loses both.</p>
+                    <p>Payout is the total paid back if the contract wins, your stake included. If it loses, the stake is lost. <a href="guide-payouts.html">How payouts are worked out</a></p>
+                </details>
                 <div class="ticket-row barrier-row" data-barrier-row hidden>
                     <span class="ticket-label" id="barrier-label">Digit</span>
                     <div class="barrier-picker" role="radiogroup" aria-labelledby="barrier-label" data-barrier-picker></div>

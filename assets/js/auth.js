@@ -89,9 +89,9 @@
        - The gate: a signed-in customer who has not answered or skipped them is sent to
          onboarding.html from every signed-in page except that page and help. If the status cannot
          be read the page stays open; it is guidance, not a security control.
-       - The answers: pages tailor themselves with window.smartProfitOnboarding.answers() (for
-         example the trade page opens on a contract the customer chose). They are kept for the tab
-         in essential session storage, so each page does not ask the server again. */
+       - The answers: tailoring.js turns them into settings pages follow (for example the trade
+         page opens on a contract the customer chose). They are kept for the tab in essential
+         session storage, so each page does not ask the server again. */
     const ONBOARDING_OPEN_PAGES = new Set(['onboarding.html', 'contact.html', 'faq.html', 'support.html']);
     const onboardingKey = (userId) => `smartprofit:onboarding:${userId}`;
     async function currentUserId(client) {
@@ -128,6 +128,8 @@
             if (view?.status) cacheOnboarding(userId, view);
             else sessionStorage.setItem(onboardingKey(userId), JSON.stringify({ status: 'completed', data: {} }));
         } catch (_) { /* The next page asks the server instead. */ }
+        // tailoring.js follows the new answers on this page and remembers them for the next.
+        document.dispatchEvent(new CustomEvent('smartprofit:onboarding-changed', { detail: { data: view?.data || {} } }));
     };
     window.smartProfitOnboarding = Object.freeze({
         // The customer's answers ({ goal, experience, interests, start_with }), or {} if unknown.

@@ -24,6 +24,7 @@
 <body class="premium-theme app-shell" data-shell-surface="app" data-shell-active="dashboard" data-page-loader="Loading dashboard">
     <script src="../assets/js/auth.js"></script>
     <script>requireAuth()</script>
+    <script src="../assets/js/tailoring.js"></script>
     <script src="../assets/js/loader.js"></script>
 
     <div class="animated-bg">
@@ -88,6 +89,17 @@
                     </div>
                 </div>
             </div>
+
+            <section class="getting-started mb-4" aria-labelledby="gettingStartedTitle" data-getting-started>
+                <h2 class="dash-section-title" id="gettingStartedTitle">Getting started</h2>
+                <p class="getting-started-intro">Three short guides cover how a contract settles, how payouts are worked out and how to check the results yourself.</p>
+                <ul class="getting-started-list">
+                    <li><a href="guide-settlement.html">How digit contracts settle</a><span>Ticks, the settle digit and what decides a result.</span></li>
+                    <li><a href="guide-payouts.html">The house margin and payouts</a><span>The payout formula, with worked examples.</span></li>
+                    <li><a href="guide-fairness.html">How to verify fairness</a><span>Recompute any digit from its revealed seed.</span></li>
+                </ul>
+                <p class="getting-started-note">Shown because you asked for guidance as you go. <a href="profile.html#prefsTitle">Change this</a></p>
+            </section>
 
             <div class="row g-3 mb-4">
                 <div class="col-12">

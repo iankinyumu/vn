@@ -53,7 +53,7 @@ for (const scheme of ['dark', 'light']) {
         try {
             await page.emulateMedia({ colorScheme: scheme });
             await page.locator('[data-step="1"]:not([hidden])').waitFor();
-            await page.check('[name="goal"][value="extra_income"]');
+            await page.check('[name="goal"][value="grow"]');
             await page.click('[data-step="1"] [type="submit"]');
             await page.locator('[data-step="2"]:not([hidden])').waitFor();
             // Nothing is required: continue without answering.
@@ -63,7 +63,7 @@ for (const scheme of ['dark', 'light']) {
             assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true, 'no sideways scrolling at 320px');
             const saved = await page.evaluate(() => (window.__RPC_LOG__ || []).filter((call) => call.name === 'save_my_onboarding').map((call) => call.args));
             assert.equal(saved.length, 2);
-            assert.equal(saved[0].p_data.goal, 'extra_income');
+            assert.equal(saved[0].p_data.goal, 'grow');
             await page.click('[data-step="3"] [type="submit"]');
             await page.waitForURL(/guide-settlement\.html$/);
             assert.deepEqual(errors.filter((text) => /onboarding/.test(text)), []);
@@ -111,7 +111,87 @@ test('the profile shows the answers and saves changes to them', async () => {
         await page.click('[data-prefs-form] [type="submit"]');
         await page.locator('[data-prefs-status]', { hasText: 'Saved' }).waitFor();
         const saved = await page.evaluate(() => window.__RPC_LOG__.filter((call) => call.name === 'save_my_onboarding').map((call) => call.args).at(-1));
-        assert.deepEqual(saved.p_data, { experience: 'experienced', interests: ['evenodd', 'matches'] });
+        assert.deepEqual(saved.p_data, { goal: null, experience: 'experienced', interests: ['evenodd', 'matches'] });
         assert.equal(saved.p_finish, true);
     } finally { await context.close(); }
+});
+
+test('tailoring turns the answers into settings and marks the page with them', async () => {
+    const { page, context, errors } = await openApp(app, 'dashboard.html', { fake: tradeFake({}) + onboardingFake({ status: 'completed', data: { goal: 'grow', experience: 'some', interests: ['overunder', 'evenodd'] } }) });
+    try {
+        await page.waitForFunction(() => document.documentElement.dataset.dashboardLead === 'results');
+        assert.equal(await page.evaluate(() => document.documentElement.dataset.guidance), 'light');
+        const settings = await page.evaluate(() => window.smartProfitTailoring.settings());
+        assert.deepEqual(settings, { guidance: 'light', dashboardLead: 'results', contracts: ['evenodd', 'overunder'] });
+        const mapped = await page.evaluate(() => {
+            const { derive } = window.smartProfitTailoring;
+            return {
+                none: derive({}),
+                learn: derive({ goal: 'learn', experience: 'new' }).dashboardLead,
+                shortTerm: derive({ goal: 'short_term' }).dashboardLead,
+                strategy: derive({ goal: 'strategy', experience: 'experienced' }),
+                unknown: derive({ goal: 'fun', experience: 'guru', interests: ['dice'] }),
+            };
+        });
+        assert.deepEqual(mapped.none, { guidance: null, dashboardLead: null, contracts: [] }, 'no answers keep today\'s site');
+        assert.equal(mapped.learn, 'guides');
+        assert.equal(mapped.shortTerm, 'indices');
+        assert.deepEqual(mapped.strategy, { guidance: 'minimal', dashboardLead: 'breakdown', contracts: [] });
+        assert.deepEqual(mapped.unknown, { guidance: null, dashboardLead: null, contracts: [] });
+        assert.deepEqual(errors.filter((text) => /tailoring|onboarding/.test(text)), []);
+    } finally { await context.close(); }
+});
+
+test('the profile changes the goal and the page follows at once', async () => {
+    const { page, context } = await openApp(app, 'profile.html', { fake: tradeFake({}) + onboardingFake({ status: 'completed', data: { goal: 'learn', experience: 'new' } }) });
+    try {
+        await page.locator('[data-prefs-form] [name="goal"][value="learn"]:checked').waitFor({ state: 'attached' });
+        await page.waitForFunction(() => document.documentElement.dataset.dashboardLead === 'guides');
+        await page.check('[data-prefs-form] [name="goal"][value="strategy"]');
+        await page.click('[data-prefs-form] [type="submit"]');
+        await page.locator('[data-prefs-status]', { hasText: 'Saved' }).waitFor();
+        const saved = await page.evaluate(() => window.__RPC_LOG__.filter((call) => call.name === 'save_my_onboarding').map((call) => call.args).at(-1));
+        assert.equal(saved.p_data.goal, 'strategy');
+        assert.equal(await page.evaluate(() => document.documentElement.dataset.dashboardLead), 'breakdown');
+    } finally { await context.close(); }
+});
+
+test('guidance levels: full explains and tours, light offers the tour, minimal stays quiet', async () => {
+    const cases = [
+        { experience: 'new', open: true, bubble: /^1 of 3\./ },
+        { experience: 'some', open: false, bubble: /Take the tour/ },
+        { experience: 'experienced', open: false, bubble: null },
+        { experience: undefined, open: false, bubble: /^1 of 3\./ },
+    ];
+    for (const { experience, open, bubble } of cases) {
+        const data = experience ? { experience, interests: ['evenodd'] } : { interests: ['evenodd'] };
+        const { page, context, errors } = await openApp(app, 'trade.html', { fake: tradeFake({}) + onboardingFake({ status: 'completed', data }) });
+        try {
+            await page.locator('[name="family"][value="evenodd"]:checked').waitFor({ state: 'attached' });
+            await page.locator('[data-companion]').waitFor();
+            await page.waitForTimeout(600);
+            assert.equal(await page.locator('[data-ticket-help]').evaluate((node) => node.open), open, `${experience}: explanation ${open ? 'open' : 'closed'}`);
+            if (open) {
+                assert.ok(await page.locator('[data-help-family="evenodd"]').isVisible(), 'the selected contract is explained');
+                assert.equal(await page.locator('[data-help-family="overunder"]').isVisible(), false, 'other contracts are not');
+            }
+            const shown = await page.locator('[data-companion-bubble]').isVisible();
+            if (!bubble) assert.equal(shown, false, `${experience}: no tour prompt`);
+            else assert.match(await page.locator('[data-companion-text], [data-companion-actions]').allTextContents().then((parts) => parts.join(' ')), bubble);
+            assert.deepEqual(errors, []);
+        } finally { await context.close(); }
+    }
+});
+
+test('the dashboard shows Getting started only to customers who asked for full guidance', async () => {
+    for (const [experience, visible] of [['new', true], ['some', false], [undefined, false]]) {
+        const data = experience ? { experience } : {};
+        const { page, context } = await openApp(app, 'dashboard.html', { fake: tradeFake({}) + onboardingFake({ status: 'completed', data }) });
+        try {
+            await page.waitForFunction(() => window.smartProfitTailoring);
+            await page.evaluate(() => window.smartProfitTailoring.settings());
+            assert.equal(await page.locator('[data-getting-started]').isVisible(), visible, `${experience}: Getting started ${visible ? 'shown' : 'hidden'}`);
+            if (visible) assert.equal(await page.locator('[data-getting-started] a[href="guide-settlement.html"]').count(), 1);
+        } finally { await context.close(); }
+    }
 });

@@ -93,6 +93,21 @@ body.trade-page { margin: 0; }
 .ticket-label { color: var(--app-muted); font: 500 var(--text-caption-2) 'DM Mono', monospace; letter-spacing: .06em; text-transform: uppercase; }
 /* Show the word that matches the header's mode switch (account-switcher.js sets its data-mode). */
 .ticket-mode-real { display: none; }
+/* How the selected contract works (tailoring.js opens it at full guidance). Only the selected family's line shows. */
+.ticket-help { margin: 0; color: var(--app-muted); font-size: var(--text-footnote); line-height: 1.45; }
+.ticket-help summary { display: flex; align-items: center; gap: var(--space-2); min-height: var(--target); color: var(--app-ink); font-weight: 600; cursor: pointer; list-style: none; }
+.ticket-help summary::-webkit-details-marker { display: none; }
+.ticket-help summary::after { content: '+'; margin-inline-start: auto; font: 500 var(--text-subhead) var(--font-mono); }
+.ticket-help[open] summary::after { content: '\2212'; }
+.ticket-help summary:hover { text-decoration: underline; }
+.ticket-help summary:active { opacity: .7; }
+.ticket-help summary:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
+.ticket-help p { margin: 0 0 var(--space-2); }
+.ticket-help a { color: var(--app-ink); text-decoration: underline; }
+.ticket-help [data-help-family] { display: none; }
+.trade-layout:has([name="family"][value="evenodd"]:checked) [data-help-family="evenodd"],
+.trade-layout:has([name="family"][value="matchdiffer"]:checked) [data-help-family="matchdiffer"],
+.trade-layout:has([name="family"][value="overunder"]:checked) [data-help-family="overunder"] { display: block; }
 .trade-page:has(.mode-switch[data-mode="real"]) .ticket-mode-practice { display: none; }
 .trade-page:has(.mode-switch[data-mode="real"]) .ticket-mode-real { display: inline; }
 .barrier-picker { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 4px; }
