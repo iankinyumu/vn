@@ -578,7 +578,3 @@ div.avatar-img {
 .notify-pref { display: flex; align-items: center; gap: 12px; min-height: var(--target); margin-bottom: 8px; cursor: pointer; }
 .notify-pref .form-check-input { flex: none; width: 20px; height: 20px; margin: 0; border-radius: var(--radius-control); cursor: pointer; }
 
-.pref-group { margin: 0 0 var(--space-4); padding: 0; border: 0; }
-.pref-group legend { margin-bottom: var(--space-1); font-size: 1rem; font-weight: 700; }
-.pref-option { display: flex; align-items: center; gap: var(--space-3); min-height: var(--target); cursor: pointer; }
-.pref-option input { flex: none; width: 20px; height: 20px; margin: 0; accent-color: var(--label); }

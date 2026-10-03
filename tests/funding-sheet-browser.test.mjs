@@ -170,7 +170,7 @@ test('funding sheet: a tester adds and removes their own number and is warned, w
     assert.match(await page.locator('[data-fund-add] .fund-warning').textContent(), /^Real money: a prompt to your own number runs on the live M-Pesa network\. Approving it with your PIN charges your real M-Pesa balance, and SmartProfit cannot refund it\.$/);
     await page.fill('[data-fund-add-input]', '12345');
     await page.click('[data-fund-add-save]');
-    await page.waitForFunction(() => /Safaricom number such as/.test(document.querySelector('[data-fund-status]').textContent));
+    await page.waitForFunction(() => /phone number your M-Pesa account uses/.test(document.querySelector('[data-fund-status]').textContent));
     await page.fill('[data-fund-add-input]', '0712 345 678');
     await page.click('[data-fund-add-save]');
     await page.waitForFunction(() => document.querySelector('[data-fund-status]').textContent === 'Number added.');

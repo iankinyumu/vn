@@ -12,7 +12,7 @@
     'use strict';
 
     const usd = (value) => Number(value).toFixed(2);
-    const kes = (value) => `KES ${Number(value).toLocaleString('en-KE', { maximumFractionDigits: 2 })}`;
+    const kes = (value) => `KES ${Number(value).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
     const mask = (msisdn) => `${msisdn.slice(0, 4)}*****${msisdn.slice(-3)}`;
     const PRESETS = Object.freeze([5, 10, 20, 50, 100, 200, 500]);
     const POLL_MS = 4000;
@@ -32,7 +32,7 @@
         rate_stale: 'Deposits are paused while the exchange rate updates.',
         rate_unavailable: 'Deposits are paused while the exchange rate updates.',
         sandbox_not_enabled: 'Deposits are not open on this account yet.',
-        phone_invalid: 'Enter a Safaricom number such as 0712345678.',
+        phone_invalid: 'Enter the phone number your M-Pesa account uses.',
         phone_not_allowed: 'This number cannot receive a prompt.',
         too_many_numbers: 'You can keep two numbers. Remove one first.',
     });
@@ -70,7 +70,7 @@
                 <button type="button" class="fund-link" data-fund-add-toggle aria-expanded="false" aria-controls="fundAdd">Add my number</button>
                 <div class="fund-add" id="fundAdd" data-fund-add hidden>
                     <div class="fund-add-row">
-                        <input type="tel" class="fund-input" inputmode="numeric" autocomplete="tel" placeholder="07XX XXX XXX" aria-label="Safaricom number" data-fund-add-input>
+                        <input type="tel" class="fund-input" inputmode="numeric" autocomplete="tel" placeholder="M-Pesa phone number" aria-label="M-Pesa phone number" data-fund-add-input>
                         <button type="button" class="fund-btn fund-btn-quiet" data-fund-add-save>Add</button>
                     </div>
                     <p class="fund-warning" role="note"><strong>Real money:</strong> a prompt to your own number runs on the live M-Pesa network. Approving it with your PIN charges your real M-Pesa balance, and SmartProfit cannot refund it.</p>
