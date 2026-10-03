@@ -155,6 +155,8 @@
         // Public pages do not load account-cache.js but must still clear its data.
         try {
             Object.keys(sessionStorage).filter((key) => key.startsWith('smartprofit:account:') || key.startsWith('smartprofit:onboarding:')).forEach((key) => sessionStorage.removeItem(key));
+            // The next person to sign in on this device starts on Practice.
+            localStorage.removeItem('smartprofit:account:active');
         } catch (_) { /* Storage may be disabled. */ }
         try { await (await getSupabaseClient()).auth.signOut(); }
         finally { window.location.replace('index.html'); }
