@@ -40,7 +40,10 @@
 
         <div class="profile-header-card">
             <div class="avatar-wrapper">
-                <div class="avatar-img" data-profile-avatar role="img" aria-label="Your character"><img data-profile-avatar-img alt="" width="112" height="112" decoding="async" hidden></div>
+                <button type="button" class="avatar-change" data-avatar-change aria-haspopup="dialog" aria-controls="avatarDialog" aria-label="Your character. Change character" disabled>
+                    <span class="avatar-img" data-profile-avatar><img data-profile-avatar-img alt="" width="112" height="112" decoding="async" hidden></span>
+                    <span class="avatar-change-text" aria-hidden="true"><i class="ms" data-icon="edit"></i>Change</span>
+                </button>
             </div>
             <div class="profile-info">
                 <h1 class="profile-name" data-profile-name>Loading account…</h1>
@@ -63,12 +66,6 @@
         </div>
 
         <div class="tab-content active" id="tab-settings" role="tabpanel">
-            <section class="settings-card avatar-picker" aria-labelledby="avatarPickerTitle">
-                <h2 class="settings-title" id="avatarPickerTitle"><i class="ms" data-icon="mood" aria-hidden="true"></i> Character</h2>
-                <p class="avatar-picker-hint">The character shown as your profile picture. Choosing one saves it straight away.</p>
-                <div class="avatar-options" role="radiogroup" aria-labelledby="avatarPickerTitle" data-avatar-options></div>
-                <p class="strength-text mt-2" data-avatar-status role="status" aria-live="polite"></p>
-            </section>
             <div class="settings-card">
                 <h2 class="settings-title"><i class="ms" data-icon="edit" aria-hidden="true"></i> Personal Information</h2>
                 <form id="profileForm">
@@ -110,6 +107,18 @@
                 </div>
             </div>
         </div>
+        <dialog class="avatar-dialog" id="avatarDialog" aria-labelledby="avatarPickerTitle" data-avatar-dialog>
+            <div class="avatar-dialog-head">
+                <h2 class="avatar-dialog-title" id="avatarPickerTitle">Choose your character</h2>
+                <button type="button" class="avatar-dialog-close" data-avatar-close aria-label="Close"><i class="ms" data-icon="close" aria-hidden="true"></i></button>
+            </div>
+            <p class="avatar-picker-hint">Shown as your profile picture. Choosing one saves it straight away.</p>
+            <div class="avatar-options" role="radiogroup" aria-labelledby="avatarPickerTitle" data-avatar-options></div>
+            <div class="avatar-dialog-foot">
+                <p class="avatar-dialog-status" data-avatar-status role="status" aria-live="polite"></p>
+                <button type="button" class="avatar-dialog-done" data-avatar-close>Done</button>
+            </div>
+        </dialog>
     </main>
 
     <div data-shell-footer></div>

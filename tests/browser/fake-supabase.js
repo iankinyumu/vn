@@ -41,6 +41,8 @@
                     getUser: async () => ({ data: { user }, error: null }),
                     onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }),
                     signOut: async () => ({ error: null }),
+                    // Merges metadata into the signed-in user, as Supabase does (profile character picks).
+                    updateUser: async ({ data } = {}) => { user.user_metadata = { ...(user.user_metadata || {}), ...(data || {}) }; return { data: { user }, error: null }; },
                 },
                 rpc,
                 realtime: { setAuth: async () => {} },

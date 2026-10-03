@@ -17,10 +17,10 @@
         image.src = avatars().src(id);
         image.hidden = false;
         holder.dataset.avatar = id;
-        holder.setAttribute('aria-label', `Your character: ${avatars().nameOf(id)}`);
+        find('[data-avatar-change]')?.setAttribute('aria-label', `Your character: ${avatars().nameOf(id)}. Change character`);
     }
 
-    // A radio group of every character; choosing one saves it to the auth user metadata.
+    // A radio group of every character, inside the avatar dialog; choosing one saves it to the auth user metadata.
     function renderPicker(current, save) {
         const group = find('[data-avatar-options]');
         if (!group || !avatars()) return;
@@ -34,6 +34,26 @@
             return option;
         }));
         group.addEventListener('change', (event) => { if (event.target.name === 'avatar') save(event.target.value); });
+        bindAvatarDialog();
+    }
+
+    // The picker is only on screen while someone is changing their character: tapping the
+    // profile picture opens it as a dialog, which returns focus to the picture when it closes.
+    function bindAvatarDialog() {
+        const trigger = find('[data-avatar-change]');
+        const dialog = find('[data-avatar-dialog]');
+        if (!trigger || !dialog) return;
+        const close = () => { if (typeof dialog.close === 'function') dialog.close(); else { dialog.removeAttribute('open'); trigger.focus(); } };
+        trigger.addEventListener('click', () => {
+            find('[data-avatar-status]').textContent = '';
+            if (typeof dialog.showModal === 'function') dialog.showModal(); else dialog.setAttribute('open', '');
+            (dialog.querySelector('[data-avatar-options] input:checked') || dialog.querySelector('[data-avatar-options] input'))?.focus();
+        });
+        dialog.querySelectorAll('[data-avatar-close]').forEach((button) => button.addEventListener('click', close));
+        // A tap on the backdrop lands on the dialog element itself.
+        dialog.addEventListener('click', (event) => { if (event.target === dialog) close(); });
+        dialog.addEventListener('close', () => trigger.focus());
+        trigger.disabled = false;
     }
 
     function bindTabs() {
