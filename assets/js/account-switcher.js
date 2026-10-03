@@ -174,7 +174,7 @@
                 const realOpen = Boolean(real && real.status === 'ACTIVE' && config.real_enabled);
                 if (sandbox && !realOpen) {
                     realItem.dataset.accountId = REAL_SANDBOX;
-                    realItem.querySelector('.mode-menu-detail').textContent = `Sandbox · ${money(sandbox.test_balance_usd)}`;
+                    realItem.querySelector('.mode-menu-detail').textContent = money(sandbox.test_balance_usd);
                 } else {
                     realItem.dataset.accountId = real?.id || '';
                     realItem.disabled = !realOpen;
@@ -209,7 +209,7 @@
                         const fresh = await sandboxOverview(client);
                         if (request !== balanceRequest) return;
                         ui.balance.textContent = fresh ? money(fresh.test_balance_usd) : 'Unavailable';
-                        if (fresh) realItem.querySelector('.mode-menu-detail').textContent = `Sandbox · ${money(fresh.test_balance_usd)}`;
+                        if (fresh) realItem.querySelector('.mode-menu-detail').textContent = money(fresh.test_balance_usd);
                         paint();
                         return;
                     }

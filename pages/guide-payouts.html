@@ -44,7 +44,7 @@
             <p>A new version applies to new purchases only. Every contract records the policy version, payout and multiplier it was bought with, and a later policy never changes a contract you already hold. The quote always uses the version in force at that moment.</p>
 
             <h2>What the margin means</h2>
-            <p>Without a margin, a fair payout would return exactly the stake on average: stake × 10 ÷ winning digits. The margin takes a fixed share of that. At 3.5%, an Even contract pays 1.93 times the stake and wins half the time, so across many contracts it returns 96.5% of the amount staked on average, and every contract type returns the same 96.5% share. Over time, the expected result of buying contracts is a loss of about 3.5% of the total staked. Individual results vary, and past results do not change the odds of the next one.</p>
+            <p>Without a margin, a fair payout would return exactly the stake on average: stake × 10 ÷ winning digits. The margin takes a fixed share of that. At 3.5%, an Even contract pays 1.93 times the stake. Every contract type is priced with the same margin, so no type is cheaper than another. Past results do not change the odds of the next one.</p>
 
             <h2>Worked examples at a 3.5% margin</h2>
             <div class="guide-table-wrap">
@@ -62,15 +62,14 @@
             <p>At launch only Even and Odd are enabled; the other rows show how the same formula prices the remaining types.</p>
 
             <h2>Rounding always goes down</h2>
-            <p>The payout is floored to the cent, never rounded up. On most stakes this changes nothing, but on some small stakes the effective margin is slightly above the published one. For example, a 1.01 Even stake has an exact value of 1.9493 and pays 1.94. The difference always favours the house, never the customer.</p>
+            <p>The payout is floored to the cent, never rounded up. On most stakes this changes nothing, but on some small stakes the effective margin is slightly above the published one. For example, a 1.01 Even stake has an exact value of 1.9493 and pays 1.94. The payout shown before you buy is always the exact amount paid.</p>
 
             <h2>Offers the engine refuses</h2>
             <p>The engine will not sell a contract whose profit would be less than 1% of the stake (the minimum profit ratio in policy version 1). Before a policy version is published, the server checks that every enabled contract type, at every allowed barrier, clears this minimum at the smallest allowed stake.</p>
 
-            <h2>Practice stakes and limits</h2>
-            <p>Practice accounts are denominated in virtual USD. Under policy version 1, a stake is between 1.00 and 1,000.00, an account may hold at most 20 open contracts and buy at most 30 per minute, and a single settle tick carries a capped total liability. The server checks each limit on every purchase.</p>
+            <h2>Stakes and limits</h2>
+            <p>Accounts are denominated in USD. Under policy version 1, a stake is between 1.00 and 1,000.00, an account may hold at most 20 open contracts and buy at most 30 per minute, and a single settle tick carries a capped total liability. The server checks each limit on every purchase.</p>
 
-            <p class="guide-note">Practice credits are virtual. They have no cash value and cannot be withdrawn, and a practice result says nothing about any future funded result.</p>
 
             <nav class="guide-nav" aria-label="Guide navigation">
                 <a href="guide-settlement.html"><i class="ms me-2" data-icon="arrow_back" aria-hidden="true"></i>Previous: how contracts settle</a>

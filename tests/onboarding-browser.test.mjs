@@ -54,7 +54,6 @@ for (const scheme of ['dark', 'light']) {
             await page.emulateMedia({ colorScheme: scheme });
             await page.locator('[data-step="1"]:not([hidden])').waitFor();
             await page.check('[name="goal"][value="extra_income"]');
-            assert.equal(await page.locator('[data-income-warning]').isVisible(), true, 'an income goal gets a plain note');
             await page.click('[data-step="1"] [type="submit"]');
             await page.locator('[data-step="2"]:not([hidden])').waitFor();
             // Nothing is required: continue without answering.

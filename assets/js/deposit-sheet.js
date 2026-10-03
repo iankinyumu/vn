@@ -214,7 +214,7 @@
         }
         const env = q('[data-fund-env]');
         env.hidden = overview.environment !== 'SANDBOX';
-        env.textContent = 'Real · sandbox test funds';
+        env.textContent = 'Real account';
         renderPhones();
         renderChips();
         renderEstimate();
@@ -227,7 +227,7 @@
         const own = overview.my_msisdns || [];
         phone.replaceChildren(
             ...own.map((msisdn) => new Option(`${mask(msisdn)} · your number`, msisdn)),
-            ...(overview.test_msisdns || []).map((msisdn) => new Option(`${mask(msisdn)} · sandbox test number`, msisdn)));
+            ...(overview.test_msisdns || []).map((msisdn) => new Option(mask(msisdn), msisdn)));
         if ([...phone.options].some((option) => option.value === selected)) phone.value = selected;
         renderPhoneActions();
     }

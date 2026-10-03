@@ -319,9 +319,9 @@
             const list = el('customerOnboarding');
             if (!list) return;
             const LABELS = {
-                goal: { learn: 'Learning how it works', fun: 'Having some fun', extra_income: 'Earning extra income', exploring: 'Just looking around' },
-                experience: { new: 'New to trading', some: 'Tried it a bit', experienced: 'Trades regularly' },
-                start_with: { tour: 'A practice trade', guides: 'A guide', dashboard: 'The dashboard' },
+                goal: { learn: 'Learn how digit contracts work', fun: 'Trade short-term contracts', extra_income: 'Grow their trading', exploring: 'Test a strategy' },
+                experience: { new: 'Beginner', some: 'Intermediate', experienced: 'Experienced' },
+                start_with: { tour: 'A trade', guides: 'A guide', dashboard: 'The dashboard' },
                 interests: { evenodd: 'Even / Odd', matches: 'Matches / Differs', overunder: 'Over / Under' },
             };
             const row = (label, value) => [h('dt', { text: label }), h('dd', { text: value || 'Not answered' })];

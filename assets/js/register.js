@@ -115,7 +115,7 @@ async function handleRegister(e) {
 
     const submit = e.currentTarget.querySelector('button[type="submit"]');
     submit.disabled = true;
-    showStatus('Creating your DEMO account…', false);
+    showStatus('Creating your account…', false);
     try {
         const { data, error } = await (await getSupabaseClient()).auth.signUp({
             email,

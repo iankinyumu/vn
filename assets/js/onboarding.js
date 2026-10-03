@@ -36,10 +36,8 @@
         for (const [name, value] of Object.entries(data)) {
             for (const input of $$(`[name="${name}"]`)) input.checked = Array.isArray(value) ? value.includes(input.value) : input.value === value;
         }
-        syncIncomeNote();
     }
 
-    function syncIncomeNote() { $('[data-income-warning]').hidden = !$('[name="goal"][value="extra_income"]').checked; }
 
     async function save(data, { finish = false, skip = false } = {}) {
         const { data: view, error } = await client.rpc('save_my_onboarding', { p_data: data, p_finish: finish, p_skip: skip });
@@ -80,7 +78,6 @@
         // "Skip" on step 1 moves on; "Skip for now" in the header ends it, keeping anything already chosen.
         $('[data-ob-skip]').addEventListener('click', () => show(2));
         $('[data-ob-skip-all]').addEventListener('click', (event) => run(async () => leave(await save({}, { skip: true })), event.currentTarget));
-        $$('[name="goal"]').forEach((radio) => radio.addEventListener('change', syncIncomeNote));
 
         try { client = await window.getSupabaseClient(); } catch (_) { status('Sign-in is unavailable. Reload the page to try again.'); return; }
         try {

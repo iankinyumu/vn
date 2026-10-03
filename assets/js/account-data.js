@@ -13,7 +13,7 @@
             const summary = await client.rpc('get_account_summary', { p_account_id: account.id });
             if (summary.error) throw summary.error;
             balance.textContent = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(summary.data.available || 0));
-            status.textContent = 'Practice mode · virtual funds';
+            status.textContent = 'Practice account';
         } catch (error) {
             console.error('Unable to load practice account', error);
             status.textContent = 'Your practice account could not be loaded.';

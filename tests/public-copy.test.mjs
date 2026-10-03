@@ -50,7 +50,7 @@ test('the guides and FAQ state the published margin and policy values from the v
     }
 });
 
-test('the FAQ states the margin, independent outcomes and that practice funds are virtual and cannot be withdrawn', () => {
+test('the FAQ states the margin, independent outcomes, how Real works and that Practice credit is virtual', () => {
     const dom = new JSDOM('<!doctype html><body></body>', { runScripts: 'outside-only', url: 'https://example.test/pages/faq.html' });
     dom.window.eval(read('assets/js/faq.js'));
     const answers = Object.fromEntries(dom.window.SMARTPROFIT_FAQS.map((faq) => [faq.id, faq.answer]));
@@ -60,7 +60,8 @@ test('the FAQ states the margin, independent outcomes and that practice funds ar
     assert.match(answers.independence, /price and its final digit decides the result/);
     assert.match(answers.funds, /virtual/);
     assert.match(answers.funds, /cannot be withdrawn/);
-    assert.match(answers.real, /^Not yet\./);
+    assert.match(answers.real, /Switch to Real/);
+    assert.doesNotMatch(Object.values(answers).join(' '), /favours the house|expected result|not yet\./i, 'no discouraging or not-yet framing');
 });
 
 test('a link to a FAQ entry shows every question and opens that answer, even after filtering', async () => {

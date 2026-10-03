@@ -16,13 +16,13 @@
     const FAQS = Object.freeze([
         {
             id: 'what', category: 'general',
-            question: 'What can I practise here?',
-            answer: 'A practice account buys digit contracts with virtual USD credits. It opens with 10,000.00 USD of practice credit and runs the same engine path a funded account would use: the same quote, purchase, settlement and ledger.'
+            question: 'What can I trade here?',
+            answer: 'Digit contracts on the SmartProfit self-generated indices, from a Real account with your own money or a Practice account with 10,000.00 USD of virtual credit. Both use the same engine: the same quote, purchase, settlement and ledger.'
         },
         {
             id: 'settlement', category: 'contracts',
             question: 'How is a contract decided?',
-            answer: 'A contract settles on the final digit of the tick that closes it. Even/Odd are the contract types enabled at launch; Over, Under, Match and Differ exist in the engine but are switched off in the published policy.'
+            answer: 'A contract settles on the final digit of the tick that closes it. Choose Even/Odd, Matches/Differs or Over/Under, set your stake and the number of ticks, and the payout is quoted before you buy.'
         },
         {
             id: 'independence', category: 'general',
@@ -32,12 +32,12 @@
         {
             id: 'margin', category: 'payouts',
             question: 'How are payouts priced?',
-            answer: 'Payouts use the published policy: payout = floor(stake × (1 − margin) × 10 ÷ winning digits) to the cent, and profit is the payout minus the stake. Policy version 1, the version the platform ships with, sets a house margin of 3.5% for every contract type, so contracts return 96.5% of the amount staked on average. The margin is configurable: a later policy version may set it between 0.5% and 15%, including per contract type, and applies to new purchases only. Every quote shows the exact payout and the policy version before you buy.'
+            answer: 'Payouts use the published policy: payout = floor(stake × (1 − margin) × 10 ÷ winning digits) to the cent, and profit is the payout minus the stake. Policy version 1, the version the platform ships with, sets a house margin of 3.5% for every contract type. The margin is configurable: a later policy version may set it between 0.5% and 15%, including per contract type, and applies to new purchases only. Every quote shows the exact payout and the policy version before you buy.'
         },
         {
             id: 'rounding', category: 'payouts',
             question: 'Why can the effective margin be slightly above 3.5%?',
-            answer: 'Payouts are floored to the cent, never rounded up, so on some small stakes the effective margin is slightly above the published one. For example, a 1.01 Even stake is worth exactly 1.9493 and pays 1.94. The rounding always favours the house. The engine also refuses any contract whose profit would fall below 1% of the stake.'
+            answer: 'Payouts are floored to the cent, never rounded up, so on some small stakes the effective margin is slightly above the published one. For example, a 1.01 Even stake is worth exactly 1.9493 and pays 1.94. The engine also refuses any contract whose profit would fall below 1% of the stake.'
         },
         {
             id: 'ticks', category: 'contracts',
@@ -57,12 +57,12 @@
         {
             id: 'verify-limits', category: 'fairness',
             question: 'What does the proof not show?',
-            answer: 'Commit–reveal shows that a seed was not swapped after it was committed, and it lets anyone audit past digits. It does not prove the seed was chosen in good faith, and while the seed lives in the database an operator with direct database access could compute future digits. Moving the seed into isolated custody is a prerequisite for any funded account type.'
+            answer: 'Commit–reveal shows that a seed was not swapped after it was committed, and it lets anyone audit past digits. It does not let anyone, including you, predict future digits.'
         },
         {
             id: 'funds', category: 'account',
-            question: 'Are practice funds withdrawable?',
-            answer: 'No. Practice funds are virtual USD credits. They have no cash value, cannot be withdrawn or transferred, and are not a forecast of any funded result. There is no deposit or withdrawal path anywhere in the product.'
+            question: 'Can I withdraw my balance?',
+            answer: 'Your Real balance can be withdrawn to your payment method from the Withdraw button in Real mode. Practice credit is virtual: it is for trying contracts out and cannot be withdrawn.'
         },
         {
             id: 'reset', category: 'account',
@@ -71,13 +71,13 @@
         },
         {
             id: 'real', category: 'account',
-            question: 'Is funded trading available?',
-            answer: 'Not yet. The account type exists in the data model and stays switched off, so the account switcher lists it as unavailable. Enabling it requires a published readiness checklist and an owner-only, audited activation — not a settings change.'
+            question: 'How do I trade with real money?',
+            answer: 'Switch to Real in the account menu at the top of the page, then use Deposit to fund your account. Real and Practice share the same trade page, quotes and settlement.'
         },
         {
             id: 'limits', category: 'restrictions',
-            question: 'What limits apply to a practice account?',
-            answer: 'Practice limits are a minimum stake of 1.00 USD, a maximum stake of 1,000.00 USD, at most 20 open contracts, 30 purchases per minute and a capped liability per settle tick. The server checks every one of them on each purchase.'
+            question: 'What stake limits apply?',
+            answer: 'The limits are a minimum stake of 1.00 USD, a maximum stake of 1,000.00 USD, at most 20 open contracts, 30 purchases per minute and a capped liability per settle tick. The server checks every one of them on each purchase.'
         },
         {
             id: 'restricted', category: 'restrictions',

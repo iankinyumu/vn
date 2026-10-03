@@ -103,8 +103,8 @@ test('funding sheet: a tester is quoted locked KES, rate and expiry; the prompt 
     const { page, context, errors, posted } = await open();
     await openSheet(page);
     await page.locator('[data-fund-step="form"]').waitFor({ state: 'visible' });
-    assert.equal(await page.locator('[data-fund-env]').textContent(), 'Real · sandbox test funds');
-    assert.deepEqual(await page.locator('[data-fund-phone] option').allTextContents(), ['2547*****149 · sandbox test number']);
+    assert.equal(await page.locator('[data-fund-env]').textContent(), 'Real account');
+    assert.deepEqual(await page.locator('[data-fund-phone] option').allTextContents(), ['2547*****149']);
     assert.deepEqual(await page.locator('.fund-chip').allTextContents(), ['$5', '$10', '$20', '$50', '$100', '$200', '$500']);
 
     await page.fill('[data-fund-amount]', '500.01');
@@ -174,7 +174,7 @@ test('funding sheet: a tester adds and removes their own number and is warned, w
     await page.fill('[data-fund-add-input]', '0712 345 678');
     await page.click('[data-fund-add-save]');
     await page.waitForFunction(() => document.querySelector('[data-fund-status]').textContent === 'Number added.');
-    assert.deepEqual(await page.locator('[data-fund-phone] option').allTextContents(), ['2547*****678 · your number', '2547*****149 · sandbox test number']);
+    assert.deepEqual(await page.locator('[data-fund-phone] option').allTextContents(), ['2547*****678 · your number', '2547*****149']);
     assert.equal(await page.locator('[data-fund-phone]').inputValue(), '254712345678');
     assert.equal(await page.locator('[data-fund-add]').isVisible(), false);
 
@@ -192,7 +192,7 @@ test('funding sheet: a tester adds and removes their own number and is warned, w
     await page.selectOption('[data-fund-phone]', '254712345678');
     await page.click('[data-fund-remove]');
     await page.waitForFunction(() => document.querySelector('[data-fund-status]').textContent === 'Number removed.');
-    assert.deepEqual(await page.locator('[data-fund-phone] option').allTextContents(), ['2547*****149 · sandbox test number']);
+    assert.deepEqual(await page.locator('[data-fund-phone] option').allTextContents(), ['2547*****149']);
     assert.equal(posted.length, 0);
     assert.deepEqual(errors, []);
     await context.close();
@@ -210,15 +210,16 @@ test('funding sheet: on a phone it is a bottom sheet over the page', async () =>
     await context.close();
 });
 
-test('Real account page: the switch shows Real with the test balance, history is listed and Practice leads back to the dashboard', async () => {
+test('Real account page: the switch shows Real with the balance, history is listed and Practice leads back to the dashboard', async () => {
     const { page, context, errors } = await open({ path: 'sandbox-deposit.html', overview: { ...TESTER, test_balance_usd: 12.5 } });
     await page.locator('[data-sandbox-available]').waitFor({ state: 'visible' });
     assert.equal(await page.locator('[data-sandbox-balance]').textContent(), '12.50');
-    assert.match(await page.locator('.real-env').textContent(), /Daraja Sandbox · not tradable/);
+    assert.equal(await page.locator('#realBalanceLabel').textContent(), 'Balance', 'the Real page reads as a live account');
     await page.waitForFunction(() => document.querySelector('[data-mode-label]')?.textContent === 'Real' && document.querySelector('[data-mode-balance]').textContent === '$12.50');
     assert.equal(await page.locator('[data-sandbox-history]').textContent(), 'No deposits yet.');
     const footer = await page.locator('footer').textContent();
-    assert.match(footer, /Real mode is in Daraja Sandbox testing: credits are test-only, but a prompt to your own phone charges real M-Pesa money\. Practice mode stays strictly virtual\./);
+    assert.match(footer, /Trading digit contracts involves risk: only trade money you can afford to lose\./);
+    assert.doesNotMatch(footer, /sandbox|testing|virtual/i, 'no test-environment wording in the footer');
     assert.ok(!/no real money/i.test(await page.content()), 'the page never claims that no real money moves');
     assert.equal(await page.evaluate(() => { try { return window.smartProfitAccount.get().mode; } catch (_) { return null; } }), null, 'no trading account is activated');
     await shot(page, 'real-account-page');

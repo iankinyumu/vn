@@ -47,12 +47,9 @@
         ...LEGAL_LINKS
     ]);
 
-    const TAGLINE = 'Digit contracts on self-generated indices. Practice only, with virtual funds.';
-    const FOOTER_NOTE = '© 2026 SmartProfit. Practice mode only; virtual funds have no cash value.';
-    // A page in Real mode declares data-shell-mode="real-sandbox" on <body>. Today the
-    // only Real surface is the Daraja sandbox. Its credits are test-only, but a
-    // prompt to a tester's own phone charges real M-Pesa money.
-    const REAL_SANDBOX_NOTE = '© 2026 SmartProfit. Real mode is in Daraja Sandbox testing: credits are test-only, but a prompt to your own phone charges real M-Pesa money. Practice mode stays strictly virtual.';
+    const TAGLINE = 'Digit contracts on self-generated indices, with results you can verify yourself.';
+    // One footer line for every page, in the standard broker form: a plain risk statement, no limits.
+    const FOOTER_NOTE = '© 2026 SmartProfit. Trading digit contracts involves risk: only trade money you can afford to lose.';
     const RAIL_KEY = 'smartprofit:rail-expanded';
 
     let mounted = false;
@@ -477,13 +474,13 @@
     }
 
     // Signed-in pages carry one line of legal text; navigation lives in the side panel.
-    function buildAppFooter(realSandbox) {
+    function buildAppFooter() {
         const footer = element('footer', 'app-footer');
         const links = element('nav', 'app-footer-links');
         links.setAttribute('aria-label', 'Help');
         APP_FOOTER_LINKS.forEach((link) => { const anchor = element('a', null, link.label); anchor.href = link.href; links.append(anchor); });
         links.append(consentButton('footer-consent'));
-        footer.append(links, element('p', null, realSandbox ? REAL_SANDBOX_NOTE : FOOTER_NOTE));
+        footer.append(links, element('p', null, FOOTER_NOTE));
         return footer;
     }
 
@@ -541,7 +538,7 @@
             headerMount.replaceChildren(header, appearance.menu);
             fillSessionAction(header);
         }
-        if (footerMount) footerMount.replaceChildren(surface === 'app' ? buildAppFooter(document.body.dataset.shellMode === 'real-sandbox') : buildFooter());
+        if (footerMount) footerMount.replaceChildren(surface === 'app' ? buildAppFooter() : buildFooter());
         if (surface === 'app' && !document.body.classList.contains('app-shell')) document.body.classList.add('app-shell');
         if (surface === 'public' && !document.body.classList.contains('public-shell')) document.body.classList.add('public-shell');
         mounted = true;
