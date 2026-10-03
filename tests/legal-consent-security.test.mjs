@@ -103,12 +103,14 @@ test('allowing preferences persists them; choosing essential only removes them',
     window.document.querySelector('[data-consent-choice="preferences"]').click();
     assert.equal(window.localStorage.getItem('smartprofit:rail-expanded'), '1', 'the setting chosen before consent is kept');
     assert.equal(JSON.parse(window.localStorage.getItem('smartprofit:consent')).preferences, true);
+    assert.match(window.document.cookie, /(?:^|; )sp_consent=v1\.preferences\.\d+/, 'the choice is a real first-party cookie');
     assert.ok(window.document.querySelector('[data-consent-banner]').hidden);
 
     window.smartProfitConsent.save({ preferences: false });
     assert.equal(window.localStorage.getItem('smartprofit:rail-expanded'), null, 'withdrawing consent clears preferences');
     assert.equal(window.smartProfitConsent.allows('preferences'), false);
     assert.equal(window.smartProfitConsent.allows('essential'), true);
+    assert.match(window.document.cookie, /sp_consent=v1\.essential\.\d+/);
 });
 
 test('a stored choice is respected and the banner stays closed', async () => {

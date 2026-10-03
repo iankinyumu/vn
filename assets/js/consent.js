@@ -28,10 +28,32 @@
     var SCRIPT_SRC = document.currentScript ? document.currentScript.src : '';
     var listeners = [];
 
+    /* The choice itself is a first-party cookie, sp_consent, for 12 months: "v1.preferences" or
+       "v1.essential", then the time it was made. It is essential (it remembers the answer), is
+       never sent to another site (SameSite=Lax) and carries no identifier. A localStorage copy
+       keeps choices made before the cookie existed. */
+    var COOKIE = 'sp_consent';
+    var COOKIE_MAX_AGE = 365 * 24 * 60 * 60;
+
+    function readCookie() {
+        var match = document.cookie.match(/(?:^|;\s*)sp_consent=v(\d+)\.(preferences|essential)\.(\d+)/);
+        if (!match || Number(match[1]) !== VERSION) return null;
+        return { v: VERSION, preferences: match[2] === 'preferences', at: new Date(Number(match[3])).toISOString() };
+    }
+
+    function writeCookie(value) {
+        var secure = window.location.protocol === 'https:' ? '; Secure' : '';
+        document.cookie = COOKIE + '=' + value + '; Max-Age=' + COOKIE_MAX_AGE + '; Path=/; SameSite=Lax' + secure;
+    }
+
     function readRecord() {
+        var fromCookie = readCookie();
+        if (fromCookie) return fromCookie;
         try {
-            var record = JSON.parse(window.localStorage.getItem(KEY));
-            return record && record.v === VERSION ? record : null;
+            var stored = JSON.parse(window.localStorage.getItem(KEY));
+            if (!stored || stored.v !== VERSION) return null;
+            writeCookie('v' + VERSION + '.' + (stored.preferences ? 'preferences' : 'essential') + '.' + (Date.parse(stored.at) || Date.now()));
+            return stored;
         } catch (_) { return null; }
     }
 
@@ -72,8 +94,10 @@
 
     function save(choices) {
         var preferences = Boolean(choices && choices.preferences);
-        record = { v: VERSION, preferences: preferences, at: new Date().toISOString() };
-        try { window.localStorage.setItem(KEY, JSON.stringify(record)); } catch (_) { /* Asked again next visit. */ }
+        var now = Date.now();
+        record = { v: VERSION, preferences: preferences, at: new Date(now).toISOString() };
+        writeCookie('v' + VERSION + '.' + (preferences ? 'preferences' : 'essential') + '.' + now);
+        try { window.localStorage.setItem(KEY, JSON.stringify(record)); } catch (_) { /* The cookie still holds it. */ }
         if (preferences) {
             // Settings chosen before consent move from memory to the device.
             Object.keys(memory).forEach(function (key) { try { window.localStorage.setItem(key, memory[key]); } catch (_) { /* memory keeps it */ } });
