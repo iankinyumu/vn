@@ -35,6 +35,10 @@
     // or offline. One channel per page, however many components call listen().
     let shown = null;
     let listening = null;
+    // A pick saved on this page wins over any server read that started before it: the catch-up
+    // query and realtime messages can arrive late carrying the previous character, and must not
+    // put it back on screen. Each read records when it started and is dropped if a save came after.
+    let savedAt = 0;
     const announce = (id) => {
         if (!valid(id) || id === shown) return;
         shown = id;
@@ -49,14 +53,18 @@
                 const client = await window.getSupabaseClient?.();
                 const user = await window.getAuthenticatedUser?.();
                 if (!client?.channel || !user?.id) return;
-                const receive = (id) => {
+                const receive = (id, startedAt = Date.now()) => {
                     if (!valid(id) || id === shown) return;
+                    if (startedAt <= savedAt + 1000) return;
                     // The stored session still carries the old metadata: refresh it so the next page draws the new character first.
                     client.auth?.refreshSession?.()?.catch?.(() => {});
                     announce(id);
                 };
-                const catchUp = () => client.from('profiles').select('avatar').eq('id', user.id).maybeSingle()
-                    .then(({ data }) => receive(data?.avatar), () => {});
+                const catchUp = () => {
+                    const startedAt = Date.now();
+                    return client.from('profiles').select('avatar').eq('id', user.id).maybeSingle()
+                        .then(({ data }) => receive(data?.avatar, startedAt), () => {});
+                };
                 client.channel(`avatar:${user.id}`)
                     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` }, (payload) => receive(payload.new?.avatar))
                     .subscribe((status) => { if (status === 'SUBSCRIBED') catchUp(); });
@@ -66,6 +74,8 @@
     }
     // Another component on this page saved a new character: keep the record in step.
     document.addEventListener('smartprofit:avatar-changed', (event) => { if (valid(event.detail?.avatar)) shown = event.detail.avatar; });
+    // Called by the profile picker the moment a pick is made, before it is saved.
+    const markSaving = (id) => { if (valid(id)) { shown = id; savedAt = Date.now(); } };
 
-    window.smartProfitAvatars = Object.freeze({ list: LIST, src, random, fromSeed, valid, forUser, nameOf, listen, markShown });
+    window.smartProfitAvatars = Object.freeze({ list: LIST, src, random, fromSeed, valid, forUser, nameOf, listen, markShown, markSaving });
 })();

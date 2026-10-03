@@ -68,6 +68,14 @@
         } catch (_) { return null; }
     }
 
+    // The account the customer last chose (Practice or Real) is kept on this device, so it holds
+    // from page to page until they switch again or sign out. It names the mode, not an account id,
+    // so a Real view becomes the real account by itself once Real is enabled. Essential storage:
+    // it says which account the customer is acting on (see the cookie policy).
+    const ACTIVE_KEY = 'smartprofit:account:active';
+    const recallMode = () => { try { return window.localStorage.getItem(ACTIVE_KEY) === 'real' ? 'real' : 'practice'; } catch (_) { return 'practice'; } };
+    const rememberMode = (mode) => { try { window.localStorage.setItem(ACTIVE_KEY, mode); } catch (_) { /* this page only */ } };
+
     const RESET_MESSAGES = Object.freeze({
         open_contracts_exist: 'Wait for open trades to settle before resetting.',
         reset_rate_limited: 'Practice funds can be reset once every 24 hours.',
@@ -252,6 +260,7 @@
                     window.smartProfitCache?.clear();
                     document.dispatchEvent(new Event('smartprofit:clear-trade-state'));
                     ui.balance.textContent = '—';
+                    rememberMode(account === practice ? 'practice' : 'real');
                     choose(account);
                 };
                 document.addEventListener('smartprofit:account-changed', () => { paint(); refreshBalance().catch(() => {}); });
@@ -260,8 +269,8 @@
                 paint();
                 if (realSandbox) refreshBalance().catch(() => {});
             }
-            // The Real sandbox page never activates a trading account; sessions otherwise start in Practice.
-            if (!realSandbox) choose(practice);
+            // The Real sandbox page never activates a trading account; other pages open on the account last chosen.
+            if (!realSandbox) choose(recallMode() === 'real' ? realTarget : practice);
             return { client, config, accounts, sandbox };
         } catch (error) {
             const failure = error instanceof StartupError ? error : new StartupError('client', error);

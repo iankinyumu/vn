@@ -92,11 +92,13 @@
         renderPicker(avatar, async (choice) => {
             const status = find('[data-avatar-status]');
             const previous = avatar;
+            avatars().markSaving?.(choice);
             showAvatar(choice);
             if (status) status.textContent = 'Saving…';
             const { error: avatarError } = await client.auth.updateUser({ data: { avatar: choice } });
             if (avatarError) {
                 console.error(avatarError);
+                avatars().markSaving?.(previous);
                 showAvatar(previous);
                 const radio = find(`[data-avatar-options] input[value="${previous}"]`);
                 if (radio) radio.checked = true;

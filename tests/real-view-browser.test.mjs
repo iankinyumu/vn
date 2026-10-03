@@ -63,3 +63,15 @@ test('dashboard: Real shows a zero balance and no contracts', async () => {
         assert.deepEqual(errors.filter((text) => !/favicon/.test(text)), []);
     } finally { await context.close(); }
 });
+
+test('Real stays selected when moving between pages', async () => {
+    const { page, context } = await openApp(app, 'dashboard.html', { fake: tradeFake({}) + extras });
+    try {
+        await page.locator('.mode-switch-toggle:not([disabled])').waitFor();
+        await chooseReal(page);
+        for (const path of ['trade.html', 'profile.html', 'dashboard.html']) {
+            await page.goto(`${app.base}/${path}`);
+            await page.waitForFunction(() => document.querySelector('[data-mode-label]')?.textContent === 'Real' && document.querySelector('[data-mode-balance]')?.textContent === '$0.00');
+        }
+    } finally { await context.close(); }
+});

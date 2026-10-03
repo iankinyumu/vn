@@ -79,3 +79,25 @@ test('a character picked on another device is pushed to this page over realtime,
     assert.equal(reads, 1, 'focus and tab switches cause no reads');
     window.close();
 });
+
+test('a late catch-up read cannot put the previous character back over a pick just made on this page', async () => {
+    const window = load();
+    let release = null, connect = null;
+    // The catch-up read is slow: it starts before the pick and answers after it, with the old character.
+    const query = { select() { return this; }, eq() { return this; }, maybeSingle: () => new Promise((resolve) => { release = () => resolve({ data: { avatar: 'orange-clover' }, error: null }); }) };
+    const channel = { on() { return this; }, subscribe(callback) { connect = callback; return this; } };
+    window.getAuthenticatedUser = async () => ({ id: 'user-1', user_metadata: { avatar: 'orange-clover' } });
+    window.getSupabaseClient = async () => ({ from: () => query, channel: () => channel, auth: { refreshSession: async () => {} } });
+    const heard = [];
+    window.document.addEventListener('smartprofit:avatar-changed', (event) => heard.push(event.detail.avatar));
+    const avatars = window.smartProfitAvatars;
+    avatars.markShown('violet-bow');
+    await avatars.listen();
+    connect('SUBSCRIBED');                     // the catch-up read starts now
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    avatars.markSaving('violet-bow');           // the customer picks while it is in flight
+    release();
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    assert.deepEqual(heard, [], 'the stale read is dropped');
+    window.close();
+});

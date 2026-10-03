@@ -127,3 +127,28 @@ test('practice funds can be reset from the menu only once the balance is below t
     assert.equal(limited.$('[data-mode-note]').textContent, 'Practice funds can be reset once every 24 hours.');
     limited.dom.window.close();
 });
+
+test('the account last chosen holds from page to page until the customer switches or signs out', async () => {
+    const first = page();
+    await first.dom.window.initAccountSwitcher();
+    first.item('real-preview').click();
+    assert.equal(first.dom.window.localStorage.getItem('smartprofit:account:active'), 'real');
+    first.dom.window.close();
+
+    // The next page on the same device opens on Real.
+    const next = page();
+    next.dom.window.localStorage.setItem('smartprofit:account:active', 'real');
+    await next.dom.window.initAccountSwitcher();
+    assert.equal(next.dom.window.smartProfitAccount.get().mode, 'REAL');
+    assert.equal(next.$('[data-mode-label]').textContent, 'Real');
+    next.item('practice-id').click();
+    assert.equal(next.dom.window.localStorage.getItem('smartprofit:account:active'), 'practice');
+    next.dom.window.close();
+
+    // Once Real is enabled, the remembered choice selects the real account itself.
+    const enabled = page({ realEnabled: true });
+    enabled.dom.window.localStorage.setItem('smartprofit:account:active', 'real');
+    await enabled.dom.window.initAccountSwitcher();
+    assert.equal(enabled.dom.window.smartProfitAccount.get().accountId, 'real-id');
+    enabled.dom.window.close();
+});
