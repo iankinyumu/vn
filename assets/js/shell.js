@@ -26,15 +26,25 @@
         { href: 'contact.html', label: 'Contact', icon: 'support_agent', key: 'contact' }
     ]);
 
+    // Legal documents sit in both footers; "Cookie settings" reopens the consent banner (consent.js).
+    const LEGAL_LINKS = Object.freeze([
+        { href: 'terms.html', label: 'Terms' },
+        { href: 'privacy.html', label: 'Privacy' },
+        { href: 'cookies.html', label: 'Cookies' },
+        { href: 'risk.html', label: 'Risk disclosure' }
+    ]);
+
     const FOOTER_COLUMNS = Object.freeze([
         { title: 'Explore', links: [{ href: 'about.html', label: 'About' }, { href: 'fairness.html', label: 'Fairness' }] },
-        { title: 'Account', links: [{ href: 'login.html', label: 'Sign in' }, { href: 'register.html', label: 'Create account' }] }
+        { title: 'Account', links: [{ href: 'login.html', label: 'Sign in' }, { href: 'register.html', label: 'Create account' }] },
+        { title: 'Legal', links: LEGAL_LINKS, consent: true }
     ]);
 
     const APP_FOOTER_LINKS = Object.freeze([
         { href: 'faq.html', label: 'FAQ' },
         { href: 'contact.html', label: 'Contact' },
-        { href: 'blog.html', label: 'Guides' }
+        { href: 'blog.html', label: 'Guides' },
+        ...LEGAL_LINKS
     ]);
 
     const TAGLINE = 'Digit contracts on self-generated indices. Practice only, with virtual funds.';
@@ -261,16 +271,24 @@
         return header;
     }
 
+    function consentButton(className) {
+        const button = element('button', className, 'Cookie settings');
+        button.type = 'button';
+        button.dataset.consentOpen = '';
+        return button;
+    }
+
     function buildFooter() {
         const footer = element('footer', 'premium-footer');
         const container = element('div', 'container-fluid px-4');
         const row = element('div', 'row g-3');
-        const brandColumn = element('div', 'col-md-6');
+        const brandColumn = element('div', 'col-md-3');
         brandColumn.append(element('div', 'footer-brand-small', 'SmartProfit'), element('p', 'footer-desc', TAGLINE));
         row.append(brandColumn);
         FOOTER_COLUMNS.forEach((column) => {
             const cell = element('div', 'col-md-3');
-            cell.append(element('h6', null, column.title));
+            // An h2, so footer headings never skip levels after a page's own h1 and h2s.
+        cell.append(element('h2', 'footer-heading', column.title));
             const list = element('ul');
             column.links.forEach((link) => {
                 const item = element('li');
@@ -279,6 +297,11 @@
                 item.append(anchor);
                 list.append(item);
             });
+            if (column.consent) {
+                const item = element('li');
+                item.append(consentButton('footer-consent'));
+                list.append(item);
+            }
             cell.append(list);
             row.append(cell);
         });
@@ -291,8 +314,10 @@
     /* Signed-in pages: a thin side panel holds the brand, navigation and log out.
        It expands in place on wide screens and slides in as a drawer on phones.
        The top bar carries only the mode switch and the funding actions. */
-    const railPreference = () => { try { return localStorage.getItem(RAIL_KEY) === '1'; } catch (_) { return false; } };
-    const saveRailPreference = (value) => { try { localStorage.setItem(RAIL_KEY, value ? '1' : '0'); } catch (_) { /* The preference is a convenience only. */ } };
+    // Preferences persist only with cookie consent (consent.js); otherwise they last for the page.
+    const prefs = () => window.smartProfitConsent?.store || localStorage;
+    const railPreference = () => { try { return prefs().getItem(RAIL_KEY) === '1'; } catch (_) { return false; } };
+    const saveRailPreference = (value) => { try { prefs().setItem(RAIL_KEY, value ? '1' : '0'); } catch (_) { /* The preference is a convenience only. */ } };
 
     function buildRail(activeKey, appearanceButton) {
         const rail = element('aside', 'app-rail');
@@ -457,6 +482,7 @@
         const links = element('nav', 'app-footer-links');
         links.setAttribute('aria-label', 'Help');
         APP_FOOTER_LINKS.forEach((link) => { const anchor = element('a', null, link.label); anchor.href = link.href; links.append(anchor); });
+        links.append(consentButton('footer-consent'));
         footer.append(links, element('p', null, realSandbox ? REAL_SANDBOX_NOTE : FOOTER_NOTE));
         return footer;
     }
@@ -609,8 +635,8 @@
 
     // Trade popups can be turned off per device on the profile page; everything else always shows.
     const TRADE_TOASTS_KEY = 'smartprofit:trade-toasts';
-    const tradeToastsOn = () => { try { return window.localStorage.getItem(TRADE_TOASTS_KEY) !== 'off'; } catch (_) { return true; } };
-    function setTradeToasts(on) { try { if (on) window.localStorage.removeItem(TRADE_TOASTS_KEY); else window.localStorage.setItem(TRADE_TOASTS_KEY, 'off'); } catch (_) { /* Private mode: the default stays. */ } }
+    const tradeToastsOn = () => { try { return prefs().getItem(TRADE_TOASTS_KEY) !== 'off'; } catch (_) { return true; } };
+    function setTradeToasts(on) { try { if (on) prefs().removeItem(TRADE_TOASTS_KEY); else prefs().setItem(TRADE_TOASTS_KEY, 'off'); } catch (_) { /* Private mode: the default stays. */ } }
 
     function showToast({ title, detail = '', tone = 'neutral', group = '' } = {}) {
         if (!title || (group === 'trade' && !tradeToastsOn())) return null;

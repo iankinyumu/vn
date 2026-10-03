@@ -22,11 +22,13 @@
     'use strict';
 
     var STAFF_STORAGE_KEY = 'smartprofit:staff-auth:v1';
-    var SUPABASE_JS_URL = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js';
+    // Pinned and integrity-checked; keep in step with auth.js.
+    var SUPABASE_JS_URL = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js';
+    var SUPABASE_JS_SRI = 'sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok';
     var authScriptUrl = document.currentScript && document.currentScript.src;
     var clientPromise;
 
-    function loadScript(url) {
+    function loadScript(url, integrity) {
         return new Promise(function (resolve, reject) {
             var existing = Array.from(document.scripts).find(function (script) { return script.src === url; });
             if (existing) {
@@ -35,6 +37,7 @@
                 return;
             }
             var script = document.createElement('script');
+            if (integrity && !window.SMARTPROFIT_TEST_CDN) { script.integrity = integrity; script.crossOrigin = 'anonymous'; }
             script.src = url;
             script.onload = resolve;
             script.onerror = function () { reject(new Error('Unable to load an authentication dependency.')); };
@@ -47,7 +50,7 @@
             clientPromise = (async function () {
                 var assetBase = new URL('.', authScriptUrl || window.location.href);
                 await loadScript(new URL('supabase-config.js', assetBase).href);
-                await loadScript(SUPABASE_JS_URL);
+                await loadScript(SUPABASE_JS_URL, SUPABASE_JS_SRI);
                 var config = window.SMARTPROFIT_SUPABASE_CONFIG;
                 if (!config || !config.url || !config.publishableKey) throw new Error('Supabase browser configuration is missing.');
                 return window.supabase.createClient(config.url, config.publishableKey, {

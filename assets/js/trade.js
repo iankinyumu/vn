@@ -399,7 +399,7 @@
         const CHART_STYLES = ['line', 'candles', 'ohlc'], CHART_PERIODS = [10000, 30000, 60000];
         let chartStyle = 'line', chartPeriod = 30000;
         try {
-            const saved = JSON.parse(localStorage.getItem(CHART_KEY) || '{}');
+            const saved = JSON.parse((window.smartProfitConsent?.store || localStorage).getItem(CHART_KEY) || '{}');
             if (CHART_STYLES.includes(saved.style)) chartStyle = saved.style;
             if (CHART_PERIODS.includes(saved.period)) chartPeriod = saved.period;
         } catch (_) { /* The default chart is used. */ }
@@ -590,7 +590,7 @@
             chartStyle = styleInputs.find((input) => input.checked)?.value || 'line';
             chartPeriod = Number(periodSelect.value) || 30000;
             showChartChoice();
-            try { localStorage.setItem(CHART_KEY, JSON.stringify({ style: chartStyle, period: chartPeriod })); } catch (_) { /* Not remembered. */ }
+            try { (window.smartProfitConsent?.store || localStorage).setItem(CHART_KEY, JSON.stringify({ style: chartStyle, period: chartPeriod })); } catch (_) { /* Not remembered. */ }
             scheduleChart();
         };
         styleInputs.forEach((input) => input.addEventListener('change', chartChanged));

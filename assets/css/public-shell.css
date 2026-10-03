@@ -112,3 +112,10 @@ body.public-shell::before, body.auth-shell::before, .public-shell .animated-bg, 
 @media (hover: hover) and (pointer: fine) { .auth-shell .signin-help-btn:hover:not(:disabled) { background: var(--fill-hover); } }
 .auth-shell .signin-help-status:empty { display: none; }
 .auth-shell .signin-help-status { margin-top: 8px !important; color: var(--label) !important; }
+
+/* Footer column titles are h2s (no skipped heading levels) styled like the old h6s. */
+.premium-footer .footer-heading { margin: 0 0 12px; color: var(--label); font-size: 13px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+/* "Cookie settings" is a button (it opens the consent banner) that reads like the links beside it. */
+.premium-footer .footer-consent { display: inline-flex; align-items: center; min-height: var(--target); padding: 0; border: 0; background: none; color: var(--text-secondary); font: inherit; font-size: 13px; cursor: pointer; }
+.premium-footer .footer-consent:hover { color: var(--label); text-decoration: underline; }
+.premium-footer .footer-consent:focus-visible { outline: 2px solid var(--label); outline-offset: 2px; }

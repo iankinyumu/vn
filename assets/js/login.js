@@ -1,14 +1,22 @@
 /* assets/js/login.js - SmartProfitBinary Sign-In Handler */
 
-document.addEventListener('DOMContentLoaded', () => redirectIfAuthenticated());
+document.addEventListener('DOMContentLoaded', () => {
+    redirectIfAuthenticated();
+    document.getElementById('loginForm')?.addEventListener('submit', handleLogin);
+});
 
 const LOGIN_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Five failed sign-ins in ten minutes pause this tab for five; Supabase Auth keeps its own per-IP limit.
+function loginLimiter() {
+    return window.smartProfitForms ? window.smartProfitForms.limiter('signin', { max: 5, windowMs: 10 * 60000, lockMs: 5 * 60000 }) : null;
+}
 
 function showLoginStatus(message, isError) {
     const status = document.getElementById('loginStatus');
     if (!status) return;
     status.textContent = message;
-    status.style.color = isError ? 'var(--negative)' : 'var(--positive)';
+    status.style.color = isError ? 'var(--negative)' : 'var(--label)';
 }
 
 function validateLoginCredentials(email, password) {
@@ -28,7 +36,8 @@ function isRateLimitError(error) {
 
 async function handleLogin(event) {
     event.preventDefault();
-    const email = document.getElementById('email').value.trim();
+    const rawEmail = document.getElementById('email').value;
+    const email = window.smartProfitForms ? window.smartProfitForms.clean(rawEmail, 254) : rawEmail.trim();
     const password = document.getElementById('password').value;
     const rememberInput = document.getElementById('rememberMe');
     const rememberSession = Boolean(rememberInput && rememberInput.checked);
@@ -40,16 +49,25 @@ async function handleLogin(event) {
         return;
     }
 
+    const limit = loginLimiter();
+    const wait = limit ? limit.wait() : 0;
+    if (wait) {
+        showLoginStatus(`Too many failed sign-ins from this browser. Wait ${window.smartProfitForms.waitText(wait)}, then try again, or reset your password.`, true);
+        return;
+    }
+
     submit.disabled = true;
     showLoginStatus('Signing you in…', false);
     try {
         const client = await getSupabaseClient({ rememberSession });
         const { error } = await client.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        if (limit) limit.reset();
         const redirect = new URLSearchParams(window.location.search).get('redirect');
         window.location.assign(redirect && /^[a-z0-9-]+\.html$/i.test(redirect) ? redirect : 'dashboard.html');
     } catch (error) {
         const unconfirmed = isUnconfirmedError(error);
+        if (limit && !unconfirmed) limit.record();
         showLoginStatus(
             isRateLimitError(error)
                 ? 'Sign-ins are temporarily rate-limited. Please wait a moment before trying again, or reset your password.'
@@ -77,6 +95,11 @@ async function resendConfirmation(button) {
         document.getElementById('email').focus();
         return;
     }
+    const forms = window.smartProfitForms;
+    const limit = forms ? forms.limiter('resend-confirmation', { max: 3, windowMs: 15 * 60000, lockMs: 15 * 60000 }) : null;
+    const wait = limit ? limit.wait() : 0;
+    if (wait) { status.textContent = `Several emails were sent already. Check your inbox and spam folder, or try again in ${forms.waitText(wait)}.`; return; }
+    if (limit) limit.record();
     button.disabled = true;
     button.setAttribute('aria-busy', 'true');
     status.textContent = 'Sending…';

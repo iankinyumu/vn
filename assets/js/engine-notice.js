@@ -41,8 +41,10 @@
         return out;
     }
 
-    function dismissed() { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (_) { return []; } }
-    function dismiss(ids) { try { localStorage.setItem(KEY, JSON.stringify(ids)); } catch (_) { /* A convenience only. */ } }
+    // Dismissals are a preference: kept on the device only with cookie consent (consent.js).
+    const prefs = () => window.smartProfitConsent?.store || localStorage;
+    function dismissed() { try { return JSON.parse(prefs().getItem(KEY) || '[]'); } catch (_) { return []; } }
+    function dismiss(ids) { try { prefs().setItem(KEY, JSON.stringify(ids)); } catch (_) { /* A convenience only. */ } }
 
     function render(mount, items) {
         const hidden = new Set(dismissed());

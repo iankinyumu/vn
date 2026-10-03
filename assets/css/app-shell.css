@@ -430,3 +430,6 @@ body:not(.has-rail) .app-toast-stack { top: 12px; }
     .notify-sheet { width: 100%; border-inline-start: 0; }
 }
 @media (prefers-reduced-motion: reduce) { .notify-sheet[open] { animation: none; } .app-notify-btn { transition: none; } }
+.app-footer-links .footer-consent { display: inline-flex; align-items: center; min-height: var(--target); padding: 0 var(--space-1); border: 0; background: none; color: var(--label); font: 600 var(--text-caption) var(--font-text); cursor: pointer; }
+.app-footer-links .footer-consent:focus-visible { outline: 2px solid var(--label); outline-offset: 2px; text-decoration: underline; }
+@media (hover: hover) and (pointer: fine) { .app-footer-links .footer-consent:hover { text-decoration: underline; } }

@@ -11,8 +11,10 @@
     const BREAK_MINUTES = 30;
     const BREAK_TRADES = 25;
     const find = (selector, root = document) => root.querySelector(selector);
-    const read = () => { try { return JSON.parse(localStorage.getItem(STORE)) || {}; } catch (_) { return {}; } };
-    const write = (patch) => { try { localStorage.setItem(STORE, JSON.stringify({ ...read(), ...patch })); } catch (_) { /* private mode: keep defaults */ } };
+    // A preference: kept on the device only with cookie consent (consent.js).
+    const prefs = () => window.smartProfitConsent?.store || localStorage;
+    const read = () => { try { return JSON.parse(prefs().getItem(STORE)) || {}; } catch (_) { return {}; } };
+    const write = (patch) => { try { prefs().setItem(STORE, JSON.stringify({ ...read(), ...patch })); } catch (_) { /* private mode: keep defaults */ } };
     const reduceMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     const LIVE = new Set(['live', 'polling']);
 
@@ -49,9 +51,11 @@
                 <img data-companion-img alt="" width="64" height="64" decoding="async">
                 <span class="visually-hidden" data-companion-label></span>
             </button>
-            <button type="button" class="companion-hide" data-companion-hide aria-label="Hide ${name}">Hide</button>
+            <button type="button" class="companion-hide" data-companion-hide>Hide</button>
             <p class="visually-hidden" role="status" aria-live="polite" data-companion-live></p>`;
         find('[data-companion-bubble]', root).id = 'companionBubble';
+        // Set as an attribute, never inside the template, so a name can never become markup.
+        find('[data-companion-hide]', root).setAttribute('aria-label', `Hide ${name}`);
         const bubble = find('[data-companion-bubble]', root);
         const text = find('[data-companion-text]', root);
         const actions = find('[data-companion-actions]', root);

@@ -6,3 +6,14 @@ assets/img/*.png
 skills-lock.json
 tests
 docs
+# Never upload secrets, local tooling or source that the static site does not serve.
+.env
+.env.*
+!.env.example
+.sandbox
+.VSCode
+assets/layered-asset
+supabase
+scripts/*.cjs
+engine
+modules

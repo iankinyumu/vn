@@ -27,7 +27,14 @@
         }
     };
 
-    function loadScript(url) {
+    // supabase-js is pinned to one release and checked with Subresource Integrity, so a new or
+    // tampered upload on the CDN cannot run with access to sessions. To upgrade, change both
+    // values together (staff-auth.js has the same pair). Browser tests serve a fake client and set
+    // window.SMARTPROFIT_TEST_CDN before any page script runs, which skips the hash check.
+    const SUPABASE_JS_URL = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js';
+    const SUPABASE_JS_SRI = 'sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok';
+
+    function loadScript(url, integrity) {
         return new Promise((resolve, reject) => {
             const existing = Array.from(document.scripts).find((script) => script.src === url);
             if (existing) {
@@ -36,6 +43,7 @@
                 return;
             }
             const script = document.createElement('script');
+            if (integrity && !window.SMARTPROFIT_TEST_CDN) { script.integrity = integrity; script.crossOrigin = 'anonymous'; }
             script.src = url;
             script.onload = resolve;
             script.onerror = () => reject(new Error('Unable to load an authentication dependency.'));
@@ -56,7 +64,7 @@
             clientPromise = (async () => {
                 const assetBase = new URL('.', authScriptUrl || window.location.href);
                 await loadScript(new URL('supabase-config.js', assetBase).href);
-                await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js');
+                await loadScript(SUPABASE_JS_URL, SUPABASE_JS_SRI);
                 const config = window.SMARTPROFIT_SUPABASE_CONFIG;
                 if (!config || !config.url || !config.publishableKey) throw new Error('Supabase browser configuration is missing.');
                 return window.supabase.createClient(config.url, config.publishableKey, {

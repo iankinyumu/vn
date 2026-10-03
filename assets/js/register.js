@@ -1,9 +1,16 @@
 /* assets/js/register.js - SmartProfitBinary Registration Handler */
 
+// The legal documents a new account accepts; bump it when terms.html, privacy.html or risk.html change.
+const LEGAL_VERSION = '2026-10-03';
+const NAME_PATTERN = /^[\p{L}\p{M}][\p{L}\p{M}' .-]{0,49}$/u;
+const USERNAME_PATTERN = /^[A-Za-z0-9_.]{3,30}$/;
+
 document.addEventListener('DOMContentLoaded', function () {
     if (typeof redirectIfAuthenticated === 'function') {
         redirectIfAuthenticated();
     }
+    document.getElementById('registerForm')?.addEventListener('submit', handleRegister);
+    document.getElementById('password')?.addEventListener('input', checkPasswordStrength);
     const confirmInput = document.getElementById('confirmPassword');
     if (confirmInput) {
         confirmInput.addEventListener('input', checkPasswordMatch);
@@ -44,19 +51,18 @@ function checkPasswordMatch() {
     const confirm = document.getElementById('confirmPassword').value;
     const matchText = document.getElementById('matchText');
     if (!matchText) return;
-    if (confirm && password !== confirm) {
-        matchText.style.display = 'block';
-    } else {
-        matchText.style.display = 'none';
-    }
+    const mismatch = Boolean(confirm) && password !== confirm;
+    matchText.hidden = !mismatch;
+    document.getElementById('confirmPassword').setAttribute('aria-invalid', String(mismatch));
 }
 
 async function handleRegister(e) {
     e.preventDefault();
-    const firstName = document.getElementById('firstName').value.trim();
-    const lastName = document.getElementById('lastName').value.trim();
-    const email = document.getElementById('email').value.trim();
-    const username = document.getElementById('username').value.trim();
+    const clean = window.smartProfitForms?.clean || ((value, max) => String(value).trim().slice(0, max));
+    const firstName = clean(document.getElementById('firstName').value, 50);
+    const lastName = clean(document.getElementById('lastName').value, 50);
+    const email = clean(document.getElementById('email').value, 254).toLowerCase();
+    const username = clean(document.getElementById('username').value, 30);
     const password = document.getElementById('password').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
     const terms = document.getElementById('termsCheck');
@@ -64,28 +70,48 @@ async function handleRegister(e) {
     const showStatus = (message, isError) => {
         if (!status) return;
         status.textContent = message;
-        status.style.color = isError ? 'var(--negative)' : 'var(--positive)';
+        status.style.color = isError ? 'var(--negative)' : 'var(--label)';
     };
     const errors = [];
+    const invalid = [];
+    const fail = (id, message) => { errors.push(message); invalid.push(id); };
 
-    if (!firstName) errors.push('First Name is required.');
-    if (!lastName) errors.push('Last Name is required.');
+    if (!firstName) fail('firstName', 'First Name is required.');
+    else if (!NAME_PATTERN.test(firstName)) fail('firstName', 'First Name can use letters, spaces, hyphens and apostrophes only.');
+    if (!lastName) fail('lastName', 'Last Name is required.');
+    else if (!NAME_PATTERN.test(lastName)) fail('lastName', 'Last Name can use letters, spaces, hyphens and apostrophes only.');
     if (!email) {
-        errors.push('Email is required.');
+        fail('email', 'Email is required.');
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        errors.push('Invalid email format.');
+        fail('email', 'Invalid email format.');
     }
-    if (!username) errors.push('Username is required.');
-    else if (username.length < 3) errors.push('Username must be at least 3 characters.');
-    if (!password) errors.push('Password is required.');
-    else if (password.length < 8) errors.push('Password must be at least 8 characters.');
-    if (password !== confirmPassword) errors.push('Passwords do not match.');
-    if (terms && !terms.checked) errors.push('You must accept the Terms of Service.');
+    if (!username) fail('username', 'Username is required.');
+    else if (username.length < 3) fail('username', 'Username must be at least 3 characters.');
+    else if (!USERNAME_PATTERN.test(username)) fail('username', 'Username can use letters, numbers, dots and underscores only.');
+    if (!password) fail('password', 'Password is required.');
+    else if (password.length < 8) fail('password', 'Password must be at least 8 characters.');
+    else if (password.length > 72) fail('password', 'Password must be 72 characters or fewer.');
+    if (password !== confirmPassword) fail('confirmPassword', 'Passwords do not match.');
+    if (terms && !terms.checked) fail('termsCheck', 'Confirm you are 18 or older and accept the Terms and Conditions and Privacy Policy.');
 
+    for (const id of ['firstName', 'lastName', 'email', 'username', 'password', 'confirmPassword', 'termsCheck']) {
+        document.getElementById(id)?.setAttribute('aria-invalid', String(invalid.includes(id)));
+    }
     if (errors.length > 0) {
         showStatus(errors.join(' '), true);
+        document.getElementById(invalid[0])?.focus();
         return;
     }
+
+    // Supabase Auth limits sign-ups per IP; this only stops a tab from hammering it.
+    const forms = window.smartProfitForms;
+    const limit = forms ? forms.limiter('signup', { max: 5, windowMs: 10 * 60000, lockMs: 10 * 60000 }) : null;
+    const wait = limit ? limit.wait() : 0;
+    if (wait) {
+        showStatus(`Too many sign-up attempts from this browser. Try again in ${forms.waitText(wait)}.`, true);
+        return;
+    }
+    if (limit) limit.record();
 
     const submit = e.currentTarget.querySelector('button[type="submit"]');
     submit.disabled = true;
@@ -96,7 +122,7 @@ async function handleRegister(e) {
             password,
             options: {
                 // A random plush character becomes the profile picture; it can be changed on the profile page.
-                data: { display_name: `${firstName} ${lastName}`, username, ...(window.smartProfitAvatars ? { avatar: window.smartProfitAvatars.random() } : {}) }
+                data: { display_name: `${firstName} ${lastName}`, username, terms_version: LEGAL_VERSION, terms_accepted_at: new Date().toISOString(), ...(window.smartProfitAvatars ? { avatar: window.smartProfitAvatars.random() } : {}) }
             }
         });
         if (error) throw error;

@@ -225,9 +225,21 @@
     margin-top: 10px
 }
 
-.success-hint a {
-    color: var(--accent);
-    text-decoration: none
+.success-hint .link-button {
+    min-height: var(--target);
+    padding: 0 2px;
+    border: 0;
+    background: none;
+    color: var(--label);
+    font: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer
+}
+
+.success-hint .link-button:focus-visible {
+    outline: 2px solid var(--label);
+    outline-offset: 2px
 }
 
 .success-hint a:hover {

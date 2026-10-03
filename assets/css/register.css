@@ -160,7 +160,7 @@
     display: flex;
     align-items: flex-start;
     gap: 10px;
-    margin: 20px 0 8px;
+    margin: 20px 0 4px;
     font-size: 13px;
     color: var(--text-secondary);
     line-height: 1.5
@@ -175,14 +175,38 @@
     flex-shrink: 0
 }
 
-.terms-check a {
-    color: var(--accent);
-    text-decoration: none;
+.terms-check label {
+    cursor: pointer
+}
+
+.terms-links {
+    margin: 0 0 16px 26px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5
+}
+
+/* DESIGN.md: links are the text colour and underlined. */
+.terms-links a {
+    color: var(--label);
+    text-decoration: underline;
+    text-underline-offset: 2px;
     font-weight: 500
 }
 
-.terms-check a:hover {
-    text-decoration: underline
+.terms-links a:hover {
+    text-decoration-thickness: 2px
+}
+
+.field-error {
+    color: var(--negative)
+}
+
+.register-status {
+    font-size: 13px;
+    min-height: 18px;
+    margin: 12px 0 0;
+    text-align: center
 }
 
 .btn-register {
@@ -322,27 +346,6 @@
 .back-home a:hover {
     background: var(--fill-pressed);
     color: var(--label)
-}
-
-.step-indicator {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    margin-bottom: 28px
-}
-
-.step-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: var(--radius-control);
-    background: var(--glass-border);
-    transition: color var(--dur-fast) ease, background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, opacity var(--dur-fast) ease
-}
-
-.step-dot.active {
-    background: var(--accent-fill);
-    width: 24px;
-    border-radius: var(--radius-control)
 }
 
 @media (max-width:576px) {

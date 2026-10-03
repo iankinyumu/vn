@@ -44,7 +44,10 @@ function fakeRpc(overrides = {}) {
 async function openPage(path, { rpc = fakeRpc(), testTrust = true, viewport = { width: 1280, height: 900 }, init = null, offline = false } = {}) {
     const context = await browser.newContext({ viewport, acceptDownloads: true });
     const errors = [], failed = [];
-    await context.route('**/@supabase/supabase-js@2/dist/umd/supabase.js', (route) => route.fulfill({ contentType: 'text/javascript', body: readFileSync(join(ROOT, 'tests/browser/fake-supabase.js'), 'utf8') }));
+    await context.addInitScript(() => { window.SMARTPROFIT_TEST_CDN = true; });
+    // A returning visitor who allowed preference storage, so the cookie banner stays out of the way.
+    await context.addInitScript(() => { try { if (!localStorage.getItem('smartprofit:consent')) localStorage.setItem('smartprofit:consent', JSON.stringify({ v: 1, preferences: true, at: '2026-10-03T00:00:00.000Z' })); } catch (_) { /* opaque origin */ } });
+    await context.route('**/@supabase/supabase-js@*/dist/umd/supabase.js', (route) => route.fulfill({ contentType: 'text/javascript', body: readFileSync(join(ROOT, 'tests/browser/fake-supabase.js'), 'utf8') }));
     await context.route(/^https:\/\/(cdnjs\.cloudflare\.com|fonts\.googleapis\.com|fonts\.gstatic\.com)\//, async (route) => { try { await route.fulfill({ response: await route.fetch() }); } catch { await route.fulfill({ status: 200, body: '' }); } });
     if (testTrust) {
         await context.route('**/verifier/v3/trusted-keys.json', (route) => route.fulfill({ contentType: 'application/json', body: readFileSync(join(trustDir, 'trusted-keys.json')) }));
@@ -54,7 +57,9 @@ async function openPage(path, { rpc = fakeRpc(), testTrust = true, viewport = { 
     if (init) await context.addInitScript({ content: init });
     const page = await context.newPage();
     page.on('pageerror', (error) => errors.push(`pageerror: ${error.message}`));
-    page.on('console', (message) => { if (message.type() === 'error') errors.push(`console: ${message.text()}`); });
+    // The CDN is stubbed with empty bodies, so Subresource Integrity rightly blocks them; that is the only error ignored.
+    const stubbedCdn = (text) => text.includes("Failed to find a valid digest in the 'integrity' attribute for resource 'https://cdnjs.cloudflare.com/");
+    page.on('console', (message) => { if (message.type() === 'error' && !stubbedCdn(message.text())) errors.push(`console: ${message.text()}`); });
     page.on('requestfailed', (request) => { if (request.url().startsWith(base)) failed.push(request.url()); });
     await page.goto(`${base}/${path}`);
     if (offline) await context.setOffline(true);

@@ -9,11 +9,13 @@
     var CHOICES = ['system', 'light', 'dark'];
     var query = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
     var memory = 'system';
+    // Appearance is a preference: it persists only with consent (consent.js, loaded first).
+    function prefs() { return (window.smartProfitConsent && window.smartProfitConsent.store) || window.localStorage; }
 
     function preference() {
         try {
-            var value = window.localStorage.getItem(KEY);
-            return CHOICES.indexOf(value) > 0 ? value : 'system';
+            var value = prefs().getItem(KEY);
+            return CHOICES.indexOf(value) > 0 ? value : (value === null ? memory : 'system');
         } catch (_) {
             return memory;
         }
@@ -32,8 +34,8 @@
         if (CHOICES.indexOf(choice) < 0) return;
         memory = choice;
         try {
-            if (choice === 'system') window.localStorage.removeItem(KEY);
-            else window.localStorage.setItem(KEY, choice);
+            if (choice === 'system') prefs().removeItem(KEY);
+            else prefs().setItem(KEY, choice);
         } catch (_) { /* Private windows keep the choice for this page only. */ }
         apply();
     }
