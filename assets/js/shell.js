@@ -542,9 +542,9 @@
             document.body.classList.add('has-rail');
             paintRailAvatar(rail);
         } else if (headerMount) {
-            const appearance = buildAppearance('nav');
-            const header = buildHeader(active, appearance.button);
-            headerMount.replaceChildren(header, appearance.menu);
+            // Public pages are always light (theme.js); the Appearance menu is for signed-in pages.
+            const header = buildHeader(active);
+            headerMount.replaceChildren(header);
             fillSessionAction(header, footerMount);
         }
         if (footerMount) footerMount.replaceChildren(surface === 'app' ? buildAppFooter() : buildFooter());

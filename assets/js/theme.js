@@ -2,7 +2,9 @@
    choice is kept per browser and applied in <head> before the stylesheets paint.
    data-bs-theme on <html> drives both Bootstrap and tokens.css; without this
    script pages stay dark. The shell's Appearance menu calls
-   window.smartProfitAppearance.set(); other tabs follow through the storage event. */
+   window.smartProfitAppearance.set(); other tabs follow through the storage event.
+   Signed-out pages (welcome, legal, sign in) declare data-appearance-fixed="light" on
+   <html>: they stay light and offer no menu; the choice applies to signed-in pages. */
 (function () {
     'use strict';
     var KEY = 'smartprofit:appearance';
@@ -21,7 +23,13 @@
         }
     }
 
+    var fixed = document.documentElement.getAttribute('data-appearance-fixed');
+
     function apply() {
+        if (fixed) {
+            document.documentElement.setAttribute('data-bs-theme', fixed);
+            return;
+        }
         var choice = preference();
         var light = choice === 'system' ? Boolean(query && query.matches) : choice === 'light';
         var root = document.documentElement;

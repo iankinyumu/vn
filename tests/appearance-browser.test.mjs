@@ -2,8 +2,10 @@
 // fake backend: light and dark follow the system setting (live), the collapsed side panel
 // labels the focused item, and the layout mirrors in right-to-left text.
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { after, before, test } from 'node:test';
-import { EDGE, openApp, startApp } from './helpers/browser-app.mjs';
+import { EDGE, ROOT, openApp, startApp } from './helpers/browser-app.mjs';
 import { tradeFake } from './browser/trade-fake.mjs';
 
 let app;
@@ -95,22 +97,29 @@ test('the Appearance menu overrides the system setting, persists, and works from
     await context.close();
 });
 
-test('the Appearance menu opens inside the screen from the public header and the phone drawer', async () => {
-    let { page, context, errors } = await openApp(app, 'index.html', { fake: tradeFake() });
-    const header = page.locator('.premium-header .appearance-toggle');
-    await header.waitFor({ state: 'visible' });
-    await header.click();
-    let box = await page.locator('.appearance-menu').boundingBox();
-    const width = page.viewportSize().width;
-    assert.ok(box.x >= 0 && box.x + box.width <= width && box.y > 0, `header menu on screen (${JSON.stringify(box)})`);
-    assert.deepEqual(errors, []);
-    await context.close();
-    ({ page, context, errors } = await openApp(app, 'trade.html', { fake: tradeFake(), viewport: { width: 360, height: 740 } }));
+test('signed-out pages stay light with no Appearance menu, whatever the saved choice or device', async () => {
+    // Sign in, Create account and Forgot password redirect a signed-in session, so only their markup is checked.
+    for (const path of ['login.html', 'register.html', 'forgot-password.html']) {
+        assert.match(readFileSync(join(ROOT, 'pages', path), 'utf8'), /<html[^>]*data-appearance-fixed="light"/, `${path} is not fixed light`);
+    }
+    for (const path of ['index.html', 'terms.html', 'about.html']) {
+        const { page, context, errors } = await openApp(app, path, { fake: tradeFake() });
+        await page.emulateMedia({ colorScheme: 'dark' });
+        await page.evaluate(() => window.smartProfitAppearance.set('dark'));
+        assert.equal(await page.evaluate(() => document.documentElement.dataset.bsTheme), 'light', `${path} went dark`);
+        assert.equal(await page.locator('.appearance-toggle').count(), 0, `${path} offers an Appearance menu`);
+        assert.deepEqual(errors, []);
+        await context.close();
+    }
+});
+
+test('the Appearance menu opens inside the screen from the phone drawer', async () => {
+    const { page, context, errors } = await openApp(app, 'trade.html', { fake: tradeFake(), viewport: { width: 360, height: 740 } });
     await page.waitForSelector('[data-rail-open]');
     await page.click('[data-rail-open]');
     await page.waitForFunction(() => document.querySelector('[data-app-rail]').getBoundingClientRect().x === 0);
     await page.click('.app-rail .appearance-toggle');
-    box = await page.locator('.appearance-menu').boundingBox();
+    const box = await page.locator('.appearance-menu').boundingBox();
     assert.ok(box.x >= 0 && box.x + box.width <= 360 && box.y >= 0 && box.y + box.height <= 740, `drawer menu on screen (${JSON.stringify(box)})`);
     await page.locator('.appearance-menu [data-appearance="light"]').click();
     await page.waitForFunction(() => document.documentElement.dataset.bsTheme === 'light');
