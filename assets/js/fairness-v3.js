@@ -64,6 +64,7 @@ async function start() {
         const verifying = window.smartProfitLoader?.mount(output.parentElement, { label: 'Verifying', overlay: false, compact: true });
         try {
             const account = window.smartProfitAccount.get();
+            if (account.preview) { say('There are no Real contracts to verify yet. Switch to Practice to verify its ticks.'); return; }
             let pkg;
             try { pkg = await rpc('get_v3_proof_package', { p_account_id: account.accountId, p_index: form.index.value, p_from: from, p_to: to }); }
             catch (error) { say(codeOf(error) === 'not_found' ? UI_MESSAGES.no_data : navigator.onLine === false ? UI_MESSAGES.offline : UI_MESSAGES.network); return; }

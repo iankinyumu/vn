@@ -58,12 +58,9 @@
     function accountFields(account) {
         return { accountId: account.id, mode: account.execution_mode, currency: account.currency };
     }
-    // Daraja sandbox testing lives in Real mode only. For an owner-enabled sandbox
-    // tester the switcher's Real entry opens the Real sandbox page; it never
-    // selects a trading account, so Practice stays strictly virtual and Real
-    // trading stays closed. Everyone else learns nothing.
+    // The Daraja sandbox page (sandbox-deposit.html) is a staff drill page reached by its URL;
+    // when it calls init({ realSandbox: true }) the switch shows Real without selecting an account.
     const REAL_SANDBOX = 'real-sandbox';
-    const REAL_SANDBOX_PAGE = 'sandbox-deposit.html';
     async function sandboxOverview(client) {
         try {
             const { data, error } = await client.rpc('funding_sandbox_overview');
@@ -165,21 +162,18 @@
                 window.smartProfitAccount?.set(accountFields(account));
                 document.dispatchEvent(new CustomEvent('smartprofit:account-changed', { detail: window.smartProfitAccount.get() }));
             };
-            const sandbox = host || realSandbox ? await sandboxOverview(client) : null;
+            const sandbox = realSandbox ? await sandboxOverview(client) : null;
+            // Until Real deposits and withdrawals are connected, Real is a view with a zero balance whose
+            // actions stay disabled (account-context.js). Once Real is enabled server-side, the real account is used.
+            const realOpen = Boolean(real && real.status === 'ACTIVE' && config.real_enabled);
+            const realPreview = { id: window.smartProfitAccount.previewId, execution_mode: 'REAL', currency: 'USD', status: 'ACTIVE' };
+            const realTarget = realOpen ? real : realPreview;
             if (host) {
                 const ui = buildSwitch(host);
                 const practiceItem = menuItem('menuitemradio', 'Practice', 'Virtual funds');
                 practiceItem.dataset.accountId = practice.id;
-                const realItem = menuItem('menuitemradio', 'Real', '');
-                const realOpen = Boolean(real && real.status === 'ACTIVE' && config.real_enabled);
-                if (sandbox && !realOpen) {
-                    realItem.dataset.accountId = REAL_SANDBOX;
-                    realItem.querySelector('.mode-menu-detail').textContent = money(sandbox.test_balance_usd);
-                } else {
-                    realItem.dataset.accountId = real?.id || '';
-                    realItem.disabled = !realOpen;
-                    realItem.querySelector('.mode-menu-detail').textContent = realOpen ? '' : 'Not open yet';
-                }
+                const realItem = menuItem('menuitemradio', 'Real', realOpen ? '' : money(0));
+                realItem.dataset.accountId = realTarget.id;
                 const reset = menuItem('menuitem', 'Reset practice funds', '');
                 reset.dataset.resetPractice = '';
                 reset.hidden = true;
@@ -194,12 +188,22 @@
                 };
                 const paint = () => {
                     const id = current();
-                    [practiceItem, realItem].forEach((item) => item.setAttribute('aria-checked', String(item.dataset.accountId === id)));
                     const isReal = id !== practice.id;
+                    practiceItem.setAttribute('aria-checked', String(!isReal));
+                    realItem.setAttribute('aria-checked', String(isReal));
                     ui.label.textContent = isReal ? 'Real' : 'Practice';
                     host.dataset.mode = isReal ? 'real' : 'demo';
-                    // Deposit and Withdraw belong to Real mode only.
-                    document.querySelectorAll('[data-funding-actions]').forEach((actions) => { actions.hidden = !isReal; });
+                    // Deposit and Withdraw belong to Real mode only, and stay disabled in the Real view.
+                    const comingSoon = isReal && !realSandbox && window.smartProfitAccount.isPreview();
+                    document.querySelectorAll('[data-funding-actions]').forEach((actions) => {
+                        actions.hidden = !isReal;
+                        actions.querySelectorAll('[data-funding-open]').forEach((button) => {
+                            const name = button.dataset.fundingOpen === 'withdraw' ? 'Withdraw' : 'Deposit';
+                            button.disabled = comingSoon;
+                            button.title = comingSoon ? `${name}s are coming soon` : '';
+                            button.setAttribute('aria-label', comingSoon ? `${name}, coming soon` : name);
+                        });
+                    });
                     ui.toggle.setAttribute('aria-label', `Account: ${ui.label.textContent}, balance ${ui.balance.textContent}. Change account`);
                 };
                 let balanceRequest = 0;
@@ -215,6 +219,7 @@
                     }
                     let active;
                     try { active = window.smartProfitAccount.get(); } catch (_) { return; }
+                    if (active.preview) { ui.balance.textContent = money(0); reset.hidden = true; divider.hidden = true; paint(); return; }
                     const { data, error } = await client.rpc('get_account_summary', { p_account_id: active.accountId });
                     if (request !== balanceRequest) return;
                     if (error || !data || !Number.isFinite(Number(data.available))) { ui.balance.textContent = 'Unavailable'; reset.hidden = true; divider.hidden = true; paint(); return; }
@@ -232,9 +237,8 @@
                 });
                 realItem.addEventListener('click', () => {
                     ui.close(true);
-                    if (realItem.dataset.accountId === REAL_SANDBOX) { if (!realSandbox) window.location.assign(REAL_SANDBOX_PAGE); return; }
-                    if (realSandbox) { window.location.assign('dashboard.html'); return; }
-                    if (real && current() !== real.id) select(real);
+                    if (realSandbox) return;
+                    if (current() !== realTarget.id) select(realTarget);
                 });
                 reset.addEventListener('click', async () => {
                     ui.close(true);

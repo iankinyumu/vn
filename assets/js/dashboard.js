@@ -149,7 +149,11 @@
 
     async function renderAccount(client, config) {
         const account = window.smartProfitAccount.get();
-        const call = (name, args) => client.rpc(name, args).then((result) => { if (result.error) throw result.error; return result.data; });
+        // The Real view has no server-side account yet: it is a zero balance with no contracts.
+        const PREVIEW = { get_account_summary: { available: 0, currency: 'USD' }, get_account_stats: { wins: 0, losses: 0, voids: 0, open: 0, net_result: 0, currency: 'USD' }, list_my_contracts: [] };
+        const call = account.preview
+            ? (name) => Promise.resolve(PREVIEW[name])
+            : (name, args) => client.rpc(name, args).then((result) => { if (result.error) throw result.error; return result.data; });
         const [summary, stats, latest, open] = await Promise.allSettled([
             call('get_account_summary', { p_account_id: account.accountId }),
             call('get_account_stats', { p_account_id: account.accountId }),

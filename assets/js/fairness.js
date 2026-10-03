@@ -133,6 +133,7 @@
             list?.replaceChildren();
             if (!Number.isInteger(from) || !Number.isInteger(to) || from < 1 || to < from) { output.textContent = 'Enter a first tick of at least 1 and a last tick that is not before it.'; return; }
             if (to - from + 1 > MAX_RANGE) { output.textContent = `Verify at most ${MAX_RANGE} ticks at a time.`; return; }
+            if (account.preview) { output.textContent = 'There are no Real contracts to verify yet. Switch to Practice to verify its ticks.'; return; }
             output.textContent = 'Verifying…';
             const verifying = window.smartProfitLoader?.mount(output.parentElement, { label: 'Verifying', overlay: false, compact: true });
             try {

@@ -34,14 +34,22 @@ async function settle(predicate, message) {
     }
 }
 
-test('a session explicitly starts on Practice and Real is listed but not open', async () => {
-    const { dom, $, item } = page();
+test('a session starts on Practice; until Real is enabled, Real is a selectable zero-balance view', async () => {
+    const { dom, $, item, calls } = page();
     await dom.window.initAccountSwitcher();
-    assert.deepEqual({ ...dom.window.smartProfitAccount.get() }, { accountId: 'practice-id', mode: 'DEMO', currency: 'USD' });
+    assert.deepEqual({ ...dom.window.smartProfitAccount.get() }, { accountId: 'practice-id', mode: 'DEMO', currency: 'USD', preview: false });
     assert.equal($('[data-mode-label]').textContent, 'Practice');
     assert.equal(item('practice-id').getAttribute('aria-checked'), 'true');
-    assert.equal(item('real-id').disabled, true);
-    assert.match(item('real-id').textContent, /Not open yet/);
+    assert.equal(item('real-id'), null, 'the closed Real trading account is never selected');
+    const real = item('real-preview');
+    assert.equal(real.disabled, false);
+    assert.match(real.textContent, /\$0\.00/);
+    real.click();
+    assert.equal(dom.window.smartProfitAccount.isPreview(), true);
+    assert.equal(dom.window.smartProfitAccount.get().mode, 'REAL');
+    await settle(() => $('[data-mode-balance]').textContent === '$0.00', 'the Real view balance was not shown');
+    assert.equal($('[data-mode-label]').textContent, 'Real');
+    assert.equal(calls.some((call) => call.args?.p_account_id === 'real-preview'), false, 'the Real view never reaches an account RPC');
     dom.window.close();
 });
 

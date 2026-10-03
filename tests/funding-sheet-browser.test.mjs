@@ -92,8 +92,8 @@ test('funding sheet: a non-tester who reaches the sheet sees closed deposits and
     await page.locator('dialog[data-fund-sheet]').waitFor({ state: 'hidden' });
     assert.equal(await page.evaluate(() => document.activeElement?.dataset.fundingOpen), 'deposit', 'focus returns to the button that opened the sheet');
     await page.click('.mode-switch-toggle');
-    assert.equal(await page.locator('[data-account-id="acc-real"]').isDisabled(), true);
-    assert.match(await page.locator('[data-account-id="acc-real"]').textContent(), /Not open yet/);
+    assert.equal(await page.locator('[data-account-id="real-preview"]').isDisabled(), false, 'Real is selectable as a view');
+    assert.match(await page.locator('[data-account-id="real-preview"]').textContent(), /\$0\.00/);
     assert.equal(posted.length, 0);
     assert.deepEqual(errors, []);
     await context.close();

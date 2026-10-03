@@ -305,9 +305,11 @@
         // an open gate, no purchase in flight and no session limit reached.
         const updateBuy = () => {
             const reason = gateReason();
-            gateNote.hidden = !reason;
-            gateNote.textContent = reason ? (messages[reason] || 'Trading on this index is paused.') : '';
-            const open = !reason && ['live', 'polling'].includes(feedState) && Boolean(index.value) && !buying && !guardReason() && stakeValid();
+            // The Real view (account-context.js) has no funded account yet, so buying stays off there.
+            const preview = window.smartProfitAccount.isPreview?.();
+            gateNote.hidden = !reason && !preview;
+            gateNote.textContent = preview ? 'Real trading opens soon. Switch to Practice to place trades in the meantime.' : reason ? (messages[reason] || 'Trading on this index is paused.') : '';
+            const open = !preview && !reason && ['live', 'polling'].includes(feedState) && Boolean(index.value) && !buying && !guardReason() && stakeValid();
             for (const button of sides) {
                 const type = sideType(button);
                 const barrierOk = !family?.barrier || BARRIER_OK[type]?.(barrierValue());
@@ -505,7 +507,7 @@
                 const type = sideType(button);
                 const payout = button.querySelector('[data-side-payout]');
                 button.removeAttribute('title');
-                if (!index.value || !enabledTypes.has(type) || !stakeValid() || (family?.barrier && !BARRIER_OK[type]?.(barrierValue()))) { payout.textContent = '—'; return; }
+                if (account().preview || !index.value || !enabledTypes.has(type) || !stakeValid() || (family?.barrier && !BARRIER_OK[type]?.(barrierValue()))) { payout.textContent = '—'; return; }
                 const { data, error } = await client.rpc('engine_quote_contract', fields(type));
                 if (request !== quoteId) return;
                 if (error) { payout.textContent = '—'; button.title = messages[codeOf(error)] || 'No quote'; return; }
@@ -522,10 +524,11 @@
             if (!index.value) { setFeedState('unavailable'); return; }
             setFeedState('loading');
             const active = account();
-            feed = createTickFeed({ client, mode: active.mode, index: index.value, interval: Number(index.selectedOptions[0].dataset.interval), onTicks, onState: setFeedState, onError: report });
+            feed = createTickFeed({ client, mode: active.preview ? 'DEMO' : active.mode, index: index.value, interval: Number(index.selectedOptions[0].dataset.interval), onTicks, onState: setFeedState, onError: report });
             const opening = feed;
             await opening.open();
             if (opening !== feed) return;
+            if (active.preview) { updateBuy(); return; }
             await loadContracts();
             if (opening !== feed) return;
             contractChannel = client.channel(`contracts:${active.accountId}`).on('postgres_changes', { event: '*', schema: 'public', table: 'engine_contracts', filter: `trading_account_id=eq.${active.accountId}` }, () => loadContracts().catch(report)).subscribe();
@@ -559,7 +562,7 @@
         function changed() { paintBarrier(); updateBuy(); clearTimeout(quoteTimer); quoteTimer = setTimeout(() => quote().catch(report), 200); }
         async function buy(button) {
             const type = sideType(button);
-            if (button.disabled || !type) return;
+            if (button.disabled || !type || account().preview) return;
             const next = intentValue(type);
             // One key per intended contract: a retry after a lost response reuses it; a completed purchase retires it.
             if (next !== intent || !idempotencyKey) { intent = next; idempotencyKey = uuid(); }
