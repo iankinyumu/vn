@@ -577,3 +577,9 @@ div.avatar-img {
 /* Notification preference: the whole row is the 44px target. */
 .notify-pref { display: flex; align-items: center; gap: 12px; min-height: var(--target); margin-bottom: 8px; cursor: pointer; }
 .notify-pref .form-check-input { flex: none; width: 20px; height: 20px; margin: 0; border-radius: var(--radius-control); cursor: pointer; }
+
+.verify-status {
+    margin: 0;
+    color: var(--label);
+    font-weight: 600;
+}

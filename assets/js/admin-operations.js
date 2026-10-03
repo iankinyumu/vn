@@ -297,6 +297,7 @@
             el('customerAccountsList').replaceChildren();
             el('customerRestrictionsList').replaceChildren();
             el('customerOnboarding')?.replaceChildren();
+            el('customerVerification')?.replaceChildren();
             el('restrictionListStatus').textContent = '';
             this.renderRestrictionChoices();
             this.resetCustomerMessage();
@@ -312,21 +313,49 @@
                 return;
             }
             this.renderOnboarding(userId);
+            this.renderVerification(userId);
         }
 
-        // Onboarding answers (staff_get_customer_onboarding, customers.read; every view is audited).
+        // What the customer told us at onboarding (staff_get_customer_onboarding, customers.read).
         async renderOnboarding(userId) {
             const list = el('customerOnboarding');
             if (!list) return;
-            const row = (label, value) => [h('dt', { text: label }), h('dd', { text: value === undefined || value === null || value === '' ? '—' : String(value) })];
+            const LABELS = {
+                goal: { learn: 'Learning how it works', fun: 'Having some fun', extra_income: 'Earning extra income', exploring: 'Just looking around' },
+                experience: { new: 'New to trading', some: 'Tried it a bit', experienced: 'Trades regularly' },
+                start_with: { tour: 'A practice trade', guides: 'A guide', dashboard: 'The dashboard' },
+                interests: { evenodd: 'Even / Odd', matches: 'Matches / Differs', overunder: 'Over / Under' },
+            };
+            const row = (label, value) => [h('dt', { text: label }), h('dd', { text: value || 'Not answered' })];
             try {
                 const view = await this.call('staff_get_customer_onboarding', { p_user_id: userId });
+                if (this.customerId !== userId) return;
+                const d = view.data || {};
+                list.replaceChildren(...[
+                    row('Status', view.status === 'not_started' ? 'Not seen yet' : view.status === 'completed' ? `${view.skipped ? 'Skipped' : 'Answered'} ${when(view.completed_at)}` : 'Started'),
+                    row('Here for', LABELS.goal[d.goal]),
+                    row('Experience', LABELS.experience[d.experience]),
+                    row('Interested in', (d.interests || []).map((key) => LABELS.interests[key]).join(', ')),
+                    row('Started with', LABELS.start_with[d.start_with]),
+                ].flat());
+            } catch (error) {
+                if (error !== STALE && this.customerId === userId) list.replaceChildren(h('dd', { text: `Could not load onboarding answers. ${explain(error)}` }));
+            }
+        }
+
+        // Verification details (staff_get_customer_verification, customers.read; every view is audited).
+        async renderVerification(userId) {
+            const list = el('customerVerification');
+            if (!list) return;
+            const row = (label, value) => [h('dt', { text: label }), h('dd', { text: value === undefined || value === null || value === '' ? '—' : String(value) })];
+            try {
+                const view = await this.call('staff_get_customer_verification', { p_user_id: userId });
                 if (this.customerId !== userId) return;
                 if (view.status === 'not_started') { list.replaceChildren(h('dd', { text: 'Not started yet.' })); return; }
                 const d = view.data || {};
                 const words = (value) => (value === undefined || value === null ? value : String(value).replaceAll('_', ' '));
                 list.replaceChildren(...[
-                    row('Status', view.status === 'completed' ? `Completed ${when(view.completed_at)}` : `In progress, step ${view.current_step} of 6`),
+                    row('Status', view.status === 'completed' ? `Submitted ${when(view.completed_at)}` : `In progress, step ${view.current_step} of 6`),
                     row('Legal name', [d.legal_first_name, d.legal_last_name].filter(Boolean).join(' ')),
                     row('Date of birth', d.date_of_birth),
                     row('Nationality / residence', [d.nationality, d.country_of_residence].filter(Boolean).join(' / ')),
@@ -342,7 +371,7 @@
                     row('Goal / weekly time', [words(d.goal), words(d.weekly_time)].filter(Boolean).join(' / ')),
                 ].flat());
             } catch (error) {
-                if (error !== STALE && this.customerId === userId) list.replaceChildren(h('dd', { text: `Could not load account setup. ${explain(error)}` }));
+                if (error !== STALE && this.customerId === userId) list.replaceChildren(h('dd', { text: `Could not load verification. ${explain(error)}` }));
             }
         }
 
