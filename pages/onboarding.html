@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0, viewport-fit=cover">
+    <meta name="robots" content="noindex">
+    <meta name="description" content="Set up your SmartProfit account: your details, experience and goals.">
+    <title>Set up your account — SmartProfit</title>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0..1,0&amp;icon_names=account_circle,add,admin_panel_settings,alternate_email,area_chart,arrow_back,arrow_downward,arrow_forward,arrow_right_alt,arrow_upward,balance,bar_chart,block,bolt,calendar_month,campaign,cancel,casino,category,check,check_circle,chevron_left,chevron_right,circle,close,contrast,currency_exchange,dark_mode,difference,edit,equal,error,expand_more,format_list_numbered,graphic_eq,group,help,history,home,hourglass_top,inbox,info,key,keyboard_double_arrow_left,keyboard_double_arrow_right,layers,light_mode,list,lock,lock_open,login,logout,mail,menu,menu_book,mood,notifications,percent,person,person_off,pie_chart,qr_code,refresh,save,schedule,search,send,settings,shield,show_chart,smartphone,sort,speed,sports_score,star,support_agent,swap_horiz,table,tag,timer,tune,undo,upload,visibility,warning&amp;display=block" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="../assets/js/consent.js"></script><script src="../assets/js/theme.js"></script>
+    <link href="../assets/css/tokens.css" rel="stylesheet">
+    <link href="../assets/css/onboarding.css" rel="stylesheet">
+</head>
+
+<body class="onboarding-body">
+    <script src="../assets/js/auth.js"></script>
+    <script>requireAuth()</script>
+
+    <!-- A focused flow: no site navigation until setup is done, like a checkout. Sign out is always here. -->
+    <header class="ob-header">
+        <span class="ob-brand" aria-label="SmartProfit"><span>Smart</span><span>Profit</span></span>
+        <span class="ob-mode">PRACTICE</span>
+        <button type="button" class="ob-text-btn" data-ob-signout><i class="ms" data-icon="logout" aria-hidden="true"></i> Sign out</button>
+    </header>
+
+    <div class="ob-layout">
+        <nav class="ob-steps" aria-label="Setup steps">
+            <ol>
+                <li data-step-item="1"><span class="ob-step-name">About you</span><span class="ob-step-state" data-step-state></span></li>
+                <li data-step-item="2"><span class="ob-step-name">Address</span><span class="ob-step-state" data-step-state></span></li>
+                <li data-step-item="3"><span class="ob-step-name">Work and finances</span><span class="ob-step-state" data-step-state></span></li>
+                <li data-step-item="4"><span class="ob-step-name">Experience</span><span class="ob-step-state" data-step-state></span></li>
+                <li data-step-item="5"><span class="ob-step-name">Knowledge check</span><span class="ob-step-state" data-step-state></span></li>
+                <li data-step-item="6"><span class="ob-step-name">Goals and safety</span><span class="ob-step-state" data-step-state></span></li>
+            </ol>
+        </nav>
+
+        <main class="ob-main" id="obMain">
+            <p class="ob-progress-text" data-ob-progress-text>Loading your setup…</p>
+            <div class="ob-progress" aria-hidden="true"><span data-ob-progress-bar></span></div>
+
+            <div class="ob-error-summary" data-ob-errors role="alert" tabindex="-1" hidden>
+                <h2>There is a problem</h2>
+                <ul data-ob-error-list></ul>
+            </div>
+
+            <!-- 1 -->
+            <form class="ob-step" data-step="1" novalidate hidden aria-labelledby="obTitle1">
+                <h1 id="obTitle1" tabindex="-1">About you</h1>
+                <p class="ob-why">We need your legal name and date of birth to confirm you are 18 or older, and a phone number to reach you about your account. Use the details on your national ID or passport.</p>
+                <div class="ob-row">
+                    <div class="ob-field">
+                        <label for="legal_first_name">Legal first name</label>
+                        <input id="legal_first_name" name="legal_first_name" autocomplete="given-name" maxlength="50" required>
+                        <p class="ob-error" data-error-for="legal_first_name" hidden></p>
+                    </div>
+                    <div class="ob-field">
+                        <label for="legal_last_name">Legal last name</label>
+                        <input id="legal_last_name" name="legal_last_name" autocomplete="family-name" maxlength="50" required>
+                        <p class="ob-error" data-error-for="legal_last_name" hidden></p>
+                    </div>
+                </div>
+                <div class="ob-field">
+                    <label for="date_of_birth">Date of birth</label>
+                    <p class="ob-hint" id="dobHint">You must be 18 or older.</p>
+                    <input id="date_of_birth" name="date_of_birth" type="date" autocomplete="bday" required aria-describedby="dobHint">
+                    <p class="ob-error" data-error-for="date_of_birth" hidden></p>
+                </div>
+                <div class="ob-row">
+                    <div class="ob-field">
+                        <label for="country_of_residence">Country of residence</label>
+                        <select id="country_of_residence" name="country_of_residence" autocomplete="country" required data-countries></select>
+                        <p class="ob-error" data-error-for="country_of_residence" hidden></p>
+                    </div>
+                    <div class="ob-field">
+                        <label for="nationality">Nationality</label>
+                        <select id="nationality" name="nationality" required data-countries></select>
+                        <p class="ob-error" data-error-for="nationality" hidden></p>
+                    </div>
+                </div>
+                <div class="ob-field">
+                    <label for="phone">Mobile number</label>
+                    <p class="ob-hint" id="phoneHint">With the country code, for example +254 712 345 678. A Kenyan number starting 07 or 01 is fine too.</p>
+                    <input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="20" required aria-describedby="phoneHint">
+                    <p class="ob-error" data-error-for="phone" hidden></p>
+                </div>
+                <div class="ob-actions"><button type="submit" class="ob-primary">Continue</button></div>
+            </form>
+
+            <!-- 2 -->
+            <form class="ob-step" data-step="2" novalidate hidden aria-labelledby="obTitle2">
+                <h1 id="obTitle2" tabindex="-1">Your address</h1>
+                <p class="ob-why">Financial services must know where their customers live. We never share it for marketing.</p>
+                <div class="ob-field">
+                    <label for="address_line1">Street address or building</label>
+                    <input id="address_line1" name="address_line1" autocomplete="address-line1" maxlength="120" required>
+                    <p class="ob-error" data-error-for="address_line1" hidden></p>
+                </div>
+                <div class="ob-field">
+                    <label for="address_line2">Apartment, floor or P.O. Box <span class="ob-optional">(optional)</span></label>
+                    <input id="address_line2" name="address_line2" autocomplete="address-line2" maxlength="120">
+                    <p class="ob-error" data-error-for="address_line2" hidden></p>
+                </div>
+                <div class="ob-row">
+                    <div class="ob-field">
+                        <label for="city">Town or city</label>
+                        <input id="city" name="city" autocomplete="address-level2" maxlength="80" required>
+                        <p class="ob-error" data-error-for="city" hidden></p>
+                    </div>
+                    <div class="ob-field">
+                        <label for="region" data-region-label>County</label>
+                        <select id="region" name="region" autocomplete="address-level1" required data-region-select hidden></select>
+                        <input id="regionText" name="region" autocomplete="address-level1" maxlength="80" data-region-text hidden disabled>
+                        <p class="ob-error" data-error-for="region" hidden></p>
+                    </div>
+                </div>
+                <div class="ob-field ob-short">
+                    <label for="postal_code">Postal code <span class="ob-optional">(optional)</span></label>
+                    <input id="postal_code" name="postal_code" autocomplete="postal-code" maxlength="12">
+                    <p class="ob-error" data-error-for="postal_code" hidden></p>
+                </div>
+                <div class="ob-actions"><button type="button" class="ob-secondary" data-ob-back>Back</button><button type="submit" class="ob-primary">Continue</button></div>
+            </form>
+
+            <!-- 3 -->
+            <form class="ob-step" data-step="3" novalidate hidden aria-labelledby="obTitle3">
+                <h1 id="obTitle3" tabindex="-1">Work and finances</h1>
+                <p class="ob-why">These answers help us check that trading suits your situation and meet anti-money-laundering rules. Bands are fine; we do not ask for exact figures.</p>
+                <div class="ob-row">
+                    <div class="ob-field">
+                        <label for="employment_status">Employment status</label>
+                        <select id="employment_status" name="employment_status" required>
+                            <option value="">Choose one</option>
+                            <option value="employed">Employed</option>
+                            <option value="self_employed">Self-employed</option>
+                            <option value="business_owner">Business owner</option>
+                            <option value="student">Student</option>
+                            <option value="unemployed">Not working</option>
+                            <option value="retired">Retired</option>
+                        </select>
+                        <p class="ob-error" data-error-for="employment_status" hidden></p>
+                    </div>
+                    <div class="ob-field">
+                        <label for="occupation">Industry</label>
+                        <select id="occupation" name="occupation" required>
+                            <option value="">Choose one</option>
+                            <option value="agriculture">Agriculture</option>
+                            <option value="construction">Construction and real estate</option>
+                            <option value="education">Education</option>
+                            <option value="finance">Banking and finance</option>
+                            <option value="government">Government and public service</option>
+                            <option value="health">Health</option>
+                            <option value="hospitality">Hospitality and tourism</option>
+                            <option value="ict">Technology and telecoms</option>
+                            <option value="manufacturing">Manufacturing</option>
+                            <option value="retail">Retail and trade</option>
+                            <option value="transport">Transport and logistics</option>
+                            <option value="other">Other</option>
+                            <option value="none">Not applicable</option>
+                        </select>
+                        <p class="ob-error" data-error-for="occupation" hidden></p>
+                    </div>
+                </div>
+                <div class="ob-row">
+                    <div class="ob-field">
+                        <label for="annual_income">Yearly income</label>
+                        <select id="annual_income" name="annual_income" required>
+                            <option value="">Choose one</option>
+                            <option value="under_300k">Under KES 300,000</option>
+                            <option value="300k_1m">KES 300,000 to 1 million</option>
+                            <option value="1m_3m">KES 1 to 3 million</option>
+                            <option value="3m_10m">KES 3 to 10 million</option>
+                            <option value="over_10m">Over KES 10 million</option>
+                        </select>
+                        <p class="ob-error" data-error-for="annual_income" hidden></p>
+                    </div>
+                    <div class="ob-field">
+                        <label for="savings">Savings and investments</label>
+                        <select id="savings" name="savings" required>
+                            <option value="">Choose one</option>
+                            <option value="under_100k">Under KES 100,000</option>
+                            <option value="100k_500k">KES 100,000 to 500,000</option>
+                            <option value="500k_2m">KES 500,000 to 2 million</option>
+                            <option value="2m_10m">KES 2 to 10 million</option>
+                            <option value="over_10m">Over KES 10 million</option>
+                        </select>
+                        <p class="ob-error" data-error-for="savings" hidden></p>
+                    </div>
+                </div>
+                <fieldset class="ob-field" data-field="source_of_funds">
+                    <legend>Where would money you trade with come from?</legend>
+                    <p class="ob-hint">Choose all that apply.</p>
+                    <div class="ob-choices ob-choices-2">
+                        <label class="ob-choice"><input type="checkbox" name="source_of_funds" value="salary"> Salary</label>
+                        <label class="ob-choice"><input type="checkbox" name="source_of_funds" value="business"> Business income</label>
+                        <label class="ob-choice"><input type="checkbox" name="source_of_funds" value="savings"> Savings</label>
+                        <label class="ob-choice"><input type="checkbox" name="source_of_funds" value="investments"> Investments</label>
+                        <label class="ob-choice"><input type="checkbox" name="source_of_funds" value="pension"> Pension</label>
+                        <label class="ob-choice"><input type="checkbox" name="source_of_funds" value="inheritance"> Inheritance</label>
+                        <label class="ob-choice"><input type="checkbox" name="source_of_funds" value="gift"> Gift from family</label>
+                        <label class="ob-choice"><input type="checkbox" name="source_of_funds" value="other"> Other</label>
+                    </div>
+                    <p class="ob-error" data-error-for="source_of_funds" hidden></p>
+                </fieldset>
+                <div class="ob-field ob-short">
+                    <label for="tax_id" data-tax-label>KRA PIN <span class="ob-optional">(optional for now)</span></label>
+                    <p class="ob-hint" id="taxHint" data-tax-hint>For example A123456789Z. You will need it before Real mode opens.</p>
+                    <input id="tax_id" name="tax_id" maxlength="20" autocomplete="off" spellcheck="false" autocapitalize="characters" aria-describedby="taxHint">
+                    <p class="ob-error" data-error-for="tax_id" hidden></p>
+                </div>
+                <fieldset class="ob-field" data-field="is_pep">
+                    <legend>Do you, a family member or a close associate hold a prominent public position?</legend>
+                    <p class="ob-hint">For example a member of parliament, a governor, a judge, a senior military officer or a director of a state corporation.</p>
+                    <div class="ob-choices">
+                        <label class="ob-choice"><input type="radio" name="is_pep" value="false" required> No</label>
+                        <label class="ob-choice"><input type="radio" name="is_pep" value="true"> Yes</label>
+                    </div>
+                    <p class="ob-error" data-error-for="is_pep" hidden></p>
+                </fieldset>
+                <div class="ob-actions"><button type="button" class="ob-secondary" data-ob-back>Back</button><button type="submit" class="ob-primary">Continue</button></div>
+            </form>
+
+            <!-- 4 -->
+            <form class="ob-step" data-step="4" novalidate hidden aria-labelledby="obTitle4">
+                <h1 id="obTitle4" tabindex="-1">Your trading experience</h1>
+                <p class="ob-why">There are no wrong answers. This tells us how much guidance to offer.</p>
+                <fieldset class="ob-field" data-field="experience_binary">
+                    <legend>Binary, digit or other fixed-payout options</legend>
+                    <div class="ob-choices ob-choices-4">
+                        <label class="ob-choice"><input type="radio" name="experience_binary" value="none" required> Never</label>
+                        <label class="ob-choice"><input type="radio" name="experience_binary" value="under_1y"> Under a year</label>
+                        <label class="ob-choice"><input type="radio" name="experience_binary" value="1_3y"> 1 to 3 years</label>
+                        <label class="ob-choice"><input type="radio" name="experience_binary" value="over_3y"> Over 3 years</label>
+                    </div>
+                    <p class="ob-error" data-error-for="experience_binary" hidden></p>
+                </fieldset>
+                <fieldset class="ob-field" data-field="experience_forex">
+                    <legend>Forex or CFDs</legend>
+                    <div class="ob-choices ob-choices-4">
+                        <label class="ob-choice"><input type="radio" name="experience_forex" value="none" required> Never</label>
+                        <label class="ob-choice"><input type="radio" name="experience_forex" value="under_1y"> Under a year</label>
+                        <label class="ob-choice"><input type="radio" name="experience_forex" value="1_3y"> 1 to 3 years</label>
+                        <label class="ob-choice"><input type="radio" name="experience_forex" value="over_3y"> Over 3 years</label>
+                    </div>
+                    <p class="ob-error" data-error-for="experience_forex" hidden></p>
+                </fieldset>
+                <fieldset class="ob-field" data-field="experience_shares">
+                    <legend>Shares, bonds or unit trusts</legend>
+                    <div class="ob-choices ob-choices-4">
+                        <label class="ob-choice"><input type="radio" name="experience_shares" value="none" required> Never</label>
+                        <label class="ob-choice"><input type="radio" name="experience_shares" value="under_1y"> Under a year</label>
+                        <label class="ob-choice"><input type="radio" name="experience_shares" value="1_3y"> 1 to 3 years</label>
+                        <label class="ob-choice"><input type="radio" name="experience_shares" value="over_3y"> Over 3 years</label>
+                    </div>
+                    <p class="ob-error" data-error-for="experience_shares" hidden></p>
+                </fieldset>
+                <fieldset class="ob-field" data-field="finance_background">
+                    <legend>Have you studied or worked in finance?</legend>
+                    <div class="ob-choices">
+                        <label class="ob-choice"><input type="radio" name="finance_background" value="false" required> No</label>
+                        <label class="ob-choice"><input type="radio" name="finance_background" value="true"> Yes</label>
+                    </div>
+                    <p class="ob-error" data-error-for="finance_background" hidden></p>
+                </fieldset>
+                <div class="ob-actions"><button type="button" class="ob-secondary" data-ob-back>Back</button><button type="submit" class="ob-primary">Continue</button></div>
+            </form>
+
+            <!-- 5 -->
+            <form class="ob-step" data-step="5" novalidate hidden aria-labelledby="obTitle5">
+                <h1 id="obTitle5" tabindex="-1">Knowledge check</h1>
+                <p class="ob-why">Four short questions about how digit contracts work. Your answers are checked on our side, and we explain each one afterwards. Practice stays open whatever your score.</p>
+                <fieldset class="ob-field ob-question" data-field="q1">
+                    <legend>1. You stake $10 on Even and the last digit of the settle tick is 7. What happens?</legend>
+                    <div class="ob-choices">
+                        <label class="ob-choice"><input type="radio" name="q1" value="lose_stake" required> You lose the $10 stake</label>
+                        <label class="ob-choice"><input type="radio" name="q1" value="refund"> You get the $10 back</label>
+                        <label class="ob-choice"><input type="radio" name="q1" value="win_stake"> You win the payout</label>
+                    </div>
+                    <p class="ob-error" data-error-for="q1" hidden></p>
+                </fieldset>
+                <fieldset class="ob-field ob-question" data-field="q2">
+                    <legend>2. The last five digits were all odd. How likely is the next digit to be even?</legend>
+                    <div class="ob-choices">
+                        <label class="ob-choice"><input type="radio" name="q2" value="more_likely" required> More likely than usual, it is due</label>
+                        <label class="ob-choice"><input type="radio" name="q2" value="same_chance"> Exactly as likely as on any other tick</label>
+                        <label class="ob-choice"><input type="radio" name="q2" value="less_likely"> Less likely, odd is on a streak</label>
+                    </div>
+                    <p class="ob-error" data-error-for="q2" hidden></p>
+                </fieldset>
+                <fieldset class="ob-field ob-question" data-field="q3">
+                    <legend>3. Over many contracts, what overall result should a customer expect?</legend>
+                    <div class="ob-choices">
+                        <label class="ob-choice"><input type="radio" name="q3" value="expected_profit" required> A profit, if they follow a system</label>
+                        <label class="ob-choice"><input type="radio" name="q3" value="break_even"> To break even</label>
+                        <label class="ob-choice"><input type="radio" name="q3" value="expected_loss"> A loss, because payouts are set below fair odds</label>
+                    </div>
+                    <p class="ob-error" data-error-for="q3" hidden></p>
+                </fieldset>
+                <fieldset class="ob-field ob-question" data-field="q4">
+                    <legend>4. What is the most you can lose on one contract?</legend>
+                    <div class="ob-choices">
+                        <label class="ob-choice"><input type="radio" name="q4" value="the_stake" required> The stake you put on it</label>
+                        <label class="ob-choice"><input type="radio" name="q4" value="more_than_stake"> More than the stake</label>
+                        <label class="ob-choice"><input type="radio" name="q4" value="whole_balance"> The whole account balance</label>
+                    </div>
+                    <p class="ob-error" data-error-for="q4" hidden></p>
+                </fieldset>
+                <div class="ob-actions"><button type="button" class="ob-secondary" data-ob-back>Back</button><button type="submit" class="ob-primary">Check my answers</button></div>
+            </form>
+
+            <!-- 5b: feedback on the knowledge check -->
+            <section class="ob-step" data-step="5-result" hidden aria-labelledby="obTitleResult">
+                <h1 id="obTitleResult" tabindex="-1">Your answers</h1>
+                <p class="ob-why" data-ob-score></p>
+                <ol class="ob-review" data-ob-review></ol>
+                <div class="ob-actions"><button type="button" class="ob-secondary" data-ob-retry>Change my answers</button><button type="button" class="ob-primary" data-ob-next>Continue</button></div>
+            </section>
+
+            <!-- 6 -->
+            <form class="ob-step" data-step="6" novalidate hidden aria-labelledby="obTitle6">
+                <h1 id="obTitle6" tabindex="-1">Goals and safety</h1>
+                <p class="ob-why">Knowing why you are here lets us keep the right reminders in front of you.</p>
+                <fieldset class="ob-field" data-field="goal">
+                    <legend>What brings you to SmartProfit?</legend>
+                    <div class="ob-choices">
+                        <label class="ob-choice"><input type="radio" name="goal" value="learn" required> To learn how digit contracts work</label>
+                        <label class="ob-choice"><input type="radio" name="goal" value="entertainment"> For fun, with money I can spare</label>
+                        <label class="ob-choice"><input type="radio" name="goal" value="extra_income"> To earn extra income</label>
+                        <label class="ob-choice"><input type="radio" name="goal" value="other"> Something else</label>
+                    </div>
+                    <p class="ob-callout" data-income-warning hidden>Please think carefully. Payouts are set below fair odds, so over time trading costs money rather than earning it. It should never be a way to pay bills or make up a shortfall.</p>
+                    <p class="ob-error" data-error-for="goal" hidden></p>
+                </fieldset>
+                <fieldset class="ob-field" data-field="weekly_time">
+                    <legend>How much time do you expect to spend each week?</legend>
+                    <div class="ob-choices ob-choices-3">
+                        <label class="ob-choice"><input type="radio" name="weekly_time" value="under_1h" required> Under an hour</label>
+                        <label class="ob-choice"><input type="radio" name="weekly_time" value="1_5h"> 1 to 5 hours</label>
+                        <label class="ob-choice"><input type="radio" name="weekly_time" value="over_5h"> Over 5 hours</label>
+                    </div>
+                    <p class="ob-error" data-error-for="weekly_time" hidden></p>
+                </fieldset>
+                <fieldset class="ob-field" data-field="acknowledgements">
+                    <legend>Please confirm</legend>
+                    <div class="ob-choices">
+                        <label class="ob-choice"><input type="checkbox" name="ack_lose_stake" required> I understand every contract can lose its whole stake.</label>
+                        <label class="ob-choice"><input type="checkbox" name="ack_practice" required> I understand Practice results do not predict results with real money.</label>
+                        <label class="ob-choice"><input type="checkbox" name="ack_afford" required> I will only ever trade money I can afford to lose.</label>
+                    </div>
+                    <p class="ob-hint">Read the <a href="risk.html" target="_blank" rel="noopener">Risk Disclosure</a> (opens in a new tab).</p>
+                    <p class="ob-error" data-error-for="acknowledgements" hidden></p>
+                </fieldset>
+                <div class="ob-actions"><button type="button" class="ob-secondary" data-ob-back>Back</button><button type="submit" class="ob-primary">Finish setup</button></div>
+            </form>
+
+            <!-- done -->
+            <section class="ob-step ob-done" data-step="done" hidden aria-labelledby="obTitleDone">
+                <img src="../assets/img/mascots/peach-whistle.webp" class="ob-mascot" width="96" height="96" alt="" aria-hidden="true" decoding="async">
+                <h1 id="obTitleDone" tabindex="-1">You're all set</h1>
+                <p class="ob-why">Your Practice account has virtual funds ready. Nothing you do there uses real money.</p>
+                <p class="ob-note" data-ob-appropriateness></p>
+                <ul class="ob-next">
+                    <li><a href="trade.html"><strong>Place a practice trade</strong><span>A three-step tour shows you around the order ticket.</span></a></li>
+                    <li><a href="guide-settlement.html"><strong>Read how a contract settles</strong><span>Five minutes on ticks, digits and payouts.</span></a></li>
+                    <li><a href="dashboard.html"><strong>Go to your dashboard</strong><span>Balance, results and the live indices.</span></a></li>
+                </ul>
+            </section>
+
+            <p class="ob-status" data-ob-status role="status" aria-live="polite"></p>
+        </main>
+    </div>
+
+    <footer class="ob-footer">
+        <a href="terms.html">Terms</a><a href="privacy.html">Privacy</a><a href="cookies.html">Cookies</a><a href="risk.html">Risk disclosure</a><a href="contact.html">Help</a>
+    </footer>
+
+    <script src="../assets/js/form-guard.js"></script>
+    <script src="../assets/js/onboarding.js"></script>
+</body>
+
+</html>

@@ -647,3 +647,9 @@ table.table tbody tr:hover td {
 
 /* Announcement preview: how the message reads in a customer's notification centre. */
 .announcement-preview { padding: 12px 14px; border: 1px solid var(--separator); border-inline-start: 2px solid var(--label); border-radius: var(--radius-control); background: var(--bg-3); color: var(--label); white-space: pre-line; overflow-wrap: anywhere; }
+
+/* Account setup answers in the customer inspector: a plain two-column list with separators. */
+.customer-onboarding { display: grid; grid-template-columns: minmax(120px, 40%) 1fr; margin: 0; border-top: 1px solid var(--separator); }
+.customer-onboarding dt, .customer-onboarding dd { margin: 0; padding: 6px 8px 6px 0; border-bottom: 1px solid var(--separator); }
+.customer-onboarding dt { color: var(--label-2); font-weight: 600; }
+.customer-onboarding dd { color: var(--label); overflow-wrap: anywhere; }

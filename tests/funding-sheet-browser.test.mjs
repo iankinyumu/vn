@@ -233,7 +233,7 @@ test('Real account page: a non-tester learns only that Real is not open', async 
     await page.locator('[data-sandbox-unavailable]').waitFor({ state: 'visible' });
     assert.equal(await page.locator('[data-sandbox-available]').isVisible(), false);
     const calls = await page.evaluate(() => window.__RPC_LOG__.map((c) => c.name));
-    assert.ok(calls.every((name) => name.startsWith('funding_') || ['get_engine_config', 'enroll_practice_account', 'list_my_accounts', 'get_account_summary', 'get_notification_unread_count', 'list_my_notifications'].includes(name)), `only funding, account and notification RPCs: ${calls}`);
+    assert.ok(calls.every((name) => name.startsWith('funding_') || ['get_engine_config', 'enroll_practice_account', 'list_my_accounts', 'get_account_summary', 'get_notification_unread_count', 'list_my_notifications', 'get_my_onboarding'].includes(name)), `only funding, account and notification RPCs: ${calls}`);
     assert.deepEqual(errors, []);
     await context.close();
 });

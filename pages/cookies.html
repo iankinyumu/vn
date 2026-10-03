@@ -63,6 +63,7 @@
                         <tr><td><code>smartprofit:staff-auth:v1</code></td><td>A staff sign-in session for the operations console, kept apart from customer sessions.</td><td>Until the staff member signs out</td></tr>
                         <tr><td><code>smartprofit:account:v1:…</code></td><td>Short-lived copies of account data so pages load quickly.</td><td>Minutes; cleared when the tab closes or you log out</td></tr>
                         <tr><td><code>practice:…</code>, <code>real:…</code></td><td>Working state for the active Practice or Real account.</td><td>Cleared when you switch account or log out</td></tr>
+                        <tr><td><code>smartprofit:onboarding:done:…</code></td><td>Remembers that account setup is finished, so each page does not ask the server again.</td><td>Until the tab closes or you log out</td></tr>
                         <tr><td><code>smartprofit:limit:…</code></td><td>Counts failed sign-ins and emails sent from this tab, to slow repeated attempts.</td><td>Until the tab closes</td></tr>
                         <tr><td><code>sp_consent</code> (cookie)</td><td>Remembers the choice you made on this page: "essential" or "preferences" and when you chose. Sent only to SmartProfit, never to another site, and holds no identifier.</td><td>12 months</td></tr>
                         <tr><td><code>smartprofit:consent</code></td><td>A copy of the same choice in local storage.</td><td>Until you clear it or change it</td></tr>

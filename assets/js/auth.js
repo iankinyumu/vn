@@ -85,13 +85,42 @@
     window.getSupabaseClient = getSupabaseClient;
     window.getAuthenticatedUser = async () => (await getSession())?.user || null;
     window.isAuthenticated = async () => Boolean(await getSession());
+    /* Onboarding gate. A signed-in customer who has not finished account setup is sent to
+       onboarding.html from every signed-in page except the setup page itself and help. Finished
+       setup is remembered for the tab (essential session storage) so pages do not ask again. If the
+       status cannot be read the page stays open: this gate guides people, the server enforces. */
+    const ONBOARDING_OPEN_PAGES = new Set(['onboarding.html', 'contact.html', 'faq.html', 'support.html']);
+    const onboardingKey = (userId) => `smartprofit:onboarding:done:${userId}`;
+    async function onboardingFinished() {
+        const client = await getSupabaseClient();
+        const { data: { session } } = await client.auth.getSession();
+        const userId = session?.user?.id;
+        if (!userId) return true;
+        try { if (sessionStorage.getItem(onboardingKey(userId)) === '1') return true; } catch (_) { /* ask the server */ }
+        const { data, error } = await client.rpc('get_my_onboarding');
+        if (error || !data || !data.status) return true;
+        if (data.status === 'completed') { try { sessionStorage.setItem(onboardingKey(userId), '1'); } catch (_) { /* asked again next page */ } }
+        return data.status === 'completed';
+    }
+    window.markOnboardingComplete = async function markOnboardingComplete() {
+        try {
+            const { data: { session } } = await (await getSupabaseClient()).auth.getSession();
+            if (session?.user?.id) sessionStorage.setItem(onboardingKey(session.user.id), '1');
+        } catch (_) { /* The next page asks the server instead. */ }
+    };
+
     window.requireAuth = async function requireAuth() {
+        const currentPath = window.location.pathname.split('/').pop() || 'dashboard.html';
         try {
             if (!await window.isAuthenticated()) {
-                const currentPath = window.location.pathname.split('/').pop() || 'dashboard.html';
                 window.location.replace(`login.html?redirect=${encodeURIComponent(currentPath)}`);
+                return;
             }
-        } catch (_) { window.location.replace('login.html?error=auth_unavailable'); }
+        } catch (_) { window.location.replace('login.html?error=auth_unavailable'); return; }
+        if (ONBOARDING_OPEN_PAGES.has(currentPath)) return;
+        try {
+            if (!await onboardingFinished()) window.location.replace('onboarding.html');
+        } catch (_) { /* Status unknown: leave the page open. */ }
     };
     window.redirectIfAuthenticated = async function redirectIfAuthenticated() {
         try { if (await window.isAuthenticated()) window.location.replace('dashboard.html'); } catch (_) { /* Keep form available. */ }
@@ -100,7 +129,7 @@
         window.smartProfitCache?.clear();
         // Public pages do not load account-cache.js but must still clear its data.
         try {
-            Object.keys(sessionStorage).filter((key) => key.startsWith('smartprofit:account:')).forEach((key) => sessionStorage.removeItem(key));
+            Object.keys(sessionStorage).filter((key) => key.startsWith('smartprofit:account:') || key.startsWith('smartprofit:onboarding:')).forEach((key) => sessionStorage.removeItem(key));
         } catch (_) { /* Storage may be disabled. */ }
         try { await (await getSupabaseClient()).auth.signOut(); }
         finally { window.location.replace('index.html'); }

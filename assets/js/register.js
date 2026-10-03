@@ -127,7 +127,8 @@ async function handleRegister(e) {
         });
         if (error) throw error;
         if (data.session) {
-            window.location.assign('dashboard.html');
+            // A new account goes straight into account setup.
+            window.location.assign('onboarding.html');
             return;
         }
         showStatus('Account created. You can now sign in.', false);

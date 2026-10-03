@@ -296,6 +296,7 @@
             el('customerDetailMeta').textContent = '';
             el('customerAccountsList').replaceChildren();
             el('customerRestrictionsList').replaceChildren();
+            el('customerOnboarding')?.replaceChildren();
             el('restrictionListStatus').textContent = '';
             this.renderRestrictionChoices();
             this.resetCustomerMessage();
@@ -308,6 +309,40 @@
                 el('customerRestrictionsList').replaceChildren(...(data.restrictions?.length ? data.restrictions.map((row) => this.restrictionItem(row, userId)) : [h('li', { className: 'list-group-item text-muted', text: 'No restrictions recorded for this customer.' })]));
             } catch (error) {
                 if (error !== STALE) el('customerDetailName').textContent = `Could not load customer detail. ${explain(error)}`;
+                return;
+            }
+            this.renderOnboarding(userId);
+        }
+
+        // Onboarding answers (staff_get_customer_onboarding, customers.read; every view is audited).
+        async renderOnboarding(userId) {
+            const list = el('customerOnboarding');
+            if (!list) return;
+            const row = (label, value) => [h('dt', { text: label }), h('dd', { text: value === undefined || value === null || value === '' ? '—' : String(value) })];
+            try {
+                const view = await this.call('staff_get_customer_onboarding', { p_user_id: userId });
+                if (this.customerId !== userId) return;
+                if (view.status === 'not_started') { list.replaceChildren(h('dd', { text: 'Not started yet.' })); return; }
+                const d = view.data || {};
+                const words = (value) => (value === undefined || value === null ? value : String(value).replaceAll('_', ' '));
+                list.replaceChildren(...[
+                    row('Status', view.status === 'completed' ? `Completed ${when(view.completed_at)}` : `In progress, step ${view.current_step} of 6`),
+                    row('Legal name', [d.legal_first_name, d.legal_last_name].filter(Boolean).join(' ')),
+                    row('Date of birth', d.date_of_birth),
+                    row('Nationality / residence', [d.nationality, d.country_of_residence].filter(Boolean).join(' / ')),
+                    row('Phone', d.phone),
+                    row('Address', [d.address_line1, d.address_line2, d.city, d.region, d.postal_code].filter(Boolean).join(', ')),
+                    row('Employment', [words(d.employment_status), words(d.occupation)].filter(Boolean).join(', ')),
+                    row('Income / savings (KES)', [words(d.annual_income), words(d.savings)].filter(Boolean).join(' / ')),
+                    row('Source of funds', (d.source_of_funds || []).join(', ')),
+                    row('Tax PIN', d.tax_id),
+                    row('Politically exposed', d.is_pep === undefined ? undefined : d.is_pep ? 'Yes' : 'No'),
+                    row('Experience (options / forex / shares)', [d.experience_binary, d.experience_forex, d.experience_shares].map(words).filter(Boolean).join(' / ')),
+                    row('Knowledge check', view.knowledge_score === undefined || view.knowledge_score === null ? undefined : `${view.knowledge_score} of 4 (${view.appropriateness === 'appropriate' ? 'appropriate' : 'not yet'})`),
+                    row('Goal / weekly time', [words(d.goal), words(d.weekly_time)].filter(Boolean).join(' / ')),
+                ].flat());
+            } catch (error) {
+                if (error !== STALE && this.customerId === userId) list.replaceChildren(h('dd', { text: `Could not load account setup. ${explain(error)}` }));
             }
         }
 
