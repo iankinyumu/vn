@@ -1,6 +1,5 @@
-/* Profile: the customer's trading preferences, which are their onboarding answers. Changing them
-   here changes how the site guides them (the trade companion tour, the contract the trade page
-   opens on). Saved with save_my_onboarding; the tab's cached answers are refreshed straight away. */
+/* Profile: the customer's trading preferences, which are their onboarding answers (goal,
+   experience, contracts). Changing them here changes how the site tailors itself (tailoring.js). Saved with save_my_onboarding; the tab's cached answers are refreshed straight away. */
 (function () {
     'use strict';
 
@@ -15,6 +14,7 @@
             const { data, error } = await client.rpc('get_my_onboarding');
             if (error) throw error;
             const answers = data?.data || {};
+            form.querySelectorAll('[name="goal"]').forEach((input) => { input.checked = input.value === answers.goal; });
             form.querySelectorAll('[name="experience"]').forEach((input) => { input.checked = input.value === answers.experience; });
             form.querySelectorAll('[name="interests"]').forEach((input) => { input.checked = (answers.interests || []).includes(input.value); });
         } catch (_) {
@@ -24,16 +24,17 @@
         form.addEventListener('submit', async (event) => {
             event.preventDefault();
             if (!client || button.disabled) return;
+            const goal = form.querySelector('[name="goal"]:checked')?.value ?? null;
             const experience = form.querySelector('[name="experience"]:checked')?.value ?? null;
             const interests = [...form.querySelectorAll('[name="interests"]:checked')].map((input) => input.value);
             button.disabled = true;
             button.setAttribute('aria-busy', 'true');
             status.textContent = 'Saving…';
             try {
-                const { data, error } = await client.rpc('save_my_onboarding', { p_data: { experience, interests }, p_finish: true });
+                const { data, error } = await client.rpc('save_my_onboarding', { p_data: { goal, experience, interests }, p_finish: true });
                 if (error) throw error;
                 await window.markOnboardingComplete?.(data);
-                status.textContent = 'Saved. The trade page will follow your new preferences.';
+                status.textContent = 'Saved. The site will follow your new preferences.';
             } catch (_) {
                 status.textContent = 'Your preferences could not be saved. Check your connection and try again.';
             } finally {

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { createTestDatabase, identities, claimsFor } from './helpers/test-db.mjs';
 
-const MIGRATIONS = ['supabase/migrations/20261003120000_customer_onboarding.sql', 'supabase/migrations/20261003130000_split_onboarding_and_verification.sql', 'supabase/migrations/20261003140000_remove_verification.sql'];
+const MIGRATIONS = ['supabase/migrations/20261003120000_customer_onboarding.sql', 'supabase/migrations/20261003130000_split_onboarding_and_verification.sql', 'supabase/migrations/20261003140000_remove_verification.sql', 'supabase/migrations/20261003150000_onboarding_answer_values.sql'];
 
 test('onboarding: a light, optional welcome that customers can answer, skip or change later', async (t) => {
     const db = await createTestDatabase();
@@ -30,7 +30,7 @@ test('onboarding: a light, optional welcome that customers can answer, skip or c
         view = await save({ experience: 'new', interests: ['overunder', 'evenodd', 'evenodd'] });
         assert.deepEqual(view.data.interests, ['evenodd', 'overunder']);
         assert.equal(view.data.goal, 'learn', 'earlier answers are kept');
-        view = await save({ start_with: 'tour' }, true);
+        view = await save({ start_with: 'trade' }, true);
         assert.equal(view.status, 'completed');
         assert.equal(view.skipped, false);
         const first = view.completed_at;
@@ -58,7 +58,7 @@ test('onboarding: a light, optional welcome that customers can answer, skip or c
         await as('agent');
         await assert.rejects(scalar('select public.staff_get_customer_onboarding($1) as result', [identities.customer.id]), /forbidden/);
         await as('administrator');
-        assert.equal((await scalar('select public.staff_get_customer_onboarding($1) as result', [identities.customer.id])).data.start_with, 'tour');
+        assert.equal((await scalar('select public.staff_get_customer_onboarding($1) as result', [identities.customer.id])).data.start_with, 'trade');
         await db.exec('reset role');
         await db.exec('set role anon');
         await assert.rejects(db.query('select public.get_my_onboarding()'), /permission denied/);

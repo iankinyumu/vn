@@ -53,7 +53,7 @@ for (const scheme of ['dark', 'light']) {
         try {
             await page.emulateMedia({ colorScheme: scheme });
             await page.locator('[data-step="1"]:not([hidden])').waitFor();
-            await page.check('[name="goal"][value="extra_income"]');
+            await page.check('[name="goal"][value="grow"]');
             await page.click('[data-step="1"] [type="submit"]');
             await page.locator('[data-step="2"]:not([hidden])').waitFor();
             // Nothing is required: continue without answering.
@@ -63,7 +63,7 @@ for (const scheme of ['dark', 'light']) {
             assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true, 'no sideways scrolling at 320px');
             const saved = await page.evaluate(() => (window.__RPC_LOG__ || []).filter((call) => call.name === 'save_my_onboarding').map((call) => call.args));
             assert.equal(saved.length, 2);
-            assert.equal(saved[0].p_data.goal, 'extra_income');
+            assert.equal(saved[0].p_data.goal, 'grow');
             await page.click('[data-step="3"] [type="submit"]');
             await page.waitForURL(/guide-settlement\.html$/);
             assert.deepEqual(errors.filter((text) => /onboarding/.test(text)), []);
@@ -111,7 +111,47 @@ test('the profile shows the answers and saves changes to them', async () => {
         await page.click('[data-prefs-form] [type="submit"]');
         await page.locator('[data-prefs-status]', { hasText: 'Saved' }).waitFor();
         const saved = await page.evaluate(() => window.__RPC_LOG__.filter((call) => call.name === 'save_my_onboarding').map((call) => call.args).at(-1));
-        assert.deepEqual(saved.p_data, { experience: 'experienced', interests: ['evenodd', 'matches'] });
+        assert.deepEqual(saved.p_data, { goal: null, experience: 'experienced', interests: ['evenodd', 'matches'] });
         assert.equal(saved.p_finish, true);
+    } finally { await context.close(); }
+});
+
+test('tailoring turns the answers into settings and marks the page with them', async () => {
+    const { page, context, errors } = await openApp(app, 'dashboard.html', { fake: tradeFake({}) + onboardingFake({ status: 'completed', data: { goal: 'grow', experience: 'some', interests: ['overunder', 'evenodd'] } }) });
+    try {
+        await page.waitForFunction(() => document.documentElement.dataset.dashboardLead === 'results');
+        assert.equal(await page.evaluate(() => document.documentElement.dataset.guidance), 'light');
+        const settings = await page.evaluate(() => window.smartProfitTailoring.settings());
+        assert.deepEqual(settings, { guidance: 'light', dashboardLead: 'results', contracts: ['evenodd', 'overunder'] });
+        const mapped = await page.evaluate(() => {
+            const { derive } = window.smartProfitTailoring;
+            return {
+                none: derive({}),
+                learn: derive({ goal: 'learn', experience: 'new' }).dashboardLead,
+                shortTerm: derive({ goal: 'short_term' }).dashboardLead,
+                strategy: derive({ goal: 'strategy', experience: 'experienced' }),
+                unknown: derive({ goal: 'fun', experience: 'guru', interests: ['dice'] }),
+            };
+        });
+        assert.deepEqual(mapped.none, { guidance: 'full', dashboardLead: null, contracts: [] }, 'no answers keep today\'s site');
+        assert.equal(mapped.learn, 'guides');
+        assert.equal(mapped.shortTerm, 'indices');
+        assert.deepEqual(mapped.strategy, { guidance: 'minimal', dashboardLead: 'breakdown', contracts: [] });
+        assert.deepEqual(mapped.unknown, { guidance: 'full', dashboardLead: null, contracts: [] });
+        assert.deepEqual(errors.filter((text) => /tailoring|onboarding/.test(text)), []);
+    } finally { await context.close(); }
+});
+
+test('the profile changes the goal and the page follows at once', async () => {
+    const { page, context } = await openApp(app, 'profile.html', { fake: tradeFake({}) + onboardingFake({ status: 'completed', data: { goal: 'learn', experience: 'new' } }) });
+    try {
+        await page.locator('[data-prefs-form] [name="goal"][value="learn"]:checked').waitFor({ state: 'attached' });
+        await page.waitForFunction(() => document.documentElement.dataset.dashboardLead === 'guides');
+        await page.check('[data-prefs-form] [name="goal"][value="strategy"]');
+        await page.click('[data-prefs-form] [type="submit"]');
+        await page.locator('[data-prefs-status]', { hasText: 'Saved' }).waitFor();
+        const saved = await page.evaluate(() => window.__RPC_LOG__.filter((call) => call.name === 'save_my_onboarding').map((call) => call.args).at(-1));
+        assert.equal(saved.p_data.goal, 'strategy');
+        assert.equal(await page.evaluate(() => document.documentElement.dataset.dashboardLead), 'breakdown');
     } finally { await context.close(); }
 });

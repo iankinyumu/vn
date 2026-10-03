@@ -7,13 +7,20 @@
 
     const TOTAL = 3;
     const NAMES = ['Your goal', 'Your experience', 'Where to start'];
-    const START_PAGES = { tour: 'trade.html', guides: 'guide-settlement.html', dashboard: 'dashboard.html' };
+    const START_PAGES = { trade: 'trade.html', guides: 'guide-settlement.html', dashboard: 'dashboard.html' };
 
     const $ = (selector, root = document) => root.querySelector(selector);
     const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 
     let client = null;
     let busy = false;
+
+    // The account the customer last chose on this device (account-switcher.js keeps it), shown as text.
+    function showMode() {
+        let mode = 'practice';
+        try { if (window.localStorage.getItem('smartprofit:account:active') === 'real') mode = 'real'; } catch (_) { /* Practice */ }
+        $('[data-ob-mode]').textContent = mode.toUpperCase();
+    }
 
     const status = (text) => { $('[data-ob-status]').textContent = text; };
 
@@ -63,6 +70,7 @@
     }
 
     async function boot() {
+        showMode();
         for (let step = 1; step <= TOTAL; step += 1) {
             const form = $(`[data-step="${step}"]`);
             form.addEventListener('submit', (event) => {
