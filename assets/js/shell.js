@@ -83,8 +83,15 @@
         return item;
     }
 
-    async function appendSessionAction(list) {
-        const item = element('li', 'nav-item ms-2');
+    // Where "Back" goes: the previous page when it was one of ours, otherwise the dashboard.
+    function goBack() {
+        let sameSite = false;
+        try { sameSite = Boolean(document.referrer) && new URL(document.referrer).origin === window.location.origin; } catch (_) { sameSite = false; }
+        if (sameSite && window.history.length > 1) window.history.back();
+        else window.location.assign('dashboard.html');
+    }
+
+    async function appendSessionAction(item) {
         let signedIn = false;
         try {
             signedIn = typeof window.isAuthenticated === 'function' && await window.isAuthenticated();
@@ -92,13 +99,15 @@
             signedIn = false;
         }
         if (signedIn) {
-            // Logging out loses nothing, so it takes the quiet style rather than the destructive one.
+            // A signed-in customer reading a public page (terms, privacy, about) gets a way back
+            // into the app, not the landing navigation or a log out they don't need here.
             const button = element('button', 'btn btn-outline-light btn-sm rounded-pill px-3');
             button.type = 'button';
-            const glyph = icon('logout');
+            button.dataset.shellBack = '';
+            const glyph = icon('arrow_back');
             glyph.classList.add('me-1');
-            button.append(glyph, document.createTextNode('Log out'));
-            button.addEventListener('click', () => { if (typeof window.logout === 'function') window.logout(); });
+            button.append(glyph, document.createTextNode('Back'));
+            button.addEventListener('click', goBack);
             item.append(button);
         } else {
             const anchor = element('a', 'btn btn-premium-primary btn-sm rounded-pill px-3', 'Create account');
@@ -107,7 +116,6 @@
             signIn.href = 'login.html';
             item.append(signIn, anchor);
         }
-        list.append(item);
         return signedIn;
     }
 
@@ -275,14 +283,15 @@
         return button;
     }
 
-    function buildFooter() {
+    function buildFooter(signedIn = false) {
         const footer = element('footer', 'premium-footer');
         const container = element('div', 'container-fluid px-4');
         const row = element('div', 'row g-3');
         const brandColumn = element('div', 'col-md-3');
         brandColumn.append(element('div', 'footer-brand-small', 'SmartProfit'), element('p', 'footer-desc', TAGLINE));
         row.append(brandColumn);
-        FOOTER_COLUMNS.forEach((column) => {
+        // Signed in, the footer keeps only the legal column: no landing or sign-in links.
+        FOOTER_COLUMNS.filter((column) => !signedIn || column.consent).forEach((column) => {
             const cell = element('div', 'col-md-3');
             // An h2, so footer headings never skip levels after a page's own h1 and h2s.
         cell.append(element('h2', 'footer-heading', column.title));
@@ -536,7 +545,7 @@
             const appearance = buildAppearance('nav');
             const header = buildHeader(active, appearance.button);
             headerMount.replaceChildren(header, appearance.menu);
-            fillSessionAction(header);
+            fillSessionAction(header, footerMount);
         }
         if (footerMount) footerMount.replaceChildren(surface === 'app' ? buildAppFooter() : buildFooter());
         if (surface === 'app' && !document.body.classList.contains('app-shell')) document.body.classList.add('app-shell');
@@ -580,10 +589,19 @@
             .catch(() => { /* Without the list or a session, the Profile icon stays. */ });
     }
 
-    function fillSessionAction(header) {
+    function fillSessionAction(header, footerMount) {
         const target = header.querySelector('[data-shell-session]');
         if (!target) return;
-        appendSessionAction(target).catch(() => { /* The session action stays empty when auth is unavailable. */ });
+        appendSessionAction(target).then((signedIn) => {
+            if (!signedIn) return;
+            // Drop the landing links (Home, About, Fairness); the appearance menu stays.
+            header.querySelectorAll('.navbar-nav > .nav-item:not([data-shell-session])').forEach((item) => {
+                if (!item.querySelector('.appearance-toggle')) item.remove();
+            });
+            const brand = header.querySelector('.navbar-brand');
+            if (brand) { brand.href = 'dashboard.html'; brand.setAttribute('aria-label', 'SmartProfit dashboard'); }
+            footerMount?.querySelector('.premium-footer')?.replaceWith(buildFooter(true));
+        }).catch(() => { /* The session action stays empty when auth is unavailable. */ });
     }
 
     window.smartProfitShell = Object.freeze({

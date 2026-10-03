@@ -53,3 +53,22 @@ test('the landing page header and footer no longer offer guides, FAQ or contact'
         for (const href of ['faq.html', 'contact.html', 'blog.html']) assert.equal(await page.locator(`a[href="${href}"]`).count(), 0, `the landing page links ${href}`);
     } finally { await context.close(); }
 });
+
+test('signed in, legal pages offer Back to the app instead of landing links or log out', async () => {
+    for (const path of ['terms.html', 'privacy.html', 'risk.html', 'cookies.html']) {
+        const { page, context, errors } = await openApp(app, path, { fake: fake() });
+        try {
+            await page.locator('.premium-header [data-shell-back]').waitFor();
+            assert.match(await page.locator('[data-shell-back]').textContent(), /Back/);
+            for (const href of ['index.html', 'about.html', 'login.html', 'register.html']) {
+                assert.equal(await page.locator(`.premium-header a[href="${href}"], .premium-footer a[href="${href}"]`).count(), 0, `${path} links ${href}`);
+            }
+            assert.equal(await page.getByRole('button', { name: /log out/i }).count(), 0, `${path} shows log out`);
+            assert.equal(await page.locator('.premium-header .navbar-brand').getAttribute('href'), 'dashboard.html');
+            assert.ok(await page.locator('.premium-footer a[href="terms.html"]').count() === 1, `${path} lost its legal links`);
+            assert.deepEqual(errors, [], `${path} logged errors`);
+            // Opened directly, with no earlier page of ours, Back goes to the dashboard.
+            await Promise.all([page.waitForURL(/dashboard\.html/), page.locator('[data-shell-back]').click()]);
+        } finally { await context.close(); }
+    }
+});
